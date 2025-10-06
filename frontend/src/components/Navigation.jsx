@@ -93,12 +93,11 @@ const Navigation = () => {
           
           {user && (
             <>
-              <div className="nav-divider" />
               {additionalPages.map((item, index) => (
                 <motion.button
                   key={item.path}
                   onClick={() => goToPage(item)}
-                  className="nav-link nav-btn secondary"
+                  className="nav-link nav-btn"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, delay: 0.4 + index * 0.05 }}
@@ -110,10 +109,14 @@ const Navigation = () => {
                 </motion.button>
               ))}
               
+              {/* Admin button in nav-links */}
               {user.role === 'admin' && (
                 <motion.button
                   onClick={() => navigate('/admin')}
                   className="nav-link nav-btn admin-link"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: 0.5 }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -122,13 +125,18 @@ const Navigation = () => {
                 </motion.button>
               )}
               
+              {/* Logout button in nav-links */}
               <motion.button
                 onClick={logout}
                 className="nav-logout"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.6 }}
                 whileHover={{ scale: 1.05, backgroundColor: '#ff6b6b' }}
                 whileTap={{ scale: 0.95 }}
               >
-                Logout
+                <LogIn size={18} />
+                <span>Logout</span>
               </motion.button>
             </>
           )}
