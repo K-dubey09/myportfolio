@@ -342,6 +342,84 @@ const PortfolioSite = () => {
         </div>
       </motion.section>
 
+      {/* Skills Highlights Section */}
+      {skills.length > 0 && (
+        <motion.section 
+          id="skills-highlights" 
+          className="section skills-highlights-section"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="container">
+            <div className="section-header">
+              <motion.h2 
+                className="section-title"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                Skills Highlights
+              </motion.h2>
+              {skills.length > (user ? 12 : 6) && (
+                <button className="header-view-all" onClick={() => handleViewAll('/skills')}>View All</button>
+              )}
+            </div>
+            <div className="skills-highlights-grid">
+              {skills.slice(0, user ? 12 : 6).map((skill, index) => (
+                <motion.div 
+                  key={skill._id || index} 
+                  className="skill-highlight-card"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                >
+                  <div className="skill-icon">
+                    {skill.icon || '⚡'}
+                  </div>
+                  <h3>{skill.name}</h3>
+                  {skill.level && (
+                    <div className="skill-progress">
+                      <div className="progress-bar">
+                        <motion.div 
+                          className="progress-fill"
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${skill.proficiency || 75}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: index * 0.1 }}
+                        />
+                      </div>
+                      <span className="skill-level">{skill.level}</span>
+                    </div>
+                  )}
+                  {skill.description && (
+                    <p className="skill-description">{skill.description}</p>
+                  )}
+                  {skill.experience && (
+                    <span className="skill-experience">{skill.experience} experience</span>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+            {!user && (
+              <motion.p 
+                className="limited-access-notice"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              >
+                Showing featured skills. <button onClick={() => navigate('/login')} className="link-btn">Login</button> to see complete skills portfolio.
+              </motion.p>
+            )}
+          </div>
+        </motion.section>
+      )}
+
       {/* Services Section */}
       {services.length > 0 && (
         <motion.section 

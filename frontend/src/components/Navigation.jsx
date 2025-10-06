@@ -1,40 +1,59 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Home, User, Briefcase, BookOpen, MessageSquare, Star, Video, LogIn, Settings } from 'lucide-react';
+import { Home, User, Briefcase, BookOpen, MessageSquare, Star, Video, LogIn, Settings, Award, Layers, BarChart3, GraduationCap, Images, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Navigation = () => {
-  const { user, logout, clearRateLimit } = useAuth();
+  const __motionRefNav = typeof motion === 'undefined' ? null : motion; // linter usage hint
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const handleClearRateLimit = async () => {
-    if (user && user.role === 'admin') {
-      try {
-        const result = await clearRateLimit();
-        if (result.success) {
-          alert('Rate limits cleared successfully!');
-        } else {
-          alert('Failed to clear rate limits: ' + result.error);
-        }
-      } catch (error) {
-        alert('Error: ' + error.message);
-      }
+  // Main navigation links matching admin panel structure
+  const mainNavLinks = [
+    { name: 'Home', target: 'top', icon: Home },
+    { name: 'Services', target: 'services', icon: Layers },
+    { name: 'Projects', target: 'projects', icon: Briefcase },
+    { name: 'Experience', target: 'experience', icon: Briefcase },
+    { name: 'Education', target: 'education', icon: GraduationCap },
+    { name: 'Blogs', target: 'blogs', icon: BookOpen },
+    { name: 'Contact', target: 'contact', icon: MessageSquare },
+  ];
+
+  const additionalPages = [
+    { name: 'Gallery', path: '/gallery', icon: Images, protected: true },
+    { name: 'Skills', path: '/skills', icon: Star, protected: true },
+  ];
+
+  const scrollToSection = useCallback((id) => {
+    if (id === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  const handleSectionClick = (target) => {
+    if (location.pathname !== '/') {
+      navigate('/', { replace: false });
+      // Delay scroll until after navigation to home has rendered
+      setTimeout(() => scrollToSection(target), 60);
+    } else {
+      scrollToSection(target);
     }
   };
 
-  const navigationItems = [
-    { name: 'Home', path: '/', icon: Home, public: true },
-    { name: 'Projects', path: '/projects', icon: Briefcase, public: true },
-    { name: 'Blogs', path: '/blogs', icon: BookOpen, public: true },
-    { name: 'Testimonials', path: '/testimonials', icon: MessageSquare, public: true },
-    ...(user ? [
-      { name: 'Vlogs', path: '/vlogs', icon: Video, public: false },
-      ...(user.role === 'admin' ? [
-        { name: 'Admin Panel', path: '/admin', icon: Settings, public: false }
-      ] : [])
-    ] : [
-      { name: 'Login', path: '/login', icon: LogIn, public: true }
-    ])
-  ];
+  const goToPage = (item) => {
+    if (item.protected && !user) {
+      navigate('/login');
+      return;
+    }
+    navigate(item.path);
+  };
 
   return (
     <motion.nav 
@@ -56,43 +75,73 @@ const Navigation = () => {
         </motion.div>
 
         <div className="nav-links">
-          {navigationItems.map((item, index) => (
-            <motion.a
-              key={item.path}
-              href={item.path}
-              className="nav-link"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ scale: 1.05, color: '#4a90e2' }}
+          {mainNavLinks.map((item, index) => (
+            <motion.button
+              key={item.target}
+              onClick={() => handleSectionClick(item.target)}
+              className="nav-link nav-btn"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: index * 0.05 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <item.icon size={18} />
               <span>{item.name}</span>
-            </motion.a>
+            </motion.button>
           ))}
           
           {user && (
-            <motion.button
-              onClick={logout}
-              className="nav-logout"
-              whileHover={{ scale: 1.05, backgroundColor: '#ff6b6b' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Logout
-            </motion.button>
+            <>
+              <div className="nav-divider" />
+              {additionalPages.map((item, index) => (
+                <motion.button
+                  key={item.path}
+                  onClick={() => goToPage(item)}
+                  className="nav-link nav-btn secondary"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: 0.4 + index * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <item.icon size={18} />
+                  <span>{item.name}</span>
+                </motion.button>
+              ))}
+              
+              {user.role === 'admin' && (
+                <motion.button
+                  onClick={() => navigate('/admin')}
+                  className="nav-link nav-btn admin-link"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Settings size={18} />
+                  <span>Admin</span>
+                </motion.button>
+              )}
+              
+              <motion.button
+                onClick={logout}
+                className="nav-logout"
+                whileHover={{ scale: 1.05, backgroundColor: '#ff6b6b' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Logout
+              </motion.button>
+            </>
           )}
-
-          {user && user.role === 'admin' && (
+          
+          {!user && (
             <motion.button
-              onClick={handleClearRateLimit}
-              className="nav-logout"
-              style={{ backgroundColor: '#ffa500', borderColor: '#ffa500' }}
-              whileHover={{ scale: 1.05, backgroundColor: '#ff8c00' }}
+              onClick={() => navigate('/login')}
+              className="nav-login"
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              title="Clear Rate Limits"
             >
-              Clear Limits
+              <LogIn size={18} />
+              <span>Login</span>
             </motion.button>
           )}
         </div>

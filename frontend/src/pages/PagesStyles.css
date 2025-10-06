@@ -426,6 +426,117 @@
   color: #718096;
 }
 
+/* Skills Highlights Section */
+.skills-highlights-section {
+  background: #f8fafc;
+}
+
+.skills-highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.skill-highlight-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.skill-highlight-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-color: #4299e1;
+}
+
+.skill-highlight-card .skill-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  color: white;
+}
+
+.skill-highlight-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.skill-progress {
+  margin: 1rem 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4299e1, #667eea);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.skill-level {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4299e1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skill-description {
+  color: #718096;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 1rem 0;
+}
+
+.skill-experience {
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .skills-highlights-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .skill-highlight-card {
+    padding: 1.5rem;
+  }
+  
+  .skill-highlight-card .skill-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+}
+
 /* Skills Summary */
 .skills-summary {
   background: white;
