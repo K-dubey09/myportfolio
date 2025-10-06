@@ -640,6 +640,576 @@ const AdminPanel = () => {
     </div>
   );
 
+  // Render Projects Tab
+  const renderProjectsTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>Projects Management</h2>
+        <div className="header-actions">
+          {renderControls(['Web Development', 'Mobile App', 'AI/ML', 'E-commerce'])}
+        </div>
+      </div>
+      
+      <form onSubmit={projectHandlers.submit} className="admin-form">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Project Title</label>
+            <input
+              type="text"
+              value={projectForm.title}
+              onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Technologies</label>
+            <input
+              type="text"
+              value={projectForm.technologies}
+              onChange={(e) => setProjectForm({ ...projectForm, technologies: e.target.value })}
+              className="form-input"
+              placeholder="React, Node.js, MongoDB"
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={projectForm.description}
+            onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
+            className="form-input"
+            rows="4"
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>GitHub URL</label>
+            <input
+              type="url"
+              value={projectForm.githubUrl}
+              onChange={(e) => setProjectForm({ ...projectForm, githubUrl: e.target.value })}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Live URL</label>
+            <input
+              type="url"
+              value={projectForm.liveUrl}
+              onChange={(e) => setProjectForm({ ...projectForm, liveUrl: e.target.value })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Image URL</label>
+            <input
+              type="url"
+              value={projectForm.imageUrl}
+              onChange={(e) => setProjectForm({ ...projectForm, imageUrl: e.target.value })}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={projectForm.featured}
+                onChange={(e) => setProjectForm({ ...projectForm, featured: e.target.checked })}
+              />
+              Featured Project
+            </label>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Project' : 'Add Project'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={projectHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.projects || [], ['title', 'technologies']).map((project) => (
+          <div key={project._id || project.id} className="item-card">
+            <div className="item-header">
+              <h3>{project.title}</h3>
+              {project.featured && <span className="featured-badge">Featured</span>}
+            </div>
+            <p className="item-description">{project.description}</p>
+            <div className="item-meta">
+              <span>Technologies: {project.technologies}</span>
+            </div>
+            <div className="item-actions">
+              <button onClick={() => projectHandlers.edit(project)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => projectHandlers.delete(project._id || project.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render Experience Tab
+  const renderExperienceTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>Experience Management</h2>
+        <div className="header-actions">
+          {renderControls(['Full-time', 'Part-time', 'Freelance', 'Internship'])}
+        </div>
+      </div>
+      
+      <form onSubmit={experienceHandlers.submit} className="admin-form">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Company</label>
+            <input
+              type="text"
+              value={experienceForm.company}
+              onChange={(e) => setExperienceForm({ ...experienceForm, company: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Position</label>
+            <input
+              type="text"
+              value={experienceForm.position}
+              onChange={(e) => setExperienceForm({ ...experienceForm, position: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={experienceForm.description}
+            onChange={(e) => setExperienceForm({ ...experienceForm, description: e.target.value })}
+            className="form-input"
+            rows="4"
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Start Date</label>
+            <input
+              type="date"
+              value={experienceForm.startDate}
+              onChange={(e) => setExperienceForm({ ...experienceForm, startDate: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>End Date</label>
+            <input
+              type="date"
+              value={experienceForm.endDate}
+              onChange={(e) => setExperienceForm({ ...experienceForm, endDate: e.target.value })}
+              className="form-input"
+              disabled={experienceForm.current}
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Location</label>
+            <input
+              type="text"
+              value={experienceForm.location}
+              onChange={(e) => setExperienceForm({ ...experienceForm, location: e.target.value })}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Type</label>
+            <select
+              value={experienceForm.type}
+              onChange={(e) => setExperienceForm({ ...experienceForm, type: e.target.value })}
+              className="form-input"
+            >
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Freelance">Freelance</option>
+              <option value="Internship">Internship</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={experienceForm.current}
+              onChange={(e) => setExperienceForm({ ...experienceForm, current: e.target.checked })}
+            />
+            Currently working here
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Experience' : 'Add Experience'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={experienceHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.experiences || [], ['company', 'position']).map((experience) => (
+          <div key={experience._id || experience.id} className="item-card">
+            <div className="item-header">
+              <h3>{experience.position}</h3>
+              <span className="company-name">{experience.company}</span>
+            </div>
+            <p className="item-description">{experience.description}</p>
+            <div className="item-meta">
+              <span>{experience.startDate} - {experience.current ? 'Present' : experience.endDate}</span>
+              <span>{experience.type}</span>
+            </div>
+            <div className="item-actions">
+              <button onClick={() => experienceHandlers.edit(experience)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => experienceHandlers.delete(experience._id || experience.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render Education Tab
+  const renderEducationTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>Education Management</h2>
+      </div>
+      
+      <form onSubmit={educationHandlers.submit} className="admin-form">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Institution</label>
+            <input
+              type="text"
+              value={educationForm.institution}
+              onChange={(e) => setEducationForm({ ...educationForm, institution: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Degree</label>
+            <input
+              type="text"
+              value={educationForm.degree}
+              onChange={(e) => setEducationForm({ ...educationForm, degree: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Field of Study</label>
+            <input
+              type="text"
+              value={educationForm.field}
+              onChange={(e) => setEducationForm({ ...educationForm, field: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>GPA</label>
+            <input
+              type="text"
+              value={educationForm.gpa}
+              onChange={(e) => setEducationForm({ ...educationForm, gpa: e.target.value })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Start Date</label>
+            <input
+              type="date"
+              value={educationForm.startDate}
+              onChange={(e) => setEducationForm({ ...educationForm, startDate: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>End Date</label>
+            <input
+              type="date"
+              value={educationForm.endDate}
+              onChange={(e) => setEducationForm({ ...educationForm, endDate: e.target.value })}
+              className="form-input"
+              disabled={educationForm.current}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={educationForm.current}
+              onChange={(e) => setEducationForm({ ...educationForm, current: e.target.checked })}
+            />
+            Currently studying here
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Education' : 'Add Education'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={educationHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.education || [], ['institution', 'degree', 'field']).map((education) => (
+          <div key={education._id || education.id} className="item-card">
+            <div className="item-header">
+              <h3>{education.degree}</h3>
+              <span className="institution-name">{education.institution}</span>
+            </div>
+            <p className="item-description">{education.field}</p>
+            <div className="item-meta">
+              <span>{education.startDate} - {education.current ? 'Present' : education.endDate}</span>
+              {education.gpa && <span>GPA: {education.gpa}</span>}
+            </div>
+            <div className="item-actions">
+              <button onClick={() => educationHandlers.edit(education)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => educationHandlers.delete(education._id || education.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render Blogs Tab
+  const renderBlogsTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>Blog Management</h2>
+        <div className="header-actions">
+          {renderControls(['Technology', 'Tutorial', 'Personal', 'Business'])}
+        </div>
+      </div>
+      
+      <form onSubmit={blogHandlers.submit} className="admin-form">
+        <div className="form-group">
+          <label>Blog Title</label>
+          <input
+            type="text"
+            value={blogForm.title}
+            onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
+            className="form-input"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Excerpt</label>
+          <textarea
+            value={blogForm.excerpt}
+            onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })}
+            className="form-input"
+            rows="3"
+            placeholder="Brief description of the blog post"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Content</label>
+          <textarea
+            value={blogForm.content}
+            onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })}
+            className="form-input"
+            rows="8"
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Tags</label>
+            <input
+              type="text"
+              value={blogForm.tags}
+              onChange={(e) => setBlogForm({ ...blogForm, tags: e.target.value })}
+              className="form-input"
+              placeholder="react, javascript, tutorial"
+            />
+          </div>
+          <div className="form-group">
+            <label>Read Time (minutes)</label>
+            <input
+              type="number"
+              value={blogForm.readTime}
+              onChange={(e) => setBlogForm({ ...blogForm, readTime: e.target.value })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Cover Image URL</label>
+            <input
+              type="url"
+              value={blogForm.coverImage}
+              onChange={(e) => setBlogForm({ ...blogForm, coverImage: e.target.value })}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              value={blogForm.status}
+              onChange={(e) => setBlogForm({ ...blogForm, status: e.target.value })}
+              className="form-input"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={blogForm.featured}
+              onChange={(e) => setBlogForm({ ...blogForm, featured: e.target.checked })}
+            />
+            Featured Blog
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Blog' : 'Add Blog'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={blogHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.blogs || [], ['title', 'tags']).map((blog) => (
+          <div key={blog._id || blog.id} className="item-card">
+            <div className="item-header">
+              <h3>{blog.title}</h3>
+              <div className="badges">
+                {blog.featured && <span className="featured-badge">Featured</span>}
+                <span className={`status-badge ${blog.status}`}>{blog.status}</span>
+              </div>
+            </div>
+            <p className="item-description">{blog.excerpt}</p>
+            <div className="item-meta">
+              <span>Read time: {blog.readTime} min</span>
+              <span>Tags: {blog.tags}</span>
+            </div>
+            <div className="item-actions">
+              <button onClick={() => blogHandlers.edit(blog)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => blogHandlers.delete(blog._id || blog.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Render remaining tabs (Vlogs, Gallery, Services, Testimonials, Contacts)
+  const renderVlogsTab = () => (
+    <div className="tab-content">
+      <h2>Vlog Management</h2>
+      <p>Vlog functionality will be implemented here...</p>
+    </div>
+  );
+
+  const renderGalleryTab = () => (
+    <div className="tab-content">
+      <h2>Gallery Management</h2>
+      <p>Gallery functionality will be implemented here...</p>
+    </div>
+  );
+
+  const renderServicesTab = () => (
+    <div className="tab-content">
+      <h2>Services Management</h2>
+      <p>Services functionality will be implemented here...</p>
+    </div>
+  );
+
+  const renderTestimonialsTab = () => (
+    <div className="tab-content">
+      <h2>Testimonials Management</h2>
+      <p>Testimonials functionality will be implemented here...</p>
+    </div>
+  );
+
+  const renderContactsTab = () => (
+    <div className="tab-content">
+      <h2>Contact Messages</h2>
+      <p>Contact management functionality will be implemented here...</p>
+    </div>
+  );
+
   return (
     <div className="admin-panel">
       {/* Left Sidebar Navigation */}
