@@ -154,27 +154,26 @@ const Navigation = () => {
           )}
         </div>
       </div>
-      
-      {user && (
-        <motion.div 
-          className="user-info"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="user-avatar">
-            {user.profileImage ? (
-              <img src={user.profileImage} alt={user.username} />
-            ) : (
-              <User size={20} />
-            )}
-          </div>
-          <div className="user-details">
-            <span className="username">{user.username}</span>
-            <span className="user-role">{user.role}</span>
-          </div>
-        </motion.div>
-      )}
+        {user && (
+          <motion.div 
+            className="user-info"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="user-avatar">
+              {user.profileImage ? (
+                <img src={user.profileImage} alt={user.username} />
+              ) : (
+                <User size={20} />
+              )}
+            </div>
+            <div className="user-details">
+              <span className="username">{user.username}</span>
+              <span className="user-role">{user.role}</span>
+            </div>
+          </motion.div>
+        )}
     </motion.nav>
   );
 };

@@ -758,7 +758,7 @@ body {
 .nav-container {
   max-width: 1700px;
   display: flex;
-  margin-right: 30px;
+  margin-right: 50px;
   align-items: center;
   justify-content: space-between;
   gap: 0.1rem;
@@ -777,17 +777,15 @@ body {
 }
 
 .user-info {
-  display: flex;
+  display: absolute;
   top: 10px;
-  right: 10px;
+  left: calc(100vw - 150px);
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 25px;
   backdrop-filter: blur(10px);
-  order: 3;
+  order: 2;
   flex-shrink: 0;
   transition: all 0.3s ease;
 }
