@@ -756,30 +756,86 @@ body {
 }
 
 .nav-container {
-  max-width: 1600px;
-  margin: 0 auto;
+  max-width: 1700px;
   display: flex;
+  margin-right: 30px;
   align-items: center;
   justify-content: space-between;
-  gap: 0.4rem;
+  gap: 0.1rem;
   flex-wrap: wrap;
   position: relative;
-  padding: 0 1rem;
+  padding: 0 1.4rem;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.1rem;
   justify-content: flex-end;
   flex-wrap: wrap;
-  margin-right: 30px;
   order: 2;
 }
 
 .user-info {
+  display: flex;
+  top: 10px;
+  right: 10px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
   order: 3;
   flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: capitalize;
+  line-height: 1.2;
 }
 
 .nav-brand {
@@ -794,7 +850,7 @@ body {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.1rem;
   text-decoration: none;
   color: #333;
   font-weight: 700;
@@ -809,10 +865,10 @@ body {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.2rem;
   justify-content: flex-end;
   flex-wrap: wrap;
-  margin-right: 30px;
+  margin-right: 70px;
   order: 2;
 }
 
