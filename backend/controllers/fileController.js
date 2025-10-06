@@ -61,6 +61,8 @@ export const FileController = {
       
       res.json({
         message: 'File uploaded successfully',
+        fileUrl: fileUrl, // Add this for frontend compatibility
+        url: fileUrl, // Keep this for backwards compatibility
         file: {
           ...result,
           url: fileUrl

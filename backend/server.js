@@ -17,7 +17,8 @@ import {
   requireAdmin, 
   requireAdminOrEditor,
   rateLimit,
-  auditLog
+  auditLog,
+  clearRateLimit
 } from './middleware/auth.js';
 
 // Load environment variables
@@ -43,6 +44,8 @@ import Blog from './models/Blog.js';
 import Vlog from './models/Vlog.js';
 import Gallery from './models/Gallery.js';
 import Testimonial from './models/Testimonial.js';
+import Service from './models/Service.js';
+import Contact from './models/Contact.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -109,7 +112,7 @@ app.get('/test-page', (req, res) => {
 });
 
 // Rate limiting for auth routes
-app.use('/api/auth', rateLimit(20, 15 * 60 * 1000)); // 20 requests per 15 minutes
+app.use('/api/auth', rateLimit(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -159,6 +162,22 @@ app.get('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.
 app.put('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('UPDATE_USER'), UserController.updateUserRole);
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('DELETE_USER'), UserController.deleteUser);
 
+// ==================== ADMIN UTILITY ROUTES ====================
+// Clear rate limits (admin only)
+app.post('/api/admin/clear-rate-limit', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const { identifier } = req.body;
+    clearRateLimit(identifier);
+    res.json({ 
+      message: identifier 
+        ? `Rate limit cleared for ${identifier}` 
+        : 'All rate limits cleared' 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to clear rate limits' });
+  }
+});
+
 // Create CRUD controllers for each model
 const skillController = createCRUDController(Skill, 'Skill');
 const projectController = createCRUDController(Project, 'Project');
@@ -168,6 +187,8 @@ const blogController = createCRUDController(Blog, 'Blog');
 const vlogController = createCRUDController(Vlog, 'Vlog');
 const galleryController = createCRUDController(Gallery, 'Gallery');
 const testimonialController = createCRUDController(Testimonial, 'Testimonial');
+const serviceController = createCRUDController(Service, 'Service');
+const contactController = createCRUDController(Contact, 'Contact');
 
 // ==================== FILE ROUTES (GridFS) ====================
 // Serve files from GridFS
@@ -268,19 +289,37 @@ app.put('/api/admin/testimonials/:id', authenticateToken, requirePermission('can
 app.delete('/api/admin/testimonials/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_TESTIMONIAL'), testimonialController.delete);
 app.post('/api/admin/testimonials/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('avatar'), testimonialController.uploadFile);
 
+// ==================== SERVICES ROUTES ====================
+app.get('/api/services', serviceController.getAll);
+app.get('/api/admin/services', authenticateToken, serviceController.getAll);
+app.get('/api/admin/services/:id', authenticateToken, serviceController.getById);
+app.post('/api/admin/services', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_SERVICE'), serviceController.create);
+app.put('/api/admin/services/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_SERVICE'), serviceController.update);
+app.delete('/api/admin/services/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_SERVICE'), serviceController.delete);
+
+// ==================== CONTACTS ROUTES ====================
+app.get('/api/contacts', contactController.getAll); // Public endpoint for contact form submission
+app.post('/api/contacts', contactController.create); // Public endpoint for contact form submission
+app.get('/api/admin/contacts', authenticateToken, contactController.getAll);
+app.get('/api/admin/contacts/:id', authenticateToken, contactController.getById);
+app.put('/api/admin/contacts/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_CONTACT'), contactController.update);
+app.delete('/api/admin/contacts/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_CONTACT'), contactController.delete);
+
 // ==================== PORTFOLIO DATA ROUTE (Combined) ====================
 app.get('/api/portfolio', async (req, res) => {
   try {
-    const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials] = await Promise.all([
+    const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials, services, contacts] = await Promise.all([
       Profile.findOne(),
       Skill.find().sort({ category: 1, name: 1 }),
-      Project.find({ featured: true }).sort({ createdAt: -1 }).limit(6),
+      Project.find().sort({ featured: -1, createdAt: -1 }),
       Experience.find().sort({ startDate: -1 }),
       Education.find().sort({ startDate: -1 }),
-      Blog.find({ published: true }).sort({ publishDate: -1 }).limit(6),
-      Vlog.find({ published: true }).sort({ publishDate: -1 }).limit(6),
-      Gallery.find({ featured: true }).sort({ order: 1 }).limit(12),
-      Testimonial.find({ approved: true, featured: true }).sort({ createdAt: -1 }).limit(6)
+      Blog.find().sort({ publishDate: -1, createdAt: -1 }),
+      Vlog.find().sort({ publishedDate: -1, createdAt: -1 }),
+      Gallery.find().sort({ createdAt: -1 }),
+      Testimonial.find().sort({ featured: -1, createdAt: -1 }),
+      Service.find().sort({ featured: -1, createdAt: -1 }),
+      Contact.find().sort({ createdAt: -1 })
     ]);
 
     res.json({
@@ -292,7 +331,9 @@ app.get('/api/portfolio', async (req, res) => {
       blogs: blogs || [],
       vlogs: vlogs || [],
       gallery: gallery || [],
-      testimonials: testimonials || []
+      testimonials: testimonials || [],
+      services: services || [],
+      contacts: contacts || []
     });
   } catch (error) {
     console.error('Error fetching portfolio data:', error);

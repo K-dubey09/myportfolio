@@ -107,6 +107,15 @@ export const requireOwnershipOrAdmin = (resourceField = 'userId') => {
 // Rate limiting middleware (simple implementation)
 const rateLimitMap = new Map();
 
+// Function to clear rate limit cache (useful for development and admin reset)
+export const clearRateLimit = (identifier = null) => {
+  if (identifier) {
+    rateLimitMap.delete(identifier);
+  } else {
+    rateLimitMap.clear();
+  }
+};
+
 export const rateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
   return (req, res, next) => {
     const identifier = req.ip || req.connection.remoteAddress;

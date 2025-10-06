@@ -125,6 +125,35 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  // Clear rate limit function (admin only)
+  const clearRateLimit = async (identifier = null) => {
+    try {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      const response = await fetch(`${API_BASE}/admin/clear-rate-limit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ identifier })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { success: true, message: data.message };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error };
+      }
+    } catch (error) {
+      console.error('Clear rate limit failed:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   // Helper functions for permission checking
   const hasPermission = (permission) => {
     return user?.permissions?.[permission] || false;
@@ -154,6 +183,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    clearRateLimit,
     
     // Permission helpers
     hasPermission,

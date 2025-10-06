@@ -212,13 +212,14 @@ const AdminPanel = () => {
     }
   };
 
-  // File upload handler
-  const handleFileUpload = async (file) => {
+  // Enhanced file upload handler for GridFS storage
+  const handleFileUpload = async (file, contentType = 'general') => {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
+    formData.append('category', contentType);
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/upload', {
+      const response = await fetch('http://localhost:5000/api/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -228,7 +229,7 @@ const AdminPanel = () => {
 
       const result = await response.json();
       if (response.ok) {
-        return result.url;
+        return result.fileUrl;
       } else {
         showMessage(result.error || 'Upload failed', 'error');
         return null;
@@ -249,7 +250,7 @@ const AdminPanel = () => {
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = await handleFileUpload(file);
+      const url = await handleFileUpload(file, 'profile');
       if (url) {
         setProfileForm({ ...profileForm, profilePicture: url });
       }
@@ -384,14 +385,75 @@ const AdminPanel = () => {
     'services'
   );
 
+  // Enhanced image upload handler with both file upload and URL options
+  const handleImageUpload = async (event, contentType, fieldName, setFormFunction) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      setIsSubmitting(true);
+      const imageUrl = await handleFileUpload(file, contentType);
+      
+      if (imageUrl) {
+        setFormFunction(prev => ({ ...prev, [fieldName]: imageUrl }));
+        showMessage('Image uploaded successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      showMessage('Error uploading image', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Helper function to update contact status
+  const updateContactStatus = async (contactId, newStatus) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/contacts/${contactId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        showMessage(`Contact marked as ${newStatus}`, 'success');
+        fetchData(); // Refresh data
+      } else {
+        showMessage('Failed to update contact status', 'error');
+      }
+    } catch (error) {
+      console.error('Update contact error:', error);
+      showMessage('Error updating contact status', 'error');
+    }
+  };
+
   // Helper functions
   const filterItems = (items, searchFields = []) => {
     if (!items) return [];
     
     return items.filter(item => {
-      const matchesSearch = searchTerm === '' || searchFields.some(field => 
-        item[field]?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const matchesSearch = searchTerm === '' || searchFields.some(field => {
+        const fieldValue = item[field];
+        if (!fieldValue) return false;
+        
+        // Handle arrays (like tags, technologies)
+        if (Array.isArray(fieldValue)) {
+          return fieldValue.some(val => 
+            val && typeof val === 'string' && val.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        
+        // Handle strings
+        if (typeof fieldValue === 'string') {
+          return fieldValue.toLowerCase().includes(searchTerm.toLowerCase());
+        }
+        
+        // Handle other types (convert to string)
+        return String(fieldValue).toLowerCase().includes(searchTerm.toLowerCase());
+      });
       
       const matchesCategory = filterCategory === 'all' || item.category === filterCategory;
       
@@ -442,14 +504,53 @@ const AdminPanel = () => {
       <form onSubmit={handleProfileUpdate} className="admin-form">
         <div className="form-group">
           <label>Profile Picture</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleProfilePictureUpload}
-            className="form-input"
-          />
+          
+          {/* File Upload Option */}
+          <div style={{marginBottom: '10px'}}>
+            <label style={{fontSize: '14px', color: '#666'}}>Upload File:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePictureUpload}
+              className="form-input"
+              disabled={isSubmitting}
+            />
+          </div>
+          
+          {/* URL Input Option */}
+          <div style={{marginBottom: '10px'}}>
+            <label style={{fontSize: '14px', color: '#666'}}>Or Enter URL:</label>
+            <input
+              type="url"
+              value={typeof profileForm.profilePicture === 'string' && profileForm.profilePicture.startsWith('http') ? profileForm.profilePicture : ''}
+              onChange={(e) => setProfileForm({ ...profileForm, profilePicture: e.target.value })}
+              className="form-input"
+              placeholder="https://example.com/profile.jpg"
+            />
+          </div>
+          
+          {/* Image Preview */}
           {profileForm.profilePicture && (
-            <img src={profileForm.profilePicture} alt="Profile" className="profile-preview" />
+            <div style={{marginTop: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Preview:</label>
+              <img 
+                src={profileForm.profilePicture} 
+                alt="Profile Preview" 
+                className="profile-preview"
+                style={{ 
+                  maxWidth: '150px', 
+                  maxHeight: '150px', 
+                  borderRadius: '50%', 
+                  border: '3px solid #e2e8f0',
+                  display: 'block',
+                  marginTop: '5px'
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  showMessage('Invalid image URL or file', 'error');
+                }}
+              />
+            </div>
           )}
         </div>
         
@@ -708,13 +809,54 @@ const AdminPanel = () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Image URL</label>
-            <input
-              type="url"
-              value={projectForm.imageUrl}
-              onChange={(e) => setProjectForm({ ...projectForm, imageUrl: e.target.value })}
-              className="form-input"
-            />
+            <label>Project Image</label>
+            
+            {/* File Upload Option */}
+            <div style={{marginBottom: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Upload File:</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'project', 'imageUrl', setProjectForm)}
+                className="form-input"
+                disabled={isSubmitting}
+              />
+            </div>
+            
+            {/* URL Input Option */}
+            <div style={{marginBottom: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Or Enter URL:</label>
+              <input
+                type="url"
+                value={typeof projectForm.imageUrl === 'string' && projectForm.imageUrl.startsWith('http') ? projectForm.imageUrl : ''}
+                onChange={(e) => setProjectForm(prev => ({ ...prev, imageUrl: e.target.value }))}
+                className="form-input"
+                placeholder="https://example.com/project-image.jpg"
+              />
+            </div>
+            
+            {/* Image Preview */}
+            {projectForm.imageUrl && (
+              <div style={{marginTop: '10px'}}>
+                <label style={{fontSize: '14px', color: '#666'}}>Preview:</label>
+                <img 
+                  src={projectForm.imageUrl} 
+                  alt="Project Preview" 
+                  style={{ 
+                    maxWidth: '200px', 
+                    maxHeight: '200px', 
+                    borderRadius: '8px', 
+                    border: '2px solid #e2e8f0',
+                    display: 'block',
+                    marginTop: '5px'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    showMessage('Invalid image URL or file', 'error');
+                  }}
+                />
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label className="checkbox-label">
@@ -1101,13 +1243,54 @@ const AdminPanel = () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Cover Image URL</label>
-            <input
-              type="url"
-              value={blogForm.coverImage}
-              onChange={(e) => setBlogForm({ ...blogForm, coverImage: e.target.value })}
-              className="form-input"
-            />
+            <label>Cover Image</label>
+            
+            {/* File Upload Option */}
+            <div style={{marginBottom: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Upload File:</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'blog', 'coverImage', setBlogForm)}
+                className="form-input"
+                disabled={isSubmitting}
+              />
+            </div>
+            
+            {/* URL Input Option */}
+            <div style={{marginBottom: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Or Enter URL:</label>
+              <input
+                type="url"
+                value={typeof blogForm.coverImage === 'string' && blogForm.coverImage.startsWith('http') ? blogForm.coverImage : ''}
+                onChange={(e) => setBlogForm(prev => ({ ...prev, coverImage: e.target.value }))}
+                className="form-input"
+                placeholder="https://example.com/cover-image.jpg"
+              />
+            </div>
+            
+            {/* Image Preview */}
+            {blogForm.coverImage && (
+              <div style={{marginTop: '10px'}}>
+                <label style={{fontSize: '14px', color: '#666'}}>Preview:</label>
+                <img 
+                  src={blogForm.coverImage} 
+                  alt="Cover Preview" 
+                  style={{ 
+                    maxWidth: '200px', 
+                    maxHeight: '200px', 
+                    borderRadius: '8px', 
+                    border: '2px solid #e2e8f0',
+                    display: 'block',
+                    marginTop: '5px'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    showMessage('Invalid image URL or file', 'error');
+                  }}
+                />
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Status</label>
@@ -1174,39 +1357,771 @@ const AdminPanel = () => {
     </div>
   );
 
-  // Render remaining tabs (Vlogs, Gallery, Services, Testimonials, Contacts)
+  // Render Vlogs Tab
   const renderVlogsTab = () => (
     <div className="tab-content">
-      <h2>Vlog Management</h2>
-      <p>Vlog functionality will be implemented here...</p>
+      <div className="tab-header">
+        <h2>Vlog Management</h2>
+        <div className="header-actions">
+          {renderControls(['YouTube', 'Vimeo', 'Instagram', 'TikTok'])}
+        </div>
+      </div>
+      
+      <form onSubmit={vlogHandlers.submit} className="admin-form">
+        <div className="form-group">
+          <label>Vlog Title</label>
+          <input
+            type="text"
+            value={vlogForm.title}
+            onChange={(e) => setVlogForm({ ...vlogForm, title: e.target.value })}
+            className="form-input"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={vlogForm.description}
+            onChange={(e) => setVlogForm({ ...vlogForm, description: e.target.value })}
+            className="form-input"
+            rows="4"
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Video URL</label>
+            <input
+              type="url"
+              value={vlogForm.videoUrl}
+              onChange={(e) => setVlogForm({ ...vlogForm, videoUrl: e.target.value })}
+              className="form-input"
+              placeholder="https://www.youtube.com/watch?v=..."
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Thumbnail</label>
+            
+            {/* File Upload Option */}
+            <div style={{marginBottom: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Upload File:</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'vlog', 'thumbnailUrl', setVlogForm)}
+                className="form-input"
+                disabled={isSubmitting}
+              />
+            </div>
+            
+            {/* URL Input Option */}
+            <div style={{marginBottom: '10px'}}>
+              <label style={{fontSize: '14px', color: '#666'}}>Or Enter URL:</label>
+              <input
+                type="url"
+                value={typeof vlogForm.thumbnailUrl === 'string' && vlogForm.thumbnailUrl.startsWith('http') ? vlogForm.thumbnailUrl : ''}
+                onChange={(e) => setVlogForm(prev => ({ ...prev, thumbnailUrl: e.target.value }))}
+                className="form-input"
+                placeholder="https://example.com/thumbnail.jpg"
+              />
+            </div>
+            
+            {/* Image Preview */}
+            {vlogForm.thumbnailUrl && (
+              <div style={{marginTop: '10px'}}>
+                <label style={{fontSize: '14px', color: '#666'}}>Preview:</label>
+                <img 
+                  src={vlogForm.thumbnailUrl} 
+                  alt="Thumbnail Preview" 
+                  style={{ 
+                    maxWidth: '200px', 
+                    maxHeight: '200px', 
+                    borderRadius: '8px', 
+                    border: '2px solid #e2e8f0',
+                    display: 'block',
+                    marginTop: '5px'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    showMessage('Invalid image URL or file', 'error');
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Duration</label>
+            <input
+              type="text"
+              value={vlogForm.duration}
+              onChange={(e) => setVlogForm({ ...vlogForm, duration: e.target.value })}
+              className="form-input"
+              placeholder="10:30"
+            />
+          </div>
+          <div className="form-group">
+            <label>Platform</label>
+            <select
+              value={vlogForm.platform}
+              onChange={(e) => setVlogForm({ ...vlogForm, platform: e.target.value })}
+              className="form-input"
+            >
+              <option value="YouTube">YouTube</option>
+              <option value="Vimeo">Vimeo</option>
+              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Tags</label>
+            <input
+              type="text"
+              value={vlogForm.tags}
+              onChange={(e) => setVlogForm({ ...vlogForm, tags: e.target.value })}
+              className="form-input"
+              placeholder="web development, tutorial, coding"
+            />
+          </div>
+          <div className="form-group">
+            <label>Published Date</label>
+            <input
+              type="date"
+              value={vlogForm.publishedDate}
+              onChange={(e) => setVlogForm({ ...vlogForm, publishedDate: e.target.value })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={vlogForm.featured}
+              onChange={(e) => setVlogForm({ ...vlogForm, featured: e.target.checked })}
+            />
+            Featured Vlog
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Vlog' : 'Add Vlog'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={vlogHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.vlogs || [], ['title', 'tags']).map((vlog) => (
+          <div key={vlog._id || vlog.id} className="item-card">
+            <div className="item-header">
+              <h3>{vlog.title}</h3>
+              <div className="badges">
+                {vlog.featured && <span className="featured-badge">Featured</span>}
+                <span className="platform-badge">{vlog.platform}</span>
+              </div>
+            </div>
+            <p className="item-description">{vlog.description}</p>
+            <div className="item-meta">
+              <span>Duration: {vlog.duration}</span>
+              <span>Platform: {vlog.platform}</span>
+              <span>Published: {vlog.publishedDate}</span>
+            </div>
+            <div className="item-actions">
+              <button onClick={() => vlogHandlers.edit(vlog)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => vlogHandlers.delete(vlog._id || vlog.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
+  // Render Gallery Tab
   const renderGalleryTab = () => (
     <div className="tab-content">
-      <h2>Gallery Management</h2>
-      <p>Gallery functionality will be implemented here...</p>
+      <div className="tab-header">
+        <h2>Gallery Management</h2>
+        <div className="header-actions">
+          {renderControls(['Travel', 'Work', 'Personal', 'Events'])}
+        </div>
+      </div>
+      
+      <form onSubmit={galleryHandlers.submit} className="admin-form">
+        <div className="form-group">
+          <label>Image Title</label>
+          <input
+            type="text"
+            value={galleryForm.title}
+            onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
+            className="form-input"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={galleryForm.description}
+            onChange={(e) => setGalleryForm({ ...galleryForm, description: e.target.value })}
+            className="form-input"
+            rows="3"
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Image Upload</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  handleImageUpload(e, 'gallery', 'imageUrl', setGalleryForm);
+                }
+              }}
+              className="form-input"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="form-group">
+            <label>Image URL (Alternative)</label>
+            <input
+              type="url"
+              value={typeof galleryForm.imageUrl === 'string' && galleryForm.imageUrl.startsWith('http') ? galleryForm.imageUrl : ''}
+              onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })}
+              className="form-input"
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+        </div>
+
+        {galleryForm.imageUrl && (
+          <div className="form-group">
+            <label>Image Preview</label>
+            <img 
+              src={galleryForm.imageUrl} 
+              alt="Preview" 
+              style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '8px', border: '2px solid #e2e8f0' }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                showMessage('Invalid image URL or file', 'error');
+              }}
+            />
+          </div>
+        )}
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Category</label>
+            <select
+              value={galleryForm.category}
+              onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
+              className="form-input"
+            >
+              <option value="Travel">Travel</option>
+              <option value="Work">Work</option>
+              <option value="Personal">Personal</option>
+              <option value="Events">Events</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Location</label>
+            <input
+              type="text"
+              value={galleryForm.location}
+              onChange={(e) => setGalleryForm({ ...galleryForm, location: e.target.value })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Date</label>
+            <input
+              type="date"
+              value={galleryForm.date}
+              onChange={(e) => setGalleryForm({ ...galleryForm, date: e.target.value })}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Tags</label>
+            <input
+              type="text"
+              value={galleryForm.tags}
+              onChange={(e) => setGalleryForm({ ...galleryForm, tags: e.target.value })}
+              className="form-input"
+              placeholder="nature, landscape, travel"
+            />
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Image' : 'Add Image'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={galleryHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list gallery-grid">
+        {filterItems(data?.gallery || [], ['title', 'tags', 'location']).map((image) => (
+          <div key={image._id || image.id} className="gallery-item">
+            <div className="gallery-image">
+              <img src={image.imageUrl} alt={image.title} />
+            </div>
+            <div className="gallery-info">
+              <h3>{image.title}</h3>
+              <p>{image.description}</p>
+              <div className="gallery-meta">
+                <span>{image.category}</span>
+                {image.location && <span>{image.location}</span>}
+                {image.date && <span>{image.date}</span>}
+              </div>
+              <div className="item-actions">
+                <button onClick={() => galleryHandlers.edit(image)} className="edit-btn">
+                  Edit
+                </button>
+                <button onClick={() => galleryHandlers.delete(image._id || image.id)} className="delete-btn">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
+  // Render Services Tab
   const renderServicesTab = () => (
     <div className="tab-content">
-      <h2>Services Management</h2>
-      <p>Services functionality will be implemented here...</p>
+      <div className="tab-header">
+        <h2>Services Management</h2>
+        <div className="header-actions">
+          {renderControls(['Web Development', 'Mobile App', 'Consulting', 'Design'])}
+        </div>
+      </div>
+      
+      <form onSubmit={serviceHandlers.submit} className="admin-form">
+        <div className="form-group">
+          <label>Service Title</label>
+          <input
+            type="text"
+            value={serviceForm.title}
+            onChange={(e) => setServiceForm({ ...serviceForm, title: e.target.value })}
+            className="form-input"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={serviceForm.description}
+            onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+            className="form-input"
+            rows="4"
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Icon (Emoji or Unicode)</label>
+            <input
+              type="text"
+              value={serviceForm.icon}
+              onChange={(e) => setServiceForm({ ...serviceForm, icon: e.target.value })}
+              className="form-input"
+              placeholder="💻 or fa-code"
+            />
+          </div>
+          <div className="form-group">
+            <label>Price</label>
+            <input
+              type="text"
+              value={serviceForm.price}
+              onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+              className="form-input"
+              placeholder="$500 - $2000"
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Duration</label>
+            <input
+              type="text"
+              value={serviceForm.duration}
+              onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
+              className="form-input"
+              placeholder="2-4 weeks"
+            />
+          </div>
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={serviceForm.featured}
+                onChange={(e) => setServiceForm({ ...serviceForm, featured: e.target.checked })}
+              />
+              Featured Service
+            </label>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Service' : 'Add Service'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={serviceHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.services || [], ['title', 'description']).map((service) => (
+          <div key={service._id || service.id} className="item-card service-card">
+            <div className="item-header">
+              <div className="service-icon">{service.icon}</div>
+              <div>
+                <h3>{service.title}</h3>
+                {service.featured && <span className="featured-badge">Featured</span>}
+              </div>
+              <div className="service-price">{service.price}</div>
+            </div>
+            <p className="item-description">{service.description}</p>
+            <div className="item-meta">
+              {service.duration && <span>Duration: {service.duration}</span>}
+            </div>
+            <div className="item-actions">
+              <button onClick={() => serviceHandlers.edit(service)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => serviceHandlers.delete(service._id || service.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
+  // Render Testimonials Tab
   const renderTestimonialsTab = () => (
     <div className="tab-content">
-      <h2>Testimonials Management</h2>
-      <p>Testimonials functionality will be implemented here...</p>
+      <div className="tab-header">
+        <h2>Testimonials Management</h2>
+      </div>
+      
+      <form onSubmit={testimonialHandlers.submit} className="admin-form">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Client Name</label>
+            <input
+              type="text"
+              value={testimonialForm.name}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })}
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Position</label>
+            <input
+              type="text"
+              value={testimonialForm.position}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, position: e.target.value })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Company</label>
+            <input
+              type="text"
+              value={testimonialForm.company}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, company: e.target.value })}
+              className="form-input"
+            />
+          </div>
+          <div className="form-group">
+            <label>Rating</label>
+            <select
+              value={testimonialForm.rating}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: parseInt(e.target.value) })}
+              className="form-input"
+            >
+              <option value={5}>5 Stars</option>
+              <option value={4}>4 Stars</option>
+              <option value={3}>3 Stars</option>
+              <option value={2}>2 Stars</option>
+              <option value={1}>1 Star</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Testimonial Content</label>
+          <textarea
+            value={testimonialForm.content}
+            onChange={(e) => setTestimonialForm({ ...testimonialForm, content: e.target.value })}
+            className="form-input"
+            rows="4"
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Profile Image Upload</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  handleImageUpload(e, 'testimonial', 'imageUrl', setTestimonialForm);
+                }
+              }}
+              className="form-input"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="form-group">
+            <label>Image URL (Alternative)</label>
+            <input
+              type="url"
+              value={typeof testimonialForm.imageUrl === 'string' && testimonialForm.imageUrl.startsWith('http') ? testimonialForm.imageUrl : ''}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, imageUrl: e.target.value })}
+              className="form-input"
+              placeholder="https://example.com/profile.jpg"
+            />
+          </div>
+        </div>
+
+        {testimonialForm.imageUrl && (
+          <div className="form-group">
+            <label>Image Preview</label>
+            <img 
+              src={testimonialForm.imageUrl} 
+              alt="Preview" 
+              style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px solid #e2e8f0' }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                showMessage('Invalid image URL or file', 'error');
+              }}
+            />
+          </div>
+        )}
+
+        <div className="form-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={testimonialForm.featured}
+              onChange={(e) => setTestimonialForm({ ...testimonialForm, featured: e.target.checked })}
+            />
+            Featured Testimonial
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">
+            {editingId ? 'Update Testimonial' : 'Add Testimonial'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={testimonialHandlers.cancelEdit} className="cancel-btn">
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {filterItems(data?.testimonials || [], ['name', 'company', 'content']).map((testimonial) => (
+          <div key={testimonial._id || testimonial.id} className="item-card testimonial-card">
+            <div className="testimonial-header">
+              <div className="testimonial-avatar">
+                {testimonial.imageUrl ? (
+                  <img src={testimonial.imageUrl} alt={testimonial.name} />
+                ) : (
+                  <div className="avatar-placeholder">{testimonial.name.charAt(0)}</div>
+                )}
+              </div>
+              <div className="testimonial-info">
+                <h3>{testimonial.name}</h3>
+                <p>{testimonial.position} at {testimonial.company}</p>
+                <div className="rating">
+                  {'★'.repeat(testimonial.rating)}{'☆'.repeat(5 - testimonial.rating)}
+                </div>
+              </div>
+              {testimonial.featured && <span className="featured-badge">Featured</span>}
+            </div>
+            <p className="testimonial-content">"{testimonial.content}"</p>
+            <div className="item-actions">
+              <button onClick={() => testimonialHandlers.edit(testimonial)} className="edit-btn">
+                Edit
+              </button>
+              <button onClick={() => testimonialHandlers.delete(testimonial._id || testimonial.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
+  // Render Contacts Tab
   const renderContactsTab = () => (
     <div className="tab-content">
-      <h2>Contact Messages</h2>
-      <p>Contact management functionality will be implemented here...</p>
+      <div className="tab-header">
+        <h2>Contact Messages</h2>
+        <div className="header-actions">
+          {renderControls(['unread', 'read', 'replied', 'archived'])}
+        </div>
+      </div>
+
+      <div className="items-list">
+        {filterItems(data?.contacts || [], ['name', 'email', 'subject', 'message']).map((contact) => (
+          <div key={contact._id || contact.id} className={`item-card contact-card ${contact.status}`}>
+            <div className="contact-header">
+              <div className="contact-info">
+                <h3>{contact.name}</h3>
+                <p>{contact.email}</p>
+                <p className="contact-subject">{contact.subject}</p>
+              </div>
+              <div className="contact-badges">
+                <span className={`status-badge ${contact.status}`}>{contact.status}</span>
+                <span className={`priority-badge ${contact.priority}`}>{contact.priority}</span>
+              </div>
+            </div>
+            <div className="contact-message">
+              <p>{contact.message}</p>
+            </div>
+            <div className="contact-meta">
+              <span>Received: {new Date(contact.createdAt || Date.now()).toLocaleDateString()}</span>
+              {contact.phone && <span>Phone: {contact.phone}</span>}
+              {contact.company && <span>Company: {contact.company}</span>}
+            </div>
+            <div className="item-actions">
+              <button 
+                onClick={() => {
+                  setContactForm(contact);
+                  setEditingId(contact._id || contact.id);
+                  setEditingType('contacts');
+                }} 
+                className="edit-btn"
+              >
+                Update Status
+              </button>
+              <select
+                value={contact.status}
+                onChange={(e) => updateContactStatus(contact._id || contact.id, e.target.value)}
+                className="status-select"
+                style={{marginLeft: '10px', padding: '5px'}}
+              >
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+                <option value="replied">Replied</option>
+                <option value="archived">Archived</option>
+              </select>
+              <button onClick={() => contactHandlers.delete(contact._id || contact.id)} className="delete-btn">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Contact Status Update Modal */}
+      {editingId && editingType === 'contacts' && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Update Contact Status</h3>
+            <form onSubmit={contactHandlers.submit}>
+              <div className="form-group">
+                <label>Status</label>
+                <select
+                  value={contactForm.status}
+                  onChange={(e) => setContactForm({ ...contactForm, status: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="unread">Unread</option>
+                  <option value="read">Read</option>
+                  <option value="replied">Replied</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Priority</label>
+                <select
+                  value={contactForm.priority}
+                  onChange={(e) => setContactForm({ ...contactForm, priority: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  value={contactForm.notes || ''}
+                  onChange={(e) => setContactForm({ ...contactForm, notes: e.target.value })}
+                  className="form-input"
+                  rows="3"
+                  placeholder="Add internal notes..."
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="submit" className="submit-btn">
+                  Update Contact
+                </button>
+                <button type="button" onClick={contactHandlers.cancelEdit} className="cancel-btn">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 

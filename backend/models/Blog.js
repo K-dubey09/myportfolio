@@ -8,13 +8,16 @@ const blogSchema = new mongoose.Schema({
   author: { type: String, default: 'Portfolio Owner' },
   tags: [{ type: String }],
   category: { type: String },
-  featuredImage: { type: String }, // GridFS file ID or URL
-  images: [{ type: String }], // Array of GridFS file IDs or URLs
+  coverImage: { type: String }, // GridFS file ID or URL - OPTIONAL
+  featuredImage: { type: String }, // GridFS file ID or URL - OPTIONAL
+  images: [{ type: String }], // Array of GridFS file IDs or URLs - OPTIONAL
   published: { type: Boolean, default: false },
+  status: { type: String, enum: ['draft', 'published'], default: 'draft' },
   publishDate: { type: Date, default: Date.now },
   readTime: { type: Number }, // in minutes
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
+  featured: { type: Boolean, default: false },
   comments: [{
     name: { type: String },
     email: { type: String },
