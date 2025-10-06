@@ -1,0 +1,31 @@
+{
+  "name": "portfolio-workspace",
+  "version": "1.0.0",
+  "description": "Full-stack portfolio with React frontend and Node.js backend",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start": "npm run dev",
+    "build": "cd frontend && npm run build",
+    "test": "npm run test:backend",
+    "test:backend": "cd backend && npm run test",
+    "seed": "cd backend && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "portfolio",
+    "react",
+    "nodejs",
+    "mongodb"
+  ],
+  "author": "Portfolio Developer",
+  "license": "MIT"
+}
