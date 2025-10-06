@@ -10,6 +10,7 @@ import Blog from '../models/Blog.js';
 import Vlog from '../models/Vlog.js';
 import Gallery from '../models/Gallery.js';
 import Testimonial from '../models/Testimonial.js';
+import Service from '../models/Service.js';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,154 @@ const sampleData = {
     },
     resume: "/uploads/john-doe-resume.pdf"
   },
+
+  services: [
+    {
+      title: "Full Stack Web Development",
+      description: "Complete web application development from frontend to backend using modern technologies like React, Node.js, and MongoDB.",
+      icon: "🌐",
+      price: "5000",
+      duration: "4-8 weeks",
+      featured: true,
+      category: "Development",
+      features: [
+        "Responsive Design",
+        "Database Integration",
+        "User Authentication",
+        "Payment Integration",
+        "Admin Dashboard",
+        "SEO Optimization"
+      ],
+      isActive: true
+    },
+    {
+      title: "Frontend Development",
+      description: "Beautiful, responsive, and interactive user interfaces using React, Vue.js, or Angular with modern CSS frameworks.",
+      icon: "🎨",
+      price: "3000",
+      duration: "2-4 weeks",
+      featured: true,
+      category: "Development",
+      features: [
+        "Responsive Design",
+        "Component-based Architecture",
+        "State Management",
+        "Performance Optimization",
+        "Cross-browser Compatibility"
+      ],
+      isActive: true
+    },
+    {
+      title: "Backend API Development",
+      description: "Robust and scalable REST APIs with Node.js, Express, and database integration for your applications.",
+      icon: "⚙️",
+      price: "2500",
+      duration: "2-3 weeks",
+      featured: true,
+      category: "Development",
+      features: [
+        "RESTful API Design",
+        "Database Integration",
+        "Authentication & Authorization",
+        "Data Validation",
+        "API Documentation",
+        "Performance Optimization"
+      ],
+      isActive: true
+    },
+    {
+      title: "E-commerce Solutions",
+      description: "Complete e-commerce platforms with shopping carts, payment processing, inventory management, and admin panels.",
+      icon: "🛒",
+      price: "8000",
+      duration: "6-10 weeks",
+      featured: true,
+      category: "E-commerce",
+      features: [
+        "Product Catalog",
+        "Shopping Cart",
+        "Payment Gateway Integration",
+        "Order Management",
+        "Inventory Tracking",
+        "Admin Dashboard",
+        "Customer Portal",
+        "Analytics & Reporting"
+      ],
+      isActive: true
+    },
+    {
+      title: "Database Design & Optimization",
+      description: "Professional database design, optimization, and migration services for MongoDB, MySQL, and PostgreSQL.",
+      icon: "🗄️",
+      price: "1500",
+      duration: "1-2 weeks",
+      featured: false,
+      category: "Database",
+      features: [
+        "Schema Design",
+        "Query Optimization",
+        "Index Strategies",
+        "Data Migration",
+        "Backup Solutions",
+        "Performance Tuning"
+      ],
+      isActive: true
+    },
+    {
+      title: "Mobile App Development",
+      description: "Cross-platform mobile applications using React Native for iOS and Android platforms.",
+      icon: "📱",
+      price: "6000",
+      duration: "6-8 weeks",
+      featured: false,
+      category: "Mobile",
+      features: [
+        "Cross-platform Development",
+        "Native Performance",
+        "Push Notifications",
+        "Offline Capability",
+        "App Store Deployment",
+        "Backend Integration"
+      ],
+      isActive: true
+    },
+    {
+      title: "Technical Consultation",
+      description: "Expert technical consultation for architecture decisions, technology stack selection, and project planning.",
+      icon: "💡",
+      price: "150",
+      duration: "Per hour",
+      featured: false,
+      category: "Consultation",
+      features: [
+        "Architecture Review",
+        "Technology Assessment",
+        "Performance Analysis",
+        "Security Audit",
+        "Code Review",
+        "Best Practices Guidance"
+      ],
+      isActive: true
+    },
+    {
+      title: "DevOps & Deployment",
+      description: "CI/CD pipeline setup, cloud deployment, and infrastructure management using AWS, Docker, and Kubernetes.",
+      icon: "🚀",
+      price: "2000",
+      duration: "1-3 weeks",
+      featured: false,
+      category: "DevOps",
+      features: [
+        "CI/CD Pipeline Setup",
+        "Cloud Deployment",
+        "Container Orchestration",
+        "Monitoring & Logging",
+        "Security Configuration",
+        "Automated Testing"
+      ],
+      isActive: true
+    }
+  ],
 
   skills: [
     { name: "JavaScript", category: "Programming Languages", level: "Expert", percentage: 95, icon: "js", description: "Expert in ES6+, async/await, and modern JS frameworks" },
@@ -359,9 +508,9 @@ The aggregation pipeline is one of MongoDB's most powerful features...`,
       name: "Sarah Johnson",
       position: "Product Manager",
       company: "TechCorp Solutions",
-      testimonial: "John is an exceptional developer who consistently delivers high-quality solutions. His ability to understand complex requirements and translate them into elegant code is impressive. He's also a great team player and mentor.",
+      content: "John is an exceptional developer who consistently delivers high-quality solutions. His ability to understand complex requirements and translate them into elegant code is impressive. He's also a great team player and mentor.",
       rating: 5,
-      avatar: "/uploads/testimonial-sarah.jpg",
+      imageUrl: "/uploads/testimonial-sarah.jpg",
       approved: true,
       featured: true,
       date: new Date("2024-08-15"),
@@ -372,9 +521,9 @@ The aggregation pipeline is one of MongoDB's most powerful features...`,
       name: "Mike Chen",
       position: "CTO",
       company: "StartupXYZ",
-      testimonial: "Working with John was a game-changer for our startup. He helped us build a scalable architecture that grew with our user base. His technical expertise and problem-solving skills are top-notch.",
+      content: "Working with John was a game-changer for our startup. He helped us build a scalable architecture that grew with our user base. His technical expertise and problem-solving skills are top-notch.",
       rating: 5,
-      avatar: "/uploads/testimonial-mike.jpg",
+      imageUrl: "/uploads/testimonial-mike.jpg",
       approved: true,
       featured: true,
       date: new Date("2024-07-22"),
@@ -385,9 +534,9 @@ The aggregation pipeline is one of MongoDB's most powerful features...`,
       name: "Emily Rodriguez",
       position: "UI/UX Designer",
       company: "DesignStudio Pro",
-      testimonial: "John brings designs to life with pixel-perfect precision. His attention to detail and understanding of user experience makes him a pleasure to collaborate with. Highly recommended!",
+      content: "John brings designs to life with pixel-perfect precision. His attention to detail and understanding of user experience makes him a pleasure to collaborate with. Highly recommended!",
       rating: 5,
-      avatar: "/uploads/testimonial-emily.jpg",
+      imageUrl: "/uploads/testimonial-emily.jpg",
       approved: true,
       featured: true,
       date: new Date("2024-06-10"),
@@ -398,9 +547,9 @@ The aggregation pipeline is one of MongoDB's most powerful features...`,
       name: "David Park",
       position: "Senior Developer",
       company: "CodeCraft Inc",
-      testimonial: "John's mentorship helped me grow tremendously as a developer. His code reviews are insightful and his willingness to share knowledge is amazing. A true professional.",
+      content: "John's mentorship helped me grow tremendously as a developer. His code reviews are insightful and his willingness to share knowledge is amazing. A true professional.",
       rating: 5,
-      avatar: "/uploads/testimonial-david.jpg",
+      imageUrl: "/uploads/testimonial-david.jpg",
       approved: true,
       featured: false,
       date: new Date("2024-05-18"),
@@ -428,7 +577,8 @@ async function seedDatabase() {
       Blog.deleteMany({}),
       Vlog.deleteMany({}),
       Gallery.deleteMany({}),
-      Testimonial.deleteMany({})
+      Testimonial.deleteMany({}),
+      Service.deleteMany({})
     ]);
 
     // Seed Profile
@@ -436,6 +586,14 @@ async function seedDatabase() {
     const profile = new Profile(sampleData.profile);
     await profile.save();
     console.log('✅ Profile created');
+
+    // Seed Services
+    console.log('🛠️ Creating services...');
+    for (const serviceData of sampleData.services) {
+      const service = new Service(serviceData);
+      await service.save();
+    }
+    console.log(`✅ ${sampleData.services.length} services created`);
 
     // Seed Skills
     console.log('🎯 Creating skills...');
@@ -548,6 +706,7 @@ async function seedDatabase() {
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📊 Summary:');
     console.log(`✅ Profile: ${await Profile.countDocuments()} entries`);
+    console.log(`✅ Services: ${await Service.countDocuments()} entries`);
     console.log(`✅ Skills: ${await Skill.countDocuments()} entries`);
     console.log(`✅ Projects: ${await Project.countDocuments()} entries`);
     console.log(`✅ Experience: ${await Experience.countDocuments()} entries`);
