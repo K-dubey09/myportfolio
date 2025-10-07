@@ -12,6 +12,16 @@ const PortfolioSite = () => {
   const [blogs, setBlogs] = useState([])
   const [contactInfo, setContactInfo] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  })
+  const [contactStatus, setContactStatus] = useState({ type: '', message: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch data from MongoDB
   useEffect(() => {
@@ -65,6 +75,50 @@ const PortfolioSite = () => {
 
     fetchData()
   }, [])
+
+  // Handle contact form input changes
+  const handleContactInputChange = (e) => {
+    const { name, value } = e.target
+    setContactForm(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  // Handle contact form submission
+  const handleContactSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setContactStatus({ type: '', message: '' })
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/contacts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactForm)
+      })
+
+      if (response.ok) {
+        setContactStatus({
+          type: 'success',
+          message: 'Thank you! Your message has been sent successfully. I\'ll get back to you soon.'
+        })
+        setContactForm({ name: '', email: '', subject: '', message: '' })
+      } else {
+        throw new Error('Failed to send message')
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      setContactStatus({
+        type: 'error',
+        message: 'Sorry, there was an error sending your message. Please try again later.'
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -355,7 +409,156 @@ const PortfolioSite = () => {
         <div className="container">
           <div className="section-header">
             <h2>Contact</h2>
-            <p className="section-subtitle">This section is currently empty.</p>
+            <p className="section-subtitle">Get in touch with me or send a message directly.</p>
+          </div>
+          
+          <div className="contact-cards-grid">
+            {/* Contact Information Card */}
+            <div className="contact-card">
+              <div className="card-header">
+                <h3>📧 Contact Information</h3>
+                <p>Ways to reach out to me</p>
+              </div>
+              <div className="card-content">
+                {contactInfo ? (
+                  <div className="contact-info-list">
+                    {contactInfo.email && (
+                      <div className="contact-item">
+                        <span className="contact-icon">📧</span>
+                        <div className="contact-details">
+                          <strong>Email</strong>
+                          <a href={`mailto:${contactInfo.email}`} className="contact-link">
+                            {contactInfo.email}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {contactInfo.phone && (
+                      <div className="contact-item">
+                        <span className="contact-icon">📱</span>
+                        <div className="contact-details">
+                          <strong>Phone</strong>
+                          <a href={`tel:${contactInfo.phone}`} className="contact-link">
+                            {contactInfo.phone}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {contactInfo.address && (
+                      <div className="contact-item">
+                        <span className="contact-icon">📍</span>
+                        <div className="contact-details">
+                          <strong>Location</strong>
+                          <span>
+                            {contactInfo.address.city && contactInfo.address.state
+                              ? `${contactInfo.address.city}, ${contactInfo.address.state}`
+                              : contactInfo.address.city || contactInfo.address.state || 'Location not specified'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {contactInfo.website && (
+                      <div className="contact-item">
+                        <span className="contact-icon">🌐</span>
+                        <div className="contact-details">
+                          <strong>Website</strong>
+                          <a href={contactInfo.website} target="_blank" rel="noopener noreferrer" className="contact-link">
+                            Visit Website
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="no-data">No contact information available.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Contact Messages Card */}
+            <div className="contact-card">
+              <div className="card-header">
+                <h3>💬 Send Message</h3>
+                <p>Get in touch with me directly</p>
+              </div>
+              <div className="card-content">
+                <form onSubmit={handleContactSubmit} className="contact-form">
+                  <div className="form-group">
+                    <label htmlFor="name">Full Name *</label>
+                    <input
+                      id="name"
+                      type="text"
+                      name="name"
+                      placeholder="Enter your full name"
+                      value={contactForm.name}
+                      onChange={handleContactInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="email">Email Address *</label>
+                    <input
+                      id="email"
+                      type="email"
+                      name="email"
+                      placeholder="Enter your email address"
+                      value={contactForm.email}
+                      onChange={handleContactInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="subject">Subject *</label>
+                    <input
+                      id="subject"
+                      type="text"
+                      name="subject"
+                      placeholder="What's this about?"
+                      value={contactForm.subject}
+                      onChange={handleContactInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="message">Message *</label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      placeholder="Tell me about your project or inquiry..."
+                      rows="4"
+                      value={contactForm.message}
+                      onChange={handleContactInputChange}
+                      required
+                    ></textarea>
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    className="submit-btn"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span className="spinner"></span>
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Message'
+                    )}
+                  </button>
+                  
+                  {contactStatus.message && (
+                    <div className={`status-message ${contactStatus.type}`}>
+                      {contactStatus.message}
+                    </div>
+                  )}
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </section>
