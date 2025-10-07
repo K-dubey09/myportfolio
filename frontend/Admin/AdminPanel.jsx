@@ -228,11 +228,33 @@ const AdminPanel = () => {
         setData(portfolioData);
         // Populate profile form with existing data
         if (portfolioData.profile) {
-          setProfileForm(prev => ({ ...portfolioData.profile, ...prev }));
+          setProfileForm(prev => ({ 
+            ...prev,
+            ...portfolioData.profile,
+            socialLinks: {
+              ...prev.socialLinks,
+              ...portfolioData.profile.socialLinks
+            },
+            professionalContacts: {
+              ...prev.professionalContacts,
+              ...portfolioData.profile.professionalContacts
+            }
+          }));
         }
         // Populate contact info form with existing data
         if (portfolioData.contactInfo) {
-          setContactInfoForm(prev => ({ ...prev, ...portfolioData.contactInfo }));
+          setContactInfoForm(prev => ({ 
+            ...prev, 
+            ...portfolioData.contactInfo,
+            address: {
+              ...prev.address,
+              ...portfolioData.contactInfo.address
+            },
+            businessHours: {
+              ...prev.businessHours,
+              ...portfolioData.contactInfo.businessHours
+            }
+          }));
         }
       } else {
         console.error('Failed to fetch portfolio data');
@@ -1112,6 +1134,16 @@ const AdminPanel = () => {
           <button 
             type="button" 
             className="submit-btn secondary" 
+            onClick={fetchData}
+            disabled={isSubmitting}
+            title="Refresh data from database"
+          >
+            🔄 Refresh Data
+          </button>
+          
+          <button 
+            type="button" 
+            className="submit-btn secondary" 
             onClick={() => setProfileForm({
               name: '',
               title: '',
@@ -1150,7 +1182,7 @@ const AdminPanel = () => {
             })}
             disabled={isSubmitting}
           >
-            🔄 Reset Form
+            �️ Clear Form
           </button>
         </div>
       </form>
@@ -2580,7 +2612,7 @@ const AdminPanel = () => {
               <label>Primary Email *</label>
               <input
                 type="email"
-                value={contactInfoForm.email}
+                value={contactInfoForm.email || ''}
                 onChange={(e) => setContactInfoForm({ ...contactInfoForm, email: e.target.value })}
                 className="form-input"
                 placeholder="your.professional@email.com"
@@ -2591,7 +2623,7 @@ const AdminPanel = () => {
               <label>Primary Phone</label>
               <input
                 type="tel"
-                value={contactInfoForm.phone}
+                value={contactInfoForm.phone || ''}
                 onChange={(e) => setContactInfoForm({ ...contactInfoForm, phone: e.target.value })}
                 className="form-input"
                 placeholder="+1 (555) 123-4567"
@@ -2604,7 +2636,7 @@ const AdminPanel = () => {
               <label>Alternate Email</label>
               <input
                 type="email"
-                value={contactInfoForm.alternateEmail}
+                value={contactInfoForm.alternateEmail || ''}
                 onChange={(e) => setContactInfoForm({ ...contactInfoForm, alternateEmail: e.target.value })}
                 className="form-input"
                 placeholder="alternative@email.com"
@@ -2614,7 +2646,7 @@ const AdminPanel = () => {
               <label>Alternate Phone</label>
               <input
                 type="tel"
-                value={contactInfoForm.alternatePhone}
+                value={contactInfoForm.alternatePhone || ''}
                 onChange={(e) => setContactInfoForm({ ...contactInfoForm, alternatePhone: e.target.value })}
                 className="form-input"
                 placeholder="+1 (555) 987-6543"
