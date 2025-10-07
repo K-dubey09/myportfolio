@@ -228,11 +228,6 @@ const PortfolioSite = () => {
 
               {/* Contact Actions */}
               <div className="hero-actions">
-                {contactInfo?.email && (
-                  <a href={`mailto:${contactInfo.email}`} className="cta-button primary">
-                    📧 Get In Touch
-                  </a>
-                )}
                 {profile?.resume && (
                   <a href={profile.resume} target="_blank" rel="noopener noreferrer" className="cta-button secondary">
                     📄 View Resume

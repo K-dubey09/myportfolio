@@ -261,7 +261,7 @@ body {
 }
 
 .hero-content {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -597,7 +597,7 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -841,7 +841,7 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
   align-items: start;
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -1549,10 +1549,6 @@ body {
   justify-content: space-between;
 }
 
-.dropdown-item.has-submenu:hover .theme-submenu {
-  display: block;
-}
-
 .submenu-arrow {
   transition: transform 0.3s ease;
 }
@@ -1563,9 +1559,10 @@ body {
 
 /* Theme Submenu Styles */
 .theme-submenu {
-  position: absolute;
-  right: 100%;
-  top: 0;
+  position: absolute !important;
+  right: 100% !important;
+  left: auto !important;
+  top: 0 !important;
   min-width: 200px;
   background: white;
   border: 1px solid #e5e7eb;
@@ -1574,14 +1571,12 @@ body {
   backdrop-filter: blur(20px);
   overflow: hidden;
   z-index: 1000;
-  margin-right: 8px;
+  margin-right: 8px !important;
+  margin-left: 0 !important;
+  transform: translateX(-8px) !important;
 }
 
-/* Ensure submenu stays visible when hovering */
-.dropdown-item.has-submenu:hover .theme-submenu,
-.theme-submenu:hover {
-  display: block;
-}
+/* Submenu visibility controlled by JavaScript */
 
 .theme-submenu-header {
   display: flex;

@@ -58,6 +58,7 @@ const Navigation = () => {
   // Handle mouse enter for theme dropdown
   const handleThemeMouseEnter = (e) => {
     e.stopPropagation();
+    console.log('Theme hover enter');
     if (themeTimeoutRef.current) {
       clearTimeout(themeTimeoutRef.current);
     }
@@ -67,6 +68,7 @@ const Navigation = () => {
   // Handle mouse leave for theme dropdown
   const handleThemeMouseLeave = (e) => {
     e.stopPropagation();
+    console.log('Theme hover leave');
     themeTimeoutRef.current = setTimeout(() => {
       setIsThemeDropdownOpen(false);
     }, 300); // 300ms delay before hiding
@@ -310,17 +312,26 @@ const Navigation = () => {
                     {item.hasSubmenu && (
                       <>
                         <ChevronLeft size={16} className="submenu-arrow" />
-                        {item.isThemeSelector && isThemeDropdownOpen && (
-                          <motion.div
-                            className="theme-submenu"
-                            initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseEnter={(e) => e.stopPropagation()}
-                            onMouseLeave={(e) => e.stopPropagation()}
-                          >
+                        <AnimatePresence>
+                          {item.isThemeSelector && isThemeDropdownOpen && (
+                            <motion.div
+                              className="theme-submenu"
+                              initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, x: 0, scale: 1 }}
+                              exit={{ opacity: 0, x: -10, scale: 0.95 }}
+                              transition={{ duration: 0.2, ease: "easeOut" }}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseEnter={(e) => {
+                                e.stopPropagation();
+                                if (themeTimeoutRef.current) {
+                                  clearTimeout(themeTimeoutRef.current);
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                e.stopPropagation();
+                                handleThemeMouseLeave(e);
+                              }}
+                            >
                             <div className="theme-submenu-header">
                               <Palette size={16} />
                               <span>Select Theme</span>
@@ -342,6 +353,7 @@ const Navigation = () => {
                             </div>
                           </motion.div>
                         )}
+                        </AnimatePresence>
                       </>
                     )}
                   </motion.div>
