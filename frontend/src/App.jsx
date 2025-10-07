@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import Navigation from './components/Navigation'
 import PortfolioSite from './components/PortfolioSite'
 import AdminPanel from '../Admin/AdminPanel'
@@ -81,11 +82,12 @@ const AdminRoute = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="app">
-          <ConditionalNavigation />
-          <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <div className="app">
+            <ConditionalNavigation />
+            <Routes>
             <Route path="/" element={<PortfolioSite />} />
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/register" element={<RegistrationPage />} />
@@ -177,7 +179,8 @@ function App() {
           />
         </div>
       </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

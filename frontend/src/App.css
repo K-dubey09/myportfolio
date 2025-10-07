@@ -1,3 +1,5 @@
+@import './themes.css';
+
 * {
   margin: 0;
   padding: 0;
@@ -1530,17 +1532,204 @@ body {
   background-color: #f3f4f6;
 }
 
-.dropdown-item.danger {
-  color: #dc2626;
+/* User Dropdown Hover Behavior */
+.user-dropdown {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  order: 3;
 }
 
-.dropdown-item.danger:hover {
-  background-color: #fee2e2;
-  color: #b91c1c;
+.user-dropdown:hover .user-dropdown-menu {
+  display: block;
 }
 
+.dropdown-item.has-submenu {
+  position: relative;
+  justify-content: space-between;
+}
+
+.dropdown-item.has-submenu:hover .theme-submenu {
+  display: block;
+}
+
+.submenu-arrow {
+  transition: transform 0.3s ease;
+}
+
+.dropdown-item.has-submenu:hover .submenu-arrow {
+  transform: translateX(2px);
+}
+
+/* Theme Submenu Styles */
+.theme-submenu {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  min-width: 200px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  z-index: 1000;
+  margin-right: 8px;
+}
+
+/* Ensure submenu stays visible when hovering */
+.dropdown-item.has-submenu:hover .theme-submenu,
+.theme-submenu:hover {
+  display: block;
+}
+
+.theme-submenu-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--accent-gradient);
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.theme-options {
+  padding: 0.5rem 0;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.theme-option:last-child {
+  border-bottom: none;
+}
+
+.theme-option:hover {
+  background: var(--bg-secondary);
+  color: var(--accent-primary);
+  transform: translateX(4px);
+}
+
+.theme-option.active {
+  background: var(--accent-gradient);
+  color: white;
+  font-weight: 600;
+}
+
+.theme-option.active:hover {
+  background: var(--accent-gradient);
+  color: white;
+  transform: translateX(0);
+  filter: brightness(1.1);
+}
+
+.theme-icon {
+  font-size: 1.1rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+.theme-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+}
+
+.active-indicator {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: white;
+}
+
+/* Dark theme specific adjustments for submenu */
+[data-theme="dark"] .theme-submenu {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .theme-option {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .theme-option:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
+}
+
+[data-theme="dark"] .theme-option.active {
+  background: var(--accent-gradient);
+  color: white;
+}
+
+/* Animation toggle styles */
 .dropdown-item.toggler {
   justify-content: space-between;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 20px;
+  background-color: #e5e7eb;
+  border-radius: 20px;
+  position: relative;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.theme-toggle.active {
+  background-color: var(--accent-primary);
+}
+
+.toggle-slider {
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle.active .toggle-slider {
+  transform: translateX(20px);
+}
+
+/* Responsive adjustments for submenu */
+@media (max-width: 768px) {
+  .theme-submenu {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 280px;
+    margin-right: 0;
+    z-index: 2000;
+  }
+  
+  .theme-submenu::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
+  }
 }
 
 .theme-toggle {

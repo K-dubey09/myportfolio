@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { useTheme } from '../context/ThemeContext'
 
 const API_BASE_URL = 'http://localhost:5000'
 
 const PortfolioSite = () => {
+  const { theme, isAnimated } = useTheme()
+  
   // State for each section's data
   const [profile, setProfile] = useState(null)
   const [services, setServices] = useState([])
@@ -57,7 +60,15 @@ const PortfolioSite = () => {
         setExperience(Array.isArray(experienceData) ? experienceData.slice(0, 2) : (experienceData.experience?.slice(0, 2) || []))
         setEducation(Array.isArray(educationData) ? educationData.slice(0, 2) : (educationData.education?.slice(0, 2) || []))
         setBlogs(Array.isArray(blogsData) ? blogsData.slice(0, 3) : (blogsData.blogs?.slice(0, 3) || []))
-        setContactInfo(contactInfoData)
+        
+        // Handle contact info - could be array or single object
+        if (Array.isArray(contactInfoData) && contactInfoData.length > 0) {
+          setContactInfo(contactInfoData[0])
+        } else if (contactInfoData && !Array.isArray(contactInfoData)) {
+          setContactInfo(contactInfoData)
+        } else {
+          setContactInfo(null)
+        }
         
         console.log('Services data:', servicesData)
         console.log('Projects data:', projectsData)
@@ -128,13 +139,13 @@ const PortfolioSite = () => {
     )
   }
   return (
-    <div className="portfolio-site">
+    <div className={`portfolio-site ${isAnimated ? 'animations-enabled' : 'animations-disabled'}`} data-theme={theme}>
       {/* Home Section */}
-      <section id="top" className="section home-section">
+      <section id="top" className={`section home-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
           <div className="hero-content">
             {profile?.profilePicture && (
-              <div className="profile-image">
+              <div className={`profile-image ${isAnimated ? 'scale-in' : ''}`}>
                 <img 
                   src={profile.profilePicture} 
                   alt={profile.name || 'Profile'} 
@@ -142,7 +153,7 @@ const PortfolioSite = () => {
                 />
               </div>
             )}
-            <div className="hero-text">
+            <div className={`hero-text ${isAnimated ? 'slide-in-right' : ''}`}>
               <h1>Welcome to My Portfolio</h1>
               {profile?.name && <h2>I'm {profile.name}</h2>}
               {profile?.title && <h3>{profile.title}</h3>}
@@ -234,13 +245,13 @@ const PortfolioSite = () => {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="section services-section">
+      <section id="services" className={`section services-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
           <div className="section-header">
             <h2>Services</h2>
             <a href="/services" className="view-all-link">View All</a>
           </div>
-          <div className="services-grid">
+          <div className={`services-grid ${isAnimated ? 'slide-in-left' : ''}`}>
             {services.length > 0 ? (
               services.map((service, index) => (
                 <div key={service._id || index} className="service-card">
@@ -258,13 +269,13 @@ const PortfolioSite = () => {
       </section>
 
       {/* Projects Section */}
-      <section id="projects" className="section projects-section">
+      <section id="projects" className={`section projects-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
           <div className="section-header">
             <h2>Projects</h2>
             <a href="/projects" className="view-all-link">View All</a>
           </div>
-          <div className="projects-grid">
+          <div className={`projects-grid ${isAnimated ? 'slide-in-right' : ''}`}>
             {projects.length > 0 ? (
               projects.map((project, index) => (
                 <div key={project._id || index} className="project-card">
@@ -405,14 +416,14 @@ const PortfolioSite = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="section contact-section">
+      <section id="contact" className={`section contact-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
           <div className="section-header">
             <h2>Contact</h2>
             <p className="section-subtitle">Get in touch with me or send a message directly.</p>
           </div>
           
-          <div className="contact-cards-grid">
+          <div className={`contact-cards-grid ${isAnimated ? 'bounce-in' : ''}`}>
             {/* Contact Information Card */}
             <div className="contact-card">
               <div className="card-header">

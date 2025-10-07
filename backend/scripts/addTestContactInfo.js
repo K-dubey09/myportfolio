@@ -27,7 +27,7 @@ async function addTestContactInfo() {
       businessHours: {
         monday: '9:00 AM - 6:00 PM',
         tuesday: '9:00 AM - 6:00 PM',
-        wednesday: '9:00 AM - 6:00 PM',Z5
+        wednesday: '9:00 AM - 6:00 PM',
         thursday: '9:00 AM - 6:00 PM',
         friday: '9:00 AM - 5:00 PM',
         saturday: '10:00 AM - 2:00 PM',
