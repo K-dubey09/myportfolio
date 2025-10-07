@@ -653,56 +653,61 @@ const AdminPanel = () => {
         {/* Profile Picture Section */}
         <div className="form-section">
           <h3>Profile Picture</h3>
-          <div className="form-group">
-            <label>Profile Picture</label>
+          <div className="profile-picture-container">
             
-            {/* File Upload Option */}
-            <div style={{marginBottom: '10px'}}>
-              <label style={{fontSize: '14px', color: '#666'}}>Upload File:</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleProfilePictureUpload}
-                className="form-input"
-                disabled={isSubmitting}
-              />
-            </div>
-            
-            {/* URL Input Option */}
-            <div style={{marginBottom: '10px'}}>
-              <label style={{fontSize: '14px', color: '#666'}}>Or Enter URL:</label>
-              <input
-                type="url"
-                value={typeof profileForm.profilePicture === 'string' && profileForm.profilePicture.startsWith('http') ? profileForm.profilePicture : ''}
-                onChange={(e) => setProfileForm({ ...profileForm, profilePicture: e.target.value })}
-                className="form-input"
-                placeholder="https://example.com/profile.jpg"
-              />
-            </div>
-            
-            {/* Image Preview */}
-            {profileForm.profilePicture && (
-              <div style={{marginTop: '10px'}}>
-                <label style={{fontSize: '14px', color: '#666'}}>Preview:</label>
+            {/* Circular Preview */}
+            <div className="profile-preview-container">
+              {profileForm.profilePicture ? (
                 <img 
                   src={profileForm.profilePicture} 
                   alt="Profile Preview" 
-                  className="profile-preview"
-                  style={{ 
-                    maxWidth: '150px', 
-                    maxHeight: '150px', 
-                    borderRadius: '50%', 
-                    border: '3px solid #e2e8f0',
-                    display: 'block',
-                    marginTop: '5px'
-                  }}
+                  className="profile-preview-circular"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     showMessage('Invalid image URL or file', 'error');
                   }}
                 />
+              ) : (
+                <div className="profile-preview-placeholder">
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>No Image</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Upload Controls */}
+            <div className="profile-upload-controls">
+              <div className="form-group">
+                <label>Profile Picture</label>
+                
+                {/* File Upload Option */}
+                <div className="upload-option">
+                  <label className="upload-label">Upload File:</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureUpload}
+                    className="form-input file-input"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                {/* URL Input Option */}
+                <div className="upload-option">
+                  <label className="upload-label">Or Enter URL:</label>
+                  <input
+                    type="url"
+                    value={typeof profileForm.profilePicture === 'string' && profileForm.profilePicture.startsWith('http') ? profileForm.profilePicture : ''}
+                    onChange={(e) => setProfileForm({ ...profileForm, profilePicture: e.target.value })}
+                    className="form-input"
+                    placeholder="https://example.com/profile.jpg"
+                  />
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
