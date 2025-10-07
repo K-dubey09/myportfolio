@@ -1558,7 +1558,7 @@ body {
 }
 
 .dropdown-item.has-submenu:hover .submenu-arrow {
-  transform: translateX(2px);
+  transform: translateX(-2px);
 }
 
 /* Theme Submenu Styles */
