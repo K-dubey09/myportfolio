@@ -14,6 +14,13 @@ const serviceSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  image: {
+    type: String, // GridFS filename or URL
+    default: ''
+  },
+  images: [{
+    type: String // Array of GridFS filenames or URLs
+  }],
   price: {
     type: String,
     default: ''
@@ -36,6 +43,10 @@ const serviceSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  order: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true

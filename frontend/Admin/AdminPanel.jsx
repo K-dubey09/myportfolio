@@ -130,14 +130,15 @@ const AdminPanel = () => {
   // Fetch portfolio data
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/portfolio', {
+      const response = await fetch('http://localhost:5000/api/portfolio/complete', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
       if (response.ok) {
-        const portfolioData = await response.json();
+        const result = await response.json();
+        const portfolioData = result.data; // Extract data from the response
         setData(portfolioData);
         // Populate profile form with existing data
         if (portfolioData.profile) {
@@ -705,13 +706,13 @@ const AdminPanel = () => {
       </form>
 
       <div className="items-section">
-        {!data?.skills || data.skills.length === 0 ? (
+        {!data?.skills || (Array.isArray(data.skills) ? data.skills.length === 0 : Object.keys(data.skills).length === 0) ? (
           <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>
             {searchTerm || filterCategory !== 'all' ? 'No skills match your search criteria.' : 'No skills added yet.'}
           </div>
         ) : (
           <div className="items-grid">
-            {filterItems(data?.skills || [], ['name', 'category', 'level']).map((skill, index) => (
+            {filterItems(Array.isArray(data.skills) ? data.skills : Object.values(data.skills).flat(), ['name', 'category', 'level']).map((skill, index) => (
               <div key={`skill-${skill.id || index}-${skill.name || 'unnamed'}`} className="item-card" style={{animationDelay: `${index * 0.1}s`}}>
                 <div className="item-info">
                   <h4>{skill.name}</h4>

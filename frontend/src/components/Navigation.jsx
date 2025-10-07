@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Home, User, Briefcase, BookOpen, MessageSquare, Star, Video, LogIn, Settings, Award, Layers, BarChart3, GraduationCap, Images, ShieldCheck } from 'lucide-react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Home, User, Briefcase, BookOpen, MessageSquare, Star, Video, LogIn, Settings, Award, Layers, BarChart3, GraduationCap, Images, ShieldCheck, Palette, ChevronDown, LogOut, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -9,6 +9,46 @@ const Navigation = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+    document.documentElement.classList.toggle('dark-theme', !isDarkTheme);
+  };
+
+  // Touch and click handler for dropdown
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Dropdown menu items
+  const dropdownItems = [
+    { name: 'Profile', icon: UserCircle, action: () => navigate('/profile') },
+    { name: 'Settings', icon: Settings, action: () => navigate('/settings') },
+    { 
+      name: 'Theme', 
+      icon: Palette, 
+      action: toggleTheme,
+      isToggler: true,
+      isActive: isDarkTheme
+    },
+    { name: 'Logout', icon: LogOut, action: logout, danger: true }
+  ];
 
   // Main navigation links matching admin panel structure
   const mainNavLinks = [
@@ -124,20 +164,6 @@ const Navigation = () => {
                   <span>Admin</span>
                 </motion.button>
               )}
-              
-              {/* Logout button in nav-links */}
-              <motion.button
-                onClick={logout}
-                className="nav-logout"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: 0.6 }}
-                whileHover={{ scale: 1.05, backgroundColor: '#ff6b6b' }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <LogIn size={18} />
-                <span>Logout</span>
-              </motion.button>
             </>
           )}
           
@@ -154,12 +180,17 @@ const Navigation = () => {
           )}
         </div>
       </div>
-        {user && (
+      
+      {user && (
+        <div className="user-dropdown" ref={dropdownRef}>
           <motion.div 
             className="user-info"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
+            onClick={handleDropdownToggle}
+            onTouchEnd={handleDropdownToggle}
+            style={{ cursor: 'pointer', touchAction: 'manipulation' }}
           >
             <div className="user-avatar">
               {user.profileImage ? (
@@ -172,8 +203,45 @@ const Navigation = () => {
               <span className="username">{user.username}</span>
               <span className="user-role">{user.role}</span>
             </div>
+            <motion.div
+              animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown size={16} />
+            </motion.div>
           </motion.div>
-        )}
+
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <motion.div
+                className="user-dropdown-menu"
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {dropdownItems.map((item) => (
+                  <motion.div
+                    key={item.name}
+                    className={`dropdown-item ${item.danger ? 'danger' : ''} ${item.isToggler ? 'toggler' : ''}`}
+                    onClick={item.action}
+                    whileHover={{ backgroundColor: item.danger ? '#fee2e2' : '#f3f4f6' }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <item.icon size={18} />
+                    <span>{item.name}</span>
+                    {item.isToggler && (
+                      <div className={`theme-toggle ${item.isActive ? 'active' : ''}`}>
+                        <div className="toggle-slider"></div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </motion.nav>
   );
 };

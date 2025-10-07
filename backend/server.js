@@ -10,6 +10,8 @@ import createCRUDController from './controllers/crudController.js';
 import { AuthController } from './controllers/authController.js';
 import { UserController } from './controllers/userController.js';
 import { FileController } from './controllers/fileController.js';
+import imageRoutes from './routes/imageRoutes.js';
+import portfolioRoutes from './routes/portfolioRoutes.js';
 import { 
   authenticateToken, 
   requireRole, 
@@ -209,6 +211,12 @@ app.get('/api/files/:filename/info', authenticateToken, FileController.getFileIn
 // Legacy upload endpoint for backward compatibility
 app.post('/api/admin/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('file'), FileController.uploadFile);
 
+// ==================== IMAGE MANAGEMENT ROUTES ====================
+app.use('/api/images', imageRoutes);
+
+// ==================== PORTFOLIO ROUTES ====================
+app.use('/api/portfolio', portfolioRoutes);
+
 // ==================== PROFILE ROUTES ====================
 app.get('/api/profile', ProfileController.getProfile);
 app.get('/api/admin/profile', authenticateToken, ProfileController.getProfile);
@@ -305,8 +313,9 @@ app.get('/api/admin/contacts/:id', authenticateToken, contactController.getById)
 app.put('/api/admin/contacts/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_CONTACT'), contactController.update);
 app.delete('/api/admin/contacts/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_CONTACT'), contactController.delete);
 
-// ==================== PORTFOLIO DATA ROUTE (Combined) ====================
-app.get('/api/portfolio', async (req, res) => {
+// ==================== LEGACY PORTFOLIO DATA ROUTE (Combined) ====================
+// Note: This route is deprecated in favor of /api/portfolio/* routes
+app.get('/api/portfolio-legacy', async (req, res) => {
   try {
     const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials, services, contacts] = await Promise.all([
       Profile.findOne(),

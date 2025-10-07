@@ -92,15 +92,17 @@ export const GridFSUtils = {
         reject(error);
       });
 
-      uploadStream.on('finish', (file) => {
-        console.log('✅ File uploaded to GridFS:', file.filename);
+      uploadStream.on('finish', (result) => {
+        console.log('✅ File uploaded to GridFS:', filename);
+        // The result object from GridFS finish event doesn't contain all file details
+        // We need to construct the response manually
         resolve({
-          fileId: file._id,
-          filename: file.filename,
+          fileId: uploadStream.id,
+          filename: filename,
           originalname: originalname,
           mimetype: mimetype,
-          size: file.length,
-          uploadDate: file.uploadDate
+          size: fileBuffer.length,
+          uploadDate: new Date()
         });
       });
 

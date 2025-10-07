@@ -21,7 +21,7 @@ const PortfolioSite = () => {
         const [servicesRes, projectsRes, experienceRes, educationRes, blogsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/services`),
           fetch(`${API_BASE_URL}/api/projects`),
-          fetch(`${API_BASE_URL}/api/experience`),
+          fetch(`${API_BASE_URL}/api/experiences`),
           fetch(`${API_BASE_URL}/api/education`),
           fetch(`${API_BASE_URL}/api/blogs`)
         ])
