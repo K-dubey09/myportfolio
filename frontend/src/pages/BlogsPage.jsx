@@ -8,6 +8,7 @@ const BlogsPage = () => {
   const { user } = useAuth()
   const [blogs, setBlogs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedBlog, setSelectedBlog] = useState(null)
@@ -15,15 +16,22 @@ const BlogsPage = () => {
   const fetchBlogs = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
       
       const response = await fetch('http://localhost:5000/api/blogs', { headers })
-      const data = await response.json()
       
+      if (!response.ok) {
+        throw new Error(`Failed to fetch blogs: ${response.status}`)
+      }
+      
+      const data = await response.json()
       setBlogs(data || [])
     } catch (error) {
       console.error('Error fetching blogs:', error)
-      toast.error('Failed to load blogs')
+      const errorMessage = error.message || 'Failed to load blogs'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -51,10 +59,25 @@ const BlogsPage = () => {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loading">
+      <div className="dedicated-page">
+        <div className="page-loading">
           <div className="spinner"></div>
           <p>Loading blogs...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Calendar size={64} />
+          <h2>Error Loading Blogs</h2>
+          <p>{error}</p>
+          <button onClick={fetchBlogs} className="retry-btn">
+            Try Again
+          </button>
         </div>
       </div>
     )

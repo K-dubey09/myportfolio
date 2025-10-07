@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Image, Calendar, Eye, Download, Search, Filter } from 'lucide-react';
@@ -8,22 +8,35 @@ const GalleryPage = () => {
   const { user } = useAuth();
   const [gallery, setGallery] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
 
-  const fetchGallery = React.useCallback(async () => {
+  const fetchGallery = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
       const response = await fetch('http://localhost:5000/api/gallery', {
-        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user ? { Authorization: `Bearer ${user.token}` } : {})
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        setGallery(data);
+        const galleryArray = Array.isArray(data) ? data : (data.gallery || []);
+        setGallery(galleryArray);
+        console.log('Gallery loaded:', galleryArray);
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch gallery: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Failed to fetch gallery:', error);
+      setError(error.message);
+      setGallery([]);
     } finally {
       setLoading(false);
     }
@@ -45,9 +58,26 @@ const GalleryPage = () => {
 
   if (loading) {
     return (
-      <div className="page-loading">
-        <div className="spinner"></div>
-        <p>Loading gallery...</p>
+      <div className="dedicated-page">
+        <div className="page-loading">
+          <div className="spinner"></div>
+          <p>Loading gallery...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Image size={64} />
+          <h2>Error Loading Gallery</h2>
+          <p>{error}</p>
+          <button onClick={fetchGallery} className="retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

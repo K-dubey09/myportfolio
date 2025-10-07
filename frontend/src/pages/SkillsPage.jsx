@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Code, Star, Search, TrendingUp, BarChart } from 'lucide-react';
@@ -8,22 +8,35 @@ const SkillsPage = () => {
   const { user } = useAuth();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [sortBy, setSortBy] = useState('proficiency'); // proficiency or name
+  const [sortBy, setSortBy] = useState('level'); // level or name
 
-  const fetchSkills = React.useCallback(async () => {
+  const fetchSkills = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
       const response = await fetch('http://localhost:5000/api/skills', {
-        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user ? { Authorization: `Bearer ${user.token}` } : {})
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        setSkills(data);
+        const skillsArray = Array.isArray(data) ? data : (data.skills || []);
+        setSkills(skillsArray);
+        console.log('Skills loaded:', skillsArray);
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch skills: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Failed to fetch skills:', error);
+      setError(error.message);
+      setSkills([]);
     } finally {
       setLoading(false);
     }
@@ -39,35 +52,48 @@ const SkillsPage = () => {
   ).filter(skill => 
     filterCategory === '' || skill.category === filterCategory
   ).sort((a, b) => {
-    if (sortBy === 'proficiency') {
-      return b.proficiency - a.proficiency;
+    if (sortBy === 'level') {
+      // Map level strings to numbers for sorting
+      const levelMap = { 'Beginner': 1, 'Intermediate': 2, 'Advanced': 3, 'Expert': 4 };
+      return (levelMap[b.level] || 0) - (levelMap[a.level] || 0);
     }
     return a.name.localeCompare(b.name);
   });
 
   const categories = [...new Set(skills.map(skill => skill.category))];
 
-  const getProficiencyLabel = (level) => {
-    if (level >= 90) return 'Expert';
-    if (level >= 75) return 'Advanced';
-    if (level >= 60) return 'Intermediate';
-    if (level >= 40) return 'Beginner';
-    return 'Learning';
-  };
-
-  const getProficiencyColor = (level) => {
-    if (level >= 90) return '#10b981'; // green
-    if (level >= 75) return '#3b82f6'; // blue
-    if (level >= 60) return '#f59e0b'; // yellow
-    if (level >= 40) return '#ef4444'; // red
-    return '#6b7280'; // gray
+  const getLevelColor = (level) => {
+    switch(level) {
+      case 'Expert': return '#10b981';
+      case 'Advanced': return '#3b82f6';
+      case 'Intermediate': return '#f59e0b';
+      case 'Beginner': return '#ef4444';
+      default: return '#6b7280';
+    }
   };
 
   if (loading) {
     return (
-      <div className="page-loading">
-        <div className="spinner"></div>
-        <p>Loading skills...</p>
+      <div className="dedicated-page">
+        <div className="page-loading">
+          <div className="spinner"></div>
+          <p>Loading skills...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Code size={64} />
+          <h2>Error Loading Skills</h2>
+          <p>{error}</p>
+          <button onClick={fetchSkills} className="retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -116,119 +142,107 @@ const SkillsPage = () => {
           onChange={(e) => setSortBy(e.target.value)}
           className="filter-select"
         >
-          <option value="proficiency">Sort by Proficiency</option>
+          <option value="level">Sort by Level</option>
           <option value="name">Sort by Name</option>
         </select>
       </motion.div>
 
-      <motion.div 
-        className="skills-grid"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        {filteredSkills.map((skill, index) => (
-          <motion.div
-            key={skill._id}
-            className="skill-card"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.05 }}
-            whileHover={{ y: -5, scale: 1.02 }}
-          >
-            <div className="skill-header">
-              <div className="skill-icon">
-                {skill.category === 'Programming' && <Code size={24} />}
-                {skill.category === 'Framework' && <TrendingUp size={24} />}
-                {skill.category === 'Tools' && <BarChart size={24} />}
-                {!['Programming', 'Framework', 'Tools'].includes(skill.category) && <Star size={24} />}
-              </div>
-              <h3>{skill.name}</h3>
-              <span className="skill-category">{skill.category}</span>
-            </div>
-            
-            <div className="skill-proficiency">
-              <div className="proficiency-bar">
-                <div 
-                  className="proficiency-fill"
-                  style={{ 
-                    width: `${skill.proficiency}%`,
-                    backgroundColor: getProficiencyColor(skill.proficiency)
-                  }}
-                ></div>
-              </div>
-              <div className="proficiency-info">
-                <span className="proficiency-percentage">{skill.proficiency}%</span>
-                <span 
-                  className="proficiency-label"
-                  style={{ color: getProficiencyColor(skill.proficiency) }}
-                >
-                  {getProficiencyLabel(skill.proficiency)}
-                </span>
-              </div>
-            </div>
-
-            {skill.experience && (
-              <div className="skill-experience">
-                <span>Experience: {skill.experience}</span>
-              </div>
-            )}
-
-            {skill.description && (
-              <p className="skill-description">{skill.description}</p>
-            )}
-
-            {skill.projects && skill.projects.length > 0 && (
-              <div className="skill-projects">
-                <h4>Used in projects:</h4>
-                <div className="project-tags">
-                  {skill.projects.slice(0, 3).map((project, idx) => (
-                    <span key={idx} className="project-tag">{project}</span>
-                  ))}
-                  {skill.projects.length > 3 && (
-                    <span className="project-tag more">+{skill.projects.length - 3} more</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {filteredSkills.length === 0 && (
-        <motion.div 
-          className="no-results"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        >
+      {filteredSkills.length === 0 ? (
+        <div className="no-results">
+          <Code size={64} />
           <p>No skills found matching your criteria.</p>
-        </motion.div>
-      )}
-
-      <motion.div 
-        className="skills-summary"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-      >
-        <h3>Skills Summary</h3>
-        <div className="summary-stats">
-          <div className="stat">
-            <span className="stat-number">{skills.length}</span>
-            <span className="stat-label">Total Skills</span>
-          </div>
-          <div className="stat">
-            <span className="stat-number">{categories.length}</span>
-            <span className="stat-label">Categories</span>
-          </div>
-          <div className="stat">
-            <span className="stat-number">{skills.filter(s => s.proficiency >= 75).length}</span>
-            <span className="stat-label">Advanced+</span>
-          </div>
         </div>
-      </motion.div>
+      ) : (
+        <>
+          <motion.div 
+            className="skills-grid"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            {filteredSkills.map((skill, index) => (
+              <motion.div
+                key={skill._id}
+                className="skill-card"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.5, 
+                  delay: index * 0.1,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+                }}
+              >
+                <div className="skill-header">
+                  <div className="skill-icon">
+                    <Code size={24} />
+                  </div>
+                  <h3>{skill.name}</h3>
+                </div>
+
+                <div className="skill-level">
+                  <div 
+                    className="level-badge"
+                    style={{ backgroundColor: getLevelColor(skill.level) }}
+                  >
+                    {skill.level}
+                  </div>
+                </div>
+
+                <div className="skill-category">
+                  <span className="category-badge">{skill.category}</span>
+                </div>
+
+                <div className="skill-stats">
+                  <div className="stat">
+                    <Star size={16} />
+                    <span>Level: {skill.level}</span>
+                  </div>
+                  <div className="stat">
+                    <TrendingUp size={16} />
+                    <span>Category: {skill.category}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <motion.div 
+            className="skills-summary"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <h3>Skills Overview</h3>
+            <div className="summary-stats">
+              <div className="stat">
+                <div className="stat-number">{skills.length}</div>
+                <div className="stat-label">Total Skills</div>
+              </div>
+              <div className="stat">
+                <div className="stat-number">{categories.length}</div>
+                <div className="stat-label">Categories</div>
+              </div>
+              <div className="stat">
+                <div className="stat-number">
+                  {skills.filter(s => s.level === 'Expert').length}
+                </div>
+                <div className="stat-label">Expert Level</div>
+              </div>
+              <div className="stat">
+                <div className="stat-number">
+                  {skills.filter(s => s.level === 'Advanced').length}
+                </div>
+                <div className="stat-label">Advanced Level</div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 };

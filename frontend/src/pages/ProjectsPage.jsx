@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { Github, ExternalLink, Star, Calendar, Filter } from 'lucide-react'
@@ -8,29 +8,37 @@ const ProjectsPage = () => {
   const { user } = useAuth()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    fetchProjects()
-  }, [user])
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
       
       const response = await fetch('http://localhost:5000/api/projects', { headers })
-      const data = await response.json()
       
+      if (!response.ok) {
+        throw new Error(`Failed to fetch projects: ${response.status}`)
+      }
+      
+      const data = await response.json()
       setProjects(data || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
-      toast.error('Failed to load projects')
+      const errorMessage = error.message || 'Failed to load projects'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    fetchProjects()
+  }, [fetchProjects])
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = searchTerm === '' || 
@@ -51,10 +59,25 @@ const ProjectsPage = () => {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loading">
+      <div className="dedicated-page">
+        <div className="page-loading">
           <div className="spinner"></div>
           <p>Loading projects...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Github size={64} />
+          <h2>Error Loading Projects</h2>
+          <p>{error}</p>
+          <button onClick={fetchProjects} className="retry-btn">
+            Try Again
+          </button>
         </div>
       </div>
     )

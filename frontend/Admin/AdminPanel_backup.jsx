@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../src/context/AuthContext';
 import './AdminPanel.css';
 
@@ -1099,7 +1099,7 @@ const AdminPanel = () => {
               </>
             ) : (
               <>
-                💾 Update Profile
+                ðŸ’¾ Update Profile
               </>
             )}
           </button>
@@ -1145,7 +1145,7 @@ const AdminPanel = () => {
             })}
             disabled={isSubmitting}
           >
-            🔄 Reset Form
+            ðŸ”„ Reset Form
           </button>
         </div>
       </form>
@@ -1243,14 +1243,14 @@ const AdminPanel = () => {
                     className="edit-btn"
                     title="Edit skill"
                   >
-                    ✏️ Edit
+                    âœï¸ Edit
                   </button>
                   <button 
                     onClick={() => skillHandlers.delete(skill.id)} 
                     className="delete-btn"
                     title="Delete skill"
                   >
-                    🗑️ Delete
+                    ðŸ—‘ï¸ Delete
                   </button>
                 </div>
               </div>
@@ -2279,7 +2279,7 @@ const AdminPanel = () => {
               value={serviceForm.icon}
               onChange={(e) => setServiceForm({ ...serviceForm, icon: e.target.value })}
               className="form-input"
-              placeholder="💻 or fa-code"
+              placeholder="ðŸ’» or fa-code"
             />
           </div>
           <div className="form-group">
@@ -2506,7 +2506,7 @@ const AdminPanel = () => {
                 <h3>{testimonial.name}</h3>
                 <p>{testimonial.position} at {testimonial.company}</p>
                 <div className="rating">
-                  {'★'.repeat(testimonial.rating)}{'☆'.repeat(5 - testimonial.rating)}
+                  {'â˜…'.repeat(testimonial.rating)}{'â˜†'.repeat(5 - testimonial.rating)}
                 </div>
               </div>
               {testimonial.featured && <span className="featured-badge">Featured</span>}
@@ -2558,7 +2558,7 @@ const AdminPanel = () => {
         <p>Manage your contact details that will be displayed on your portfolio based on visibility settings</p>
         <div className="header-actions">
           <div className="info-badge">
-            <span>📄</span>
+            <span>ðŸ“„</span>
             Single Record System - Updates overwrite previous data
           </div>
         </div>
@@ -2567,7 +2567,7 @@ const AdminPanel = () => {
       <form onSubmit={contactInfoHandlers.submit} className="admin-form contact-info-form">
         {/* Basic Contact Information */}
         <div className="form-section">
-          <h3>📧 Basic Contact Information</h3>
+          <h3>ðŸ“§ Basic Contact Information</h3>
           <p className="section-description">Primary contact methods for potential clients and employers</p>
           
           <div className="form-row">
@@ -2620,7 +2620,7 @@ const AdminPanel = () => {
 
         {/* Address Information */}
         <div className="form-section">
-          <h3>🏠 Address Information</h3>
+          <h3>ðŸ  Address Information</h3>
           <p className="section-description">Physical location information for local opportunities</p>
           
           <div className="form-group">
@@ -2698,7 +2698,7 @@ const AdminPanel = () => {
 
         {/* Professional Details */}
         <div className="form-section">
-          <h3>💼 Professional Details</h3>
+          <h3>ðŸ’¼ Professional Details</h3>
           <p className="section-description">Availability and professional communication preferences</p>
           
           <div className="form-row">
@@ -2709,10 +2709,10 @@ const AdminPanel = () => {
                 onChange={(e) => setContactInfoForm({ ...contactInfoForm, availability: e.target.value })}
                 className="form-input"
               >
-                <option value="available">🟢 Available for Work</option>
-                <option value="busy">🟡 Busy (Limited Availability)</option>
-                <option value="unavailable">🔴 Currently Unavailable</option>
-                <option value="open">💼 Open to Opportunities</option>
+                <option value="available">ðŸŸ¢ Available for Work</option>
+                <option value="busy">ðŸŸ¡ Busy (Limited Availability)</option>
+                <option value="unavailable">ðŸ”´ Currently Unavailable</option>
+                <option value="open">ðŸ’¼ Open to Opportunities</option>
               </select>
             </div>
             <div className="form-group">
@@ -2765,7 +2765,7 @@ const AdminPanel = () => {
 
         {/* Business Hours */}
         <div className="form-section">
-          <h3>⏰ Business Hours</h3>
+          <h3>â° Business Hours</h3>
           <p className="section-description">Your preferred hours for professional communication</p>
           
           <div className="business-hours-grid">
@@ -2789,12 +2789,12 @@ const AdminPanel = () => {
 
         {/* Social Media Links */}
         <div className="form-section">
-          <h3>🔗 Social Media Links</h3>
+          <h3>ðŸ”— Social Media Links</h3>
           <p className="section-description">Professional social media profiles and networking platforms</p>
           
           <div className="form-row">
             <div className="form-group">
-              <label>🔗 LinkedIn</label>
+              <label>ðŸ”— LinkedIn</label>
               <input
                 type="url"
                 value={contactInfoForm.socialLinks?.linkedin || ''}
@@ -2807,7 +2807,7 @@ const AdminPanel = () => {
               />
             </div>
             <div className="form-group">
-              <label>🐙 GitHub</label>
+              <label>ðŸ™ GitHub</label>
               <input
                 type="url"
                 value={contactInfoForm.socialLinks?.github || ''}
@@ -2823,7 +2823,7 @@ const AdminPanel = () => {
           
           <div className="form-row">
             <div className="form-group">
-              <label>🐦 Twitter</label>
+              <label>ðŸ¦ Twitter</label>
               <input
                 type="url"
                 value={contactInfoForm.socialLinks?.twitter || ''}
@@ -2836,7 +2836,7 @@ const AdminPanel = () => {
               />
             </div>
             <div className="form-group">
-              <label>📷 Instagram</label>
+              <label>ðŸ“· Instagram</label>
               <input
                 type="url"
                 value={contactInfoForm.socialLinks?.instagram || ''}
@@ -2851,7 +2851,7 @@ const AdminPanel = () => {
           </div>
 
           <div className="form-group">
-            <label>📺 YouTube</label>
+            <label>ðŸ“º YouTube</label>
             <input
               type="url"
               value={contactInfoForm.socialLinks?.youtube || ''}
@@ -2867,7 +2867,7 @@ const AdminPanel = () => {
 
         {/* Call to Action */}
         <div className="form-section">
-          <h3>💬 Call to Action</h3>
+          <h3>ðŸ’¬ Call to Action</h3>
           <p className="section-description">Customize the call-to-action message on your contact section</p>
           
           <div className="form-group">
@@ -2915,7 +2915,7 @@ const AdminPanel = () => {
 
         {/* Display Settings */}
         <div className="form-section">
-          <h3>👁️ Display Settings</h3>
+          <h3>ðŸ‘ï¸ Display Settings</h3>
           <p className="section-description">Control what contact information is visible on your public portfolio</p>
           
           <div className="checkbox-grid">
@@ -2929,7 +2929,7 @@ const AdminPanel = () => {
                   displaySettings: { ...contactInfoForm.displaySettings, showEmail: e.target.checked }
                 })}
               />
-              <label htmlFor="showEmail">📧 Show Email</label>
+              <label htmlFor="showEmail">ðŸ“§ Show Email</label>
             </div>
             
             <div className="checkbox-item">
@@ -2942,7 +2942,7 @@ const AdminPanel = () => {
                   displaySettings: { ...contactInfoForm.displaySettings, showAddress: e.target.checked }
                 })}
               />
-              <label htmlFor="showAddress">🏠 Show Address</label>
+              <label htmlFor="showAddress">ðŸ  Show Address</label>
             </div>
             
             <div className="checkbox-item">
@@ -2955,7 +2955,7 @@ const AdminPanel = () => {
                   displaySettings: { ...contactInfoForm.displaySettings, showPhone: e.target.checked }
                 })}
               />
-              <label htmlFor="showPhone">📱 Show Phone</label>
+              <label htmlFor="showPhone">ðŸ“± Show Phone</label>
             </div>
             
             <div className="checkbox-item">
@@ -2968,7 +2968,7 @@ const AdminPanel = () => {
                   displaySettings: { ...contactInfoForm.displaySettings, showBusinessHours: e.target.checked }
                 })}
               />
-              <label htmlFor="showBusinessHours">⏰ Show Business Hours</label>
+              <label htmlFor="showBusinessHours">â° Show Business Hours</label>
             </div>
             
             <div className="checkbox-item">
@@ -2981,7 +2981,7 @@ const AdminPanel = () => {
                   displaySettings: { ...contactInfoForm.displaySettings, showSocialLinks: e.target.checked }
                 })}
               />
-              <label htmlFor="showSocialLinks">🔗 Show Social Links</label>
+              <label htmlFor="showSocialLinks">ðŸ”— Show Social Links</label>
             </div>
             
             <div className="checkbox-item">
@@ -2994,7 +2994,7 @@ const AdminPanel = () => {
                   displaySettings: { ...contactInfoForm.displaySettings, showAvailability: e.target.checked }
                 })}
               />
-              <label htmlFor="showAvailability">💼 Show Availability</label>
+              <label htmlFor="showAvailability">ðŸ’¼ Show Availability</label>
             </div>
           </div>
         </div>
@@ -3008,7 +3008,7 @@ const AdminPanel = () => {
               </>
             ) : (
               <>
-                💾 {data?.contactInfo ? 'Update Contact Information' : 'Save Contact Information'}
+                ðŸ’¾ {data?.contactInfo ? 'Update Contact Information' : 'Save Contact Information'}
               </>
             )}
           </button>
@@ -3019,7 +3019,7 @@ const AdminPanel = () => {
             onClick={() => fetchData()}
             disabled={isSubmitting}
           >
-            🔄 Reload Data
+            ðŸ”„ Reload Data
           </button>
         </div>
       </form>
@@ -3044,7 +3044,7 @@ const AdminPanel = () => {
               </>
             ) : (
               <>
-                <span>🔄</span>
+                <span>ðŸ”„</span>
                 Refresh Contacts
               </>
             )}
@@ -3084,16 +3084,16 @@ const AdminPanel = () => {
                   <p>{contact.message}</p>
                 </div>
                 <div className="contact-meta">
-                  <span>📅 Received: {new Date(contact.createdAt || Date.now()).toLocaleDateString('en-US', {
+                  <span>ðŸ“… Received: {new Date(contact.createdAt || Date.now()).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
                   })}</span>
-                  {contact.phone && <span>📞 Phone: {contact.phone}</span>}
-                  {contact.company && <span>🏢 Company: {contact.company}</span>}
-                  {contact.source && <span>🌐 Source: {contact.source}</span>}
+                  {contact.phone && <span>ðŸ“ž Phone: {contact.phone}</span>}
+                  {contact.company && <span>ðŸ¢ Company: {contact.company}</span>}
+                  {contact.source && <span>ðŸŒ Source: {contact.source}</span>}
                 </div>
                 <div className="item-actions">
                   <button 
@@ -3104,7 +3104,7 @@ const AdminPanel = () => {
                     }} 
                     className="edit-btn"
                   >
-                    📝 Update Status
+                    ðŸ“ Update Status
                   </button>
                   <select
                     value={contact.status || 'unread'}
@@ -3118,14 +3118,14 @@ const AdminPanel = () => {
                     <option value="archived">Archived</option>
                   </select>
                   <button onClick={() => contactHandlers.delete(contact._id || contact.id)} className="delete-btn">
-                    🗑️ Delete
+                    ðŸ—‘ï¸ Delete
                   </button>
                 </div>
               </div>
             ))
           ) : (
             <div className="no-contacts">
-              <div className="no-contacts-icon">📬</div>
+              <div className="no-contacts-icon">ðŸ“¬</div>
               <h3>No contact messages found</h3>
               <p>
                 {searchTerm || filterCategory !== 'all' 
@@ -3215,31 +3215,31 @@ const AdminPanel = () => {
               className={activeTab === 'profile' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('profile')}
             >
-              <span>👤</span> Profile
+              <span>ðŸ‘¤</span> Profile
             </button>
             <button 
               className={activeTab === 'skills' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('skills')}
             >
-              <span>⚡</span> Skills
+              <span>âš¡</span> Skills
             </button>
             <button 
               className={activeTab === 'projects' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('projects')}
             >
-              <span>💼</span> Projects
+              <span>ðŸ’¼</span> Projects
             </button>
             <button 
               className={activeTab === 'experience' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('experience')}
             >
-              <span>🏢</span> Experience
+              <span>ðŸ¢</span> Experience
             </button>
             <button 
               className={activeTab === 'education' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('education')}
             >
-              <span>🎓</span> Education
+              <span>ðŸŽ“</span> Education
             </button>
           </div>
           
@@ -3249,19 +3249,19 @@ const AdminPanel = () => {
               className={activeTab === 'blogs' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('blogs')}
             >
-              <span>📝</span> Blogs
+              <span>ðŸ“</span> Blogs
             </button>
             <button 
               className={activeTab === 'vlogs' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('vlogs')}
             >
-              <span>🎥</span> Vlogs
+              <span>ðŸŽ¥</span> Vlogs
             </button>
             <button 
               className={activeTab === 'gallery' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('gallery')}
             >
-              <span>🖼️</span> Gallery
+              <span>ðŸ–¼ï¸</span> Gallery
             </button>
           </div>
           
@@ -3271,19 +3271,19 @@ const AdminPanel = () => {
               className={activeTab === 'services' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('services')}
             >
-              <span>🛠️</span> Services
+              <span>ðŸ› ï¸</span> Services
             </button>
             <button 
               className={activeTab === 'testimonials' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('testimonials')}
             >
-              <span>⭐</span> Testimonials
+              <span>â­</span> Testimonials
             </button>
             <button 
               className={activeTab === 'contacts' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('contacts')}
             >
-              <span>📧</span> Contacts
+              <span>ðŸ“§</span> Contacts
             </button>
           </div>
         </nav>
@@ -3294,7 +3294,7 @@ const AdminPanel = () => {
         {message && (
           <div className={`message ${typeof message === 'object' ? message.type : (message.includes?.('error') || message.includes?.('failed') ? 'error' : 'success')}`}>
             {typeof message === 'object' ? message.text : message}
-            <button onClick={() => setMessage('')} className="close-message">×</button>
+            <button onClick={() => setMessage('')} className="close-message">Ã—</button>
           </div>
         )}
 

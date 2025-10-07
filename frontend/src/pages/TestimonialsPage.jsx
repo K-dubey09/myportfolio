@@ -8,20 +8,28 @@ const TestimonialsPage = () => {
   const { user } = useAuth()
   const [testimonials, setTestimonials] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all')
 
   const fetchTestimonials = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
       
       const response = await fetch('http://localhost:5000/api/testimonials', { headers })
-      const data = await response.json()
       
+      if (!response.ok) {
+        throw new Error(`Failed to fetch testimonials: ${response.status}`)
+      }
+      
+      const data = await response.json()
       setTestimonials(data || [])
     } catch (error) {
       console.error('Error fetching testimonials:', error)
-      toast.error('Failed to load testimonials')
+      const errorMessage = error.message || 'Failed to load testimonials'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -41,10 +49,25 @@ const TestimonialsPage = () => {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loading">
+      <div className="dedicated-page">
+        <div className="page-loading">
           <div className="spinner"></div>
           <p>Loading testimonials...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Quote size={64} />
+          <h2>Error Loading Testimonials</h2>
+          <p>{error}</p>
+          <button onClick={fetchTestimonials} className="retry-btn">
+            Try Again
+          </button>
         </div>
       </div>
     )

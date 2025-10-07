@@ -1,36 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, MapPin, Building, ExternalLink, Search } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './PagesStyles.css';
 
 const ExperiencePage = () => {
   const { user } = useAuth();
   const [experiences, setExperiences] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
 
-  useEffect(() => {
-    fetchExperiences();
-  }, []);
-
-  const fetchExperiences = async () => {
+  const fetchExperiences = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/experience', {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('http://localhost:5000/api/experiences', {
         headers: user ? { Authorization: `Bearer ${user.token}` } : {}
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setExperiences(data);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch experiences: ${response.status}`);
       }
+      
+      const data = await response.json();
+      setExperiences(data || []);
     } catch (error) {
       console.error('Failed to fetch experiences:', error);
+      const errorMessage = error.message || 'Failed to load experiences';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchExperiences();
+  }, [fetchExperiences]);
 
   const filteredExperiences = experiences.filter(exp => 
     exp.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,9 +53,26 @@ const ExperiencePage = () => {
 
   if (loading) {
     return (
-      <div className="page-loading">
-        <div className="spinner"></div>
-        <p>Loading experiences...</p>
+      <div className="dedicated-page">
+        <div className="page-loading">
+          <div className="spinner"></div>
+          <p>Loading experiences...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Building size={64} />
+          <h2>Error Loading Experiences</h2>
+          <p>{error}</p>
+          <button onClick={fetchExperiences} className="retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

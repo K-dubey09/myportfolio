@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Play, Calendar, Eye, Clock, Search, Filter } from 'lucide-react';
@@ -8,22 +8,35 @@ const VlogsPage = () => {
   const { user } = useAuth();
   const [vlogs, setVlogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedVlog, setSelectedVlog] = useState(null);
 
-  const fetchVlogs = React.useCallback(async () => {
+  const fetchVlogs = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
       const response = await fetch('http://localhost:5000/api/vlogs', {
-        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user ? { Authorization: `Bearer ${user.token}` } : {})
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        setVlogs(data);
+        const vlogsArray = Array.isArray(data) ? data : (data.vlogs || []);
+        setVlogs(vlogsArray);
+        console.log('Vlogs loaded:', vlogsArray);
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch vlogs: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Failed to fetch vlogs:', error);
+      setError(error.message);
+      setVlogs([]);
     } finally {
       setLoading(false);
     }
@@ -51,9 +64,26 @@ const VlogsPage = () => {
 
   if (loading) {
     return (
-      <div className="page-loading">
-        <div className="spinner"></div>
-        <p>Loading vlogs...</p>
+      <div className="dedicated-page">
+        <div className="page-loading">
+          <div className="spinner"></div>
+          <p>Loading vlogs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <Play size={64} />
+          <h2>Error Loading Vlogs</h2>
+          <p>{error}</p>
+          <button onClick={fetchVlogs} className="retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

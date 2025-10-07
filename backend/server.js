@@ -48,6 +48,8 @@ import Gallery from './models/Gallery.js';
 import Testimonial from './models/Testimonial.js';
 import Service from './models/Service.js';
 import Contact from './models/Contact.js';
+import ContactInfo from './models/ContactInfo.js';
+import contactInfoController from './controllers/contactInfoController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -191,6 +193,7 @@ const galleryController = createCRUDController(Gallery, 'Gallery');
 const testimonialController = createCRUDController(Testimonial, 'Testimonial');
 const serviceController = createCRUDController(Service, 'Service');
 const contactController = createCRUDController(Contact, 'Contact');
+// ContactInfo uses specialized controller to ensure only one record exists
 
 // ==================== FILE ROUTES (GridFS) ====================
 // Serve files from GridFS
@@ -220,8 +223,11 @@ app.use('/api/portfolio', portfolioRoutes);
 // ==================== PROFILE ROUTES ====================
 app.get('/api/profile', ProfileController.getProfile);
 app.get('/api/admin/profile', authenticateToken, ProfileController.getProfile);
+app.get('/api/admin/profile/get-or-create', authenticateToken, ProfileController.getOrCreateProfile);
+app.post('/api/admin/profile', authenticateToken, requirePermission('canEditProfile'), auditLog('PROFILE_CREATE_UPDATE'), ProfileController.createOrUpdateProfile);
 app.put('/api/admin/profile', authenticateToken, requirePermission('canEditProfile'), auditLog('PROFILE_UPDATE'), ProfileController.updateProfile);
 app.post('/api/admin/profile/picture', authenticateToken, requirePermission('canUploadFiles'), upload.single('profilePicture'), ProfileController.uploadProfilePicture);
+app.delete('/api/admin/profile/reset', authenticateToken, requirePermission('canEditProfile'), auditLog('PROFILE_RESET'), ProfileController.resetProfile);
 
 // ==================== SKILLS ROUTES ====================
 app.get('/api/skills', skillController.getAll);
@@ -313,11 +319,20 @@ app.get('/api/admin/contacts/:id', authenticateToken, contactController.getById)
 app.put('/api/admin/contacts/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_CONTACT'), contactController.update);
 app.delete('/api/admin/contacts/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_CONTACT'), contactController.delete);
 
+// ==================== CONTACT INFO ROUTES ====================
+app.get('/api/contact-info', contactInfoController.getAll); // Public endpoint for getting contact info
+app.get('/api/admin/contact-info', authenticateToken, contactInfoController.getAll);
+app.get('/api/admin/contact-info/get-or-create', authenticateToken, contactInfoController.getOrCreate);
+app.get('/api/admin/contact-info/:id', authenticateToken, contactInfoController.getById);
+app.post('/api/admin/contact-info', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_CONTACT_INFO'), contactInfoController.create);
+app.put('/api/admin/contact-info/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_CONTACT_INFO'), contactInfoController.update);
+app.delete('/api/admin/contact-info/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_CONTACT_INFO'), contactInfoController.delete);
+
 // ==================== LEGACY PORTFOLIO DATA ROUTE (Combined) ====================
 // Note: This route is deprecated in favor of /api/portfolio/* routes
 app.get('/api/portfolio-legacy', async (req, res) => {
   try {
-    const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials, services, contacts] = await Promise.all([
+    const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials, services, contacts, contactInfo] = await Promise.all([
       Profile.findOne(),
       Skill.find().sort({ category: 1, name: 1 }),
       Project.find().sort({ featured: -1, createdAt: -1 }),
@@ -328,7 +343,8 @@ app.get('/api/portfolio-legacy', async (req, res) => {
       Gallery.find().sort({ createdAt: -1 }),
       Testimonial.find().sort({ featured: -1, createdAt: -1 }),
       Service.find().sort({ featured: -1, createdAt: -1 }),
-      Contact.find().sort({ createdAt: -1 })
+      Contact.find().sort({ createdAt: -1 }),
+      ContactInfo.findOne()
     ]);
 
     res.json({
@@ -342,7 +358,8 @@ app.get('/api/portfolio-legacy', async (req, res) => {
       gallery: gallery || [],
       testimonials: testimonials || [],
       services: services || [],
-      contacts: contacts || []
+      contacts: contacts || [],
+      contactInfo: contactInfo || {}
     });
   } catch (error) {
     console.error('Error fetching portfolio data:', error);

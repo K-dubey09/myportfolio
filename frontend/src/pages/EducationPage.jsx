@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { GraduationCap, Calendar, MapPin, Award, Search } from 'lucide-react';
@@ -8,21 +8,34 @@ const EducationPage = () => {
   const { user } = useAuth();
   const [education, setEducation] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDegree, setFilterDegree] = useState('');
 
-  const fetchEducation = React.useCallback(async () => {
+  const fetchEducation = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
       const response = await fetch('http://localhost:5000/api/education', {
-        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user ? { Authorization: `Bearer ${user.token}` } : {})
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        setEducation(data);
+        const educationArray = Array.isArray(data) ? data : (data.education || []);
+        setEducation(educationArray);
+        console.log('Education loaded:', educationArray);
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch education: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Failed to fetch education:', error);
+      setError(error.message);
+      setEducation([]);
     } finally {
       setLoading(false);
     }
@@ -44,9 +57,26 @@ const EducationPage = () => {
 
   if (loading) {
     return (
-      <div className="page-loading">
-        <div className="spinner"></div>
-        <p>Loading education...</p>
+      <div className="dedicated-page">
+        <div className="page-loading">
+          <div className="spinner"></div>
+          <p>Loading education...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dedicated-page">
+        <div className="page-error">
+          <GraduationCap size={64} />
+          <h2>Error Loading Education</h2>
+          <p>{error}</p>
+          <button onClick={fetchEducation} className="retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

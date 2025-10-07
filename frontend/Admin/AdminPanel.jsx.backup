@@ -3027,6 +3027,428 @@ const AdminPanel = () => {
   );
 
   // Render Contact Messages Section
+        <div className="form-section">
+          <h3>Basic Contact Information</h3>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Primary Email *</label>
+              <input
+                type="email"
+                value={contactInfoForm.email}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, email: e.target.value })}
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Primary Phone</label>
+              <input
+                type="tel"
+                value={contactInfoForm.phone}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, phone: e.target.value })}
+                className="form-input"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Alternate Email</label>
+              <input
+                type="email"
+                value={contactInfoForm.alternateEmail}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, alternateEmail: e.target.value })}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Alternate Phone</label>
+              <input
+                type="tel"
+                value={contactInfoForm.alternatePhone}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, alternatePhone: e.target.value })}
+                className="form-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Address Information */}
+        <div className="form-section">
+          <h3>Address Information</h3>
+          <div className="form-group">
+            <label>Street Address</label>
+            <input
+              type="text"
+              value={contactInfoForm.address.street}
+              onChange={(e) => setContactInfoForm({ 
+                ...contactInfoForm, 
+                address: { ...contactInfoForm.address, street: e.target.value }
+              })}
+              className="form-input"
+            />
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>City</label>
+              <input
+                type="text"
+                value={contactInfoForm.address.city}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  address: { ...contactInfoForm.address, city: e.target.value }
+                })}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>State/Province</label>
+              <input
+                type="text"
+                value={contactInfoForm.address.state}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  address: { ...contactInfoForm.address, state: e.target.value }
+                })}
+                className="form-input"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>ZIP/Postal Code</label>
+              <input
+                type="text"
+                value={contactInfoForm.address.zipCode}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  address: { ...contactInfoForm.address, zipCode: e.target.value }
+                })}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Country</label>
+              <input
+                type="text"
+                value={contactInfoForm.address.country}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  address: { ...contactInfoForm.address, country: e.target.value }
+                })}
+                className="form-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Social Media Links */}
+        <div className="form-section">
+          <h3>Social Media Links</h3>
+          <div className="form-row">
+            <div className="form-group">
+              <label>LinkedIn</label>
+              <input
+                type="url"
+                value={contactInfoForm.socialLinks.linkedin}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  socialLinks: { ...contactInfoForm.socialLinks, linkedin: e.target.value }
+                })}
+                className="form-input"
+                placeholder="https://linkedin.com/in/username"
+              />
+            </div>
+            <div className="form-group">
+              <label>GitHub</label>
+              <input
+                type="url"
+                value={contactInfoForm.socialLinks.github}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  socialLinks: { ...contactInfoForm.socialLinks, github: e.target.value }
+                })}
+                className="form-input"
+                placeholder="https://github.com/username"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Twitter</label>
+              <input
+                type="url"
+                value={contactInfoForm.socialLinks.twitter}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  socialLinks: { ...contactInfoForm.socialLinks, twitter: e.target.value }
+                })}
+                className="form-input"
+                placeholder="https://twitter.com/username"
+              />
+            </div>
+            <div className="form-group">
+              <label>Instagram</label>
+              <input
+                type="url"
+                value={contactInfoForm.socialLinks.instagram}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  socialLinks: { ...contactInfoForm.socialLinks, instagram: e.target.value }
+                })}
+                className="form-input"
+                placeholder="https://instagram.com/username"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>YouTube</label>
+              <input
+                type="url"
+                value={contactInfoForm.socialLinks.youtube}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  socialLinks: { ...contactInfoForm.socialLinks, youtube: e.target.value }
+                })}
+                className="form-input"
+                placeholder="https://youtube.com/@username"
+              />
+            </div>
+            <div className="form-group">
+              <label>Medium</label>
+              <input
+                type="url"
+                value={contactInfoForm.socialLinks.medium}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  socialLinks: { ...contactInfoForm.socialLinks, medium: e.target.value }
+                })}
+                className="form-input"
+                placeholder="https://medium.com/@username"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Professional Information */}
+        <div className="form-section">
+          <h3>Professional Information</h3>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Website</label>
+              <input
+                type="url"
+                value={contactInfoForm.website}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, website: e.target.value })}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label>Resume URL</label>
+              <input
+                type="url"
+                value={contactInfoForm.resume}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, resume: e.target.value })}
+                className="form-input"
+              />
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Preferred Contact Method</label>
+              <select
+                value={contactInfoForm.preferredContactMethod}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, preferredContactMethod: e.target.value })}
+                className="form-input"
+              >
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Availability Status</label>
+              <select
+                value={contactInfoForm.availability}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, availability: e.target.value })}
+                className="form-input"
+              >
+                <option value="available">Available</option>
+                <option value="busy">Busy</option>
+                <option value="not-available">Not Available</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Response Time</label>
+              <input
+                type="text"
+                value={contactInfoForm.responseTime}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, responseTime: e.target.value })}
+                className="form-input"
+                placeholder="24-48 hours"
+              />
+            </div>
+            <div className="form-group">
+              <label>Timezone</label>
+              <input
+                type="text"
+                value={contactInfoForm.timezone}
+                onChange={(e) => setContactInfoForm({ ...contactInfoForm, timezone: e.target.value })}
+                className="form-input"
+                placeholder="UTC, EST, PST, etc."
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <div className="form-section">
+          <h3>Call to Action</h3>
+          <div className="form-group">
+            <label>CTA Title</label>
+            <input
+              type="text"
+              value={contactInfoForm.callToAction.title}
+              onChange={(e) => setContactInfoForm({ 
+                ...contactInfoForm, 
+                callToAction: { ...contactInfoForm.callToAction, title: e.target.value }
+              })}
+              className="form-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>CTA Subtitle</label>
+            <input
+              type="text"
+              value={contactInfoForm.callToAction.subtitle}
+              onChange={(e) => setContactInfoForm({ 
+                ...contactInfoForm, 
+                callToAction: { ...contactInfoForm.callToAction, subtitle: e.target.value }
+              })}
+              className="form-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Button Text</label>
+            <input
+              type="text"
+              value={contactInfoForm.callToAction.buttonText}
+              onChange={(e) => setContactInfoForm({ 
+                ...contactInfoForm, 
+                callToAction: { ...contactInfoForm.callToAction, buttonText: e.target.value }
+              })}
+              className="form-input"
+            />
+          </div>
+        </div>
+
+        {/* Display Settings */}
+        <div className="form-section">
+          <h3>Display Settings</h3>
+          <div className="checkbox-grid">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={contactInfoForm.displaySettings.showEmail}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  displaySettings: { ...contactInfoForm.displaySettings, showEmail: e.target.checked }
+                })}
+              />
+              Show Email
+            </label>
+            
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={contactInfoForm.displaySettings.showAddress}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  displaySettings: { ...contactInfoForm.displaySettings, showAddress: e.target.checked }
+                })}
+              />
+              Show Address
+            </label>
+            
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={contactInfoForm.displaySettings.showPhone}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  displaySettings: { ...contactInfoForm.displaySettings, showPhone: e.target.checked }
+                })}
+              />
+              Show Phone
+            </label>
+            
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={contactInfoForm.displaySettings.showBusinessHours}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  displaySettings: { ...contactInfoForm.displaySettings, showBusinessHours: e.target.checked }
+                })}
+              />
+              Show Business Hours
+            </label>
+            
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={contactInfoForm.displaySettings.showSocialLinks}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  displaySettings: { ...contactInfoForm.displaySettings, showSocialLinks: e.target.checked }
+                })}
+              />
+              Show Social Links
+            </label>
+            
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={contactInfoForm.displaySettings.showAvailability}
+                onChange={(e) => setContactInfoForm({ 
+                  ...contactInfoForm, 
+                  displaySettings: { ...contactInfoForm.displaySettings, showAvailability: e.target.checked }
+                })}
+              />
+              Show Availability
+            </label>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <div className="loading-spinner" style={{width: '16px', height: '16px', marginRight: '8px', display: 'inline-block'}}></div>
+                Saving Contact Information...
+              </>
+            ) : (
+              data?.contactInfo ? 'Update Contact Information' : 'Save Contact Information'
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  // Render Contact Messages Section
   const renderContactMessagesSection = () => (
     <div className="sub-tab-content">
       <div className="tab-header">

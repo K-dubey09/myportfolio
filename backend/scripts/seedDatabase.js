@@ -11,6 +11,7 @@ import Vlog from '../models/Vlog.js';
 import Gallery from '../models/Gallery.js';
 import Testimonial from '../models/Testimonial.js';
 import Service from '../models/Service.js';
+import ContactInfo from '../models/ContactInfo.js';
 
 // Load environment variables
 dotenv.config();
@@ -556,7 +557,64 @@ The aggregation pipeline is one of MongoDB's most powerful features...`,
       relationship: "mentee",
       project: "Development Mentorship"
     }
-  ]
+  ],
+
+  contactInfo: {
+    email: "john.doe@portfolio.com",
+    phone: "+1 (555) 123-4567",
+    alternateEmail: "contact@johndoe.dev",
+    alternatePhone: "+1 (555) 987-6543",
+    address: {
+      street: "123 Developer Street",
+      city: "Tech City",
+      state: "California",
+      zipCode: "12345",
+      country: "United States"
+    },
+    businessHours: {
+      monday: "9:00 AM - 6:00 PM",
+      tuesday: "9:00 AM - 6:00 PM",
+      wednesday: "9:00 AM - 6:00 PM",
+      thursday: "9:00 AM - 6:00 PM",
+      friday: "9:00 AM - 6:00 PM",
+      saturday: "10:00 AM - 2:00 PM",
+      sunday: "Closed"
+    },
+    socialLinks: {
+      linkedin: "https://linkedin.com/in/johndoe",
+      github: "https://github.com/johndoe",
+      twitter: "https://twitter.com/johndoe",
+      instagram: "https://instagram.com/johndoe.dev",
+      youtube: "https://youtube.com/@johndoe",
+      medium: "https://medium.com/@johndoe",
+      devto: "https://dev.to/johndoe",
+      stackoverflow: "https://stackoverflow.com/users/johndoe"
+    },
+    website: "https://johndoe.dev",
+    resume: "https://johndoe.dev/resume.pdf",
+    portfolio: "https://johndoe.dev/portfolio",
+    preferredContactMethod: "email",
+    availability: "available",
+    responseTime: "24-48 hours",
+    timezone: "PST (UTC-8)",
+    languages: [
+      { language: "English", proficiency: "native" },
+      { language: "Spanish", proficiency: "intermediate" },
+      { language: "French", proficiency: "basic" }
+    ],
+    callToAction: {
+      title: "Let's Build Something Amazing Together!",
+      subtitle: "Ready to bring your ideas to life? I'd love to hear about your project.",
+      buttonText: "Get In Touch"
+    },
+    displaySettings: {
+      showAddress: true,
+      showPhone: true,
+      showBusinessHours: true,
+      showSocialLinks: true,
+      showAvailability: true
+    }
+  }
 };
 
 async function seedDatabase() {
@@ -578,7 +636,8 @@ async function seedDatabase() {
       Vlog.deleteMany({}),
       Gallery.deleteMany({}),
       Testimonial.deleteMany({}),
-      Service.deleteMany({})
+      Service.deleteMany({}),
+      ContactInfo.deleteMany({})
     ]);
 
     // Seed Profile
@@ -659,6 +718,12 @@ async function seedDatabase() {
     }
     console.log(`✅ ${sampleData.testimonials.length} testimonials created`);
 
+    // Seed Contact Info
+    console.log('📞 Creating contact information...');
+    const contactInfo = new ContactInfo(sampleData.contactInfo);
+    await contactInfo.save();
+    console.log('✅ Contact information created');
+
     // Create sample users
     console.log('👥 Creating sample users...');
     
@@ -715,6 +780,7 @@ async function seedDatabase() {
     console.log(`✅ Vlogs: ${await Vlog.countDocuments()} entries`);
     console.log(`✅ Gallery: ${await Gallery.countDocuments()} entries`);
     console.log(`✅ Testimonials: ${await Testimonial.countDocuments()} entries`);
+    console.log(`✅ Contact Info: ${await ContactInfo.countDocuments()} entries`);
     console.log(`✅ Users: ${await User.countDocuments()} entries`);
 
     console.log('\n🔐 User Accounts:');

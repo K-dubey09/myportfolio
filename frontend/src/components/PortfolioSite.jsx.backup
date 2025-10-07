@@ -416,10 +416,354 @@ const PortfolioSite = () => {
             </p>
           </div>
           
-          <div className="contact-content">
-            {/* Contact Information Display */}
-            <div className="contact-info-wrapper">
-              <div className="contact-intro">
+          <div className="contact-content-redesign">
+            {/* Contact Information Cards */}
+            <div className="contact-cards-grid">
+              
+              {/* Professional Status Card */}
+              {contactInfo?.availability && contactInfo.displaySettings?.showAvailability && (
+                <div className="contact-card status-card">
+                  <div className="card-header">
+                    <h3>Current Status</h3>
+                    <span className="status-indicator">
+                      {contactInfo.availability === 'available' ? '🟢' : 
+                       contactInfo.availability === 'busy' ? '🟡' : 
+                       contactInfo.availability === 'open' ? '💼' : '🔴'}
+                    </span>
+                  </div>
+                  <div className="card-content">
+                    <p className="status-text">
+                      {contactInfo.availability === 'available' ? 'Available for New Projects' : 
+                       contactInfo.availability === 'busy' ? 'Currently Busy (Limited Availability)' : 
+                       contactInfo.availability === 'open' ? 'Open to Opportunities' : 'Currently Unavailable'}
+                    </p>
+                    {contactInfo.responseTime && (
+                      <p className="response-info">
+                        <span className="icon">⏱️</span>
+                        Response time: {contactInfo.responseTime}
+                      </p>
+                    )}
+                    {contactInfo.timezone && (
+                      <p className="timezone-info">
+                        <span className="icon">🌍</span>
+                        {contactInfo.timezone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Methods Card */}
+              {contactInfo && (contactInfo.email || contactInfo.phone || contactInfo.alternateEmail || contactInfo.alternatePhone) && (
+                <div className="contact-card methods-card">
+                  <div className="card-header">
+                    <h3>Contact Methods</h3>
+                    <span className="card-icon">📞</span>
+                  </div>
+                  <div className="card-content">
+                    <div className="contact-methods">
+                      {contactInfo.email && contactInfo.displaySettings?.showEmail && (
+                        <div className="contact-method">
+                          <span className="method-icon">📧</span>
+                          <div className="method-info">
+                            <span className="method-label">
+                              Email
+                              {contactInfo.preferredContactMethod === 'email' && <span className="preferred">✨ Preferred</span>}
+                            </span>
+                            <a href={`mailto:${contactInfo.email}`} className="method-link">
+                              {contactInfo.email}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {contactInfo.alternateEmail && contactInfo.displaySettings?.showEmail && (
+                        <div className="contact-method">
+                          <span className="method-icon">📧</span>
+                          <div className="method-info">
+                            <span className="method-label">Alternate Email</span>
+                            <a href={`mailto:${contactInfo.alternateEmail}`} className="method-link">
+                              {contactInfo.alternateEmail}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {contactInfo.phone && contactInfo.displaySettings?.showPhone && (
+                        <div className="contact-method">
+                          <span className="method-icon">📱</span>
+                          <div className="method-info">
+                            <span className="method-label">
+                              Phone
+                              {contactInfo.preferredContactMethod === 'phone' && <span className="preferred">✨ Preferred</span>}
+                            </span>
+                            <a href={`tel:${contactInfo.phone}`} className="method-link">
+                              {contactInfo.phone}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {contactInfo.alternatePhone && contactInfo.displaySettings?.showPhone && (
+                        <div className="contact-method">
+                          <span className="method-icon">📱</span>
+                          <div className="method-info">
+                            <span className="method-label">Alternate Phone</span>
+                            <a href={`tel:${contactInfo.alternatePhone}`} className="method-link">
+                              {contactInfo.alternatePhone}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Location & Details Card */}
+              {contactInfo?.address && contactInfo.displaySettings?.showAddress && (
+                <div className="contact-card location-card">
+                  <div className="card-header">
+                    <h3>Location</h3>
+                    <span className="card-icon">📍</span>
+                  </div>
+                  <div className="card-content">
+                    <div className="location-info">
+                      {contactInfo.address.street && <p>{contactInfo.address.street}</p>}
+                      {contactInfo.address.city && contactInfo.address.state && (
+                        <p>{contactInfo.address.city}, {contactInfo.address.state}</p>
+                      )}
+                      {contactInfo.address.zipCode && <p>{contactInfo.address.zipCode}</p>}
+                      {contactInfo.address.country && <p>{contactInfo.address.country}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Social Networks Card */}
+              {contactInfo?.socialLinks && contactInfo.displaySettings?.showSocialLinks && 
+               Object.values(contactInfo.socialLinks).some(link => link && link.trim() !== '') && (
+                <div className="contact-card social-card">
+                  <div className="card-header">
+                    <h3>Social Networks</h3>
+                    <span className="card-icon">🌐</span>
+                  </div>
+                  <div className="card-content">
+                    <div className="social-networks">
+                      {contactInfo.socialLinks.linkedin && contactInfo.socialLinks.linkedin.trim() !== '' && (
+                        <a href={contactInfo.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="social-network linkedin">
+                          <span className="network-icon">💼</span>
+                          <span className="network-name">LinkedIn</span>
+                          {contactInfo.preferredContactMethod === 'linkedin' && <span className="preferred-star">⭐</span>}
+                        </a>
+                      )}
+                      {contactInfo.socialLinks.github && contactInfo.socialLinks.github.trim() !== '' && (
+                        <a href={contactInfo.socialLinks.github} target="_blank" rel="noopener noreferrer" className="social-network github">
+                          <span className="network-icon">🐙</span>
+                          <span className="network-name">GitHub</span>
+                        </a>
+                      )}
+                      {contactInfo.socialLinks.twitter && contactInfo.socialLinks.twitter.trim() !== '' && (
+                        <a href={contactInfo.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="social-network twitter">
+                          <span className="network-icon">🐦</span>
+                          <span className="network-name">Twitter</span>
+                        </a>
+                      )}
+                      {contactInfo.socialLinks.youtube && contactInfo.socialLinks.youtube.trim() !== '' && (
+                        <a href={contactInfo.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="social-network youtube">
+                          <span className="network-icon">📺</span>
+                          <span className="network-name">YouTube</span>
+                        </a>
+                      )}
+                      {contactInfo.socialLinks.instagram && contactInfo.socialLinks.instagram.trim() !== '' && (
+                        <a href={contactInfo.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="social-network instagram">
+                          <span className="network-icon">📷</span>
+                          <span className="network-name">Instagram</span>
+                        </a>
+                      )}
+                      {contactInfo.socialLinks.facebook && contactInfo.socialLinks.facebook.trim() !== '' && (
+                        <a href={contactInfo.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="social-network facebook">
+                          <span className="network-icon">📘</span>
+                          <span className="network-name">Facebook</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Business Hours Card */}
+              {contactInfo?.businessHours && contactInfo.displaySettings?.showBusinessHours && 
+               Object.values(contactInfo.businessHours).some(hours => hours && hours !== 'Closed') && (
+                <div className="contact-card hours-card">
+                  <div className="card-header">
+                    <h3>Business Hours</h3>
+                    <span className="card-icon">⏰</span>
+                  </div>
+                  <div className="card-content">
+                    <div className="business-hours-list">
+                      {Object.entries(contactInfo.businessHours).map(([day, hours]) => (
+                        hours && hours !== 'Closed' && (
+                          <div key={day} className="hours-item">
+                            <span className="day-name">{day.charAt(0).toUpperCase() + day.slice(1)}</span>
+                            <span className="hours-time">{hours}</span>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Contact Card */}
+              <div className="contact-card quick-contact-card">
+                <div className="card-header">
+                  <h3>Get In Touch</h3>
+                  <span className="card-icon">✨</span>
+                </div>
+                <div className="card-content">
+                  <p className="quick-contact-text">
+                    Ready to start your project? Send me a message and let's discuss your ideas.
+                  </p>
+                  <div className="quick-actions">
+                    {contactInfo?.email && (
+                      <a href={`mailto:${contactInfo.email}`} className="quick-action primary">
+                        <span className="action-icon">📧</span>
+                        <span className="action-text">Send Email</span>
+                      </a>
+                    )}
+                    {profile?.resume && (
+                      <a href={profile.resume} target="_blank" rel="noopener noreferrer" className="quick-action secondary">
+                        <span className="action-icon">📄</span>
+                        <span className="action-text">View Resume</span>
+                      </a>
+                    )}
+                  </div>
+                  {contactInfo?.responseTime && (
+                    <p className="response-note">
+                      💬 {contactInfo?.responseTime 
+                        ? `I typically respond within ${contactInfo.responseTime}` 
+                        : 'I typically respond within 24 hours'
+                      }
+                    </p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Contact Form - Redesigned */}
+            <div className="contact-form-redesign">
+              <div className="form-wrapper">
+                <div className="form-header">
+                  <h3>Send Me a Message</h3>
+                  <p>Have a question or want to work together? I'd love to hear from you!</p>
+                </div>
+                
+                <form onSubmit={handleContactSubmit} className="contact-form modern-redesign">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label htmlFor="name">Full Name *</label>
+                      <input
+                        id="name"
+                        type="text"
+                        name="name"
+                        placeholder="Enter your full name"
+                        value={contactForm.name}
+                        onChange={handleContactInputChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="email">Email Address *</label>
+                      <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        placeholder="Enter your email address"
+                        value={contactForm.email}
+                        onChange={handleContactInputChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-group full-width">
+                    <label htmlFor="subject">Subject *</label>
+                    <input
+                      id="subject"
+                      type="text"
+                      name="subject"
+                      placeholder="What's this about?"
+                      value={contactForm.subject}
+                      onChange={handleContactInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group full-width">
+                    <label htmlFor="message">Message *</label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      placeholder="Tell me about your project or inquiry..."
+                      rows="6"
+                      value={contactForm.message}
+                      onChange={handleContactInputChange}
+                      required
+                    ></textarea>
+                  </div>
+                  
+                  <div className="form-actions">
+                    <button 
+                      type="submit" 
+                      className="submit-btn redesign"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="spinner"></span>
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{contactInfo?.callToAction?.buttonText || 'Send Message'}</span>
+                          <span className="btn-icon">→</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {contactStatus.message && (
+                    <div className={`status-message ${contactStatus.type}`}>
+                      <div className="status-icon">
+                        {contactStatus.type === 'success' ? '✅' : '❌'}
+                      </div>
+                      <div className="status-text">
+                        {contactStatus.message}
+                      </div>
+                    </div>
+                  )}
+                </form>
+                
+                <div className="form-footer">
+                  <p>
+                    {contactInfo?.responseTime 
+                      ? `I typically respond within ${contactInfo.responseTime}.` 
+                      : 'I typically respond within 24 hours.'
+                    } Looking forward to hearing from you!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export default PortfolioSite
                 <h3>Get In Touch</h3>
                 <p>Ready to start your next project? Drop me a line and let's create something amazing together.</p>
                 
