@@ -42,15 +42,15 @@
 }
 
 .message.success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #059669;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(var(--success-rgb), 0.08);
+  color: var(--success-color);
+  border: 1px solid rgba(var(--success-rgb), 0.2);
 }
 
 .message.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(var(--error-rgb), 0.08);
+  color: var(--error-color);
+  border: 1px solid rgba(var(--error-rgb), 0.2);
 }
 
 .close-message {
@@ -218,12 +218,12 @@
 }
 
 .save-btn {
-  background: #059669;
+  background: var(--success-color);
   color: white;
 }
 
 .save-btn:hover:not(:disabled) {
-  background: #047857;
+  background: rgba(var(--success-rgb), 0.9);
   transform: translateY(-1px);
 }
 
@@ -233,12 +233,12 @@
 }
 
 .cancel-btn {
-  background: #6b7280;
+  background: var(--text-muted);
   color: white;
 }
 
 .cancel-btn:hover {
-  background: #4b5563;
+  background: var(--text-secondary);
   transform: translateY(-1px);
 }
 

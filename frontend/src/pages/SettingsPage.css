@@ -42,15 +42,15 @@
 }
 
 .message.success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #059669;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success-color);
+  border: 1px solid rgba(var(--success-rgb), 0.2);
 }
 
 .message.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(var(--error-rgb), 0.1);
+  color: var(--error-color);
+  border: 1px solid rgba(var(--error-rgb), 0.2);
 }
 
 .close-message {
@@ -76,9 +76,9 @@
 }
 
 .settings-sidebar {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
   padding: 2rem 0;
-  border-right: 1px solid #e1e8ed;
+  border-right: 1px solid var(--border-color);
 }
 
 .settings-nav {
@@ -94,8 +94,8 @@
   gap: 1rem !important;
   padding: 1.25rem 1.5rem !important;
   border: 2px solid transparent !important;
-  background: #ffffff !important;
-  color: #2c3e50 !important;
+  background: var(--card-bg) !important;
+  color: var(--text-primary) !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
   text-align: left !important;
@@ -108,19 +108,19 @@
 }
 
 .nav-item:hover {
-  background: #f0f4ff !important;
-  color: #2c3e50 !important;
-  border-color: #667eea !important;
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--accent-primary) !important;
   transform: translateX(4px) !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15) !important;
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: #ffffff !important;
-  border-color: #667eea !important;
+  background: var(--accent-gradient) !important;
+  color: var(--text-on-accent) !important;
+  border-color: var(--accent-primary) !important;
   transform: translateX(6px) !important;
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.3) !important;
   position: relative;
 }
 
@@ -132,7 +132,7 @@
   transform: translateY(-50%);
   width: 4px;
   height: 60%;
-  background: #ffffff;
+  background: var(--text-on-accent);
   border-radius: 2px;
 }
 
@@ -162,7 +162,7 @@
 .settings-main {
   padding: 2rem;
   overflow-y: auto;
-  background: var(--bg-primary, #ffffff);
+  background: var(--bg-primary, var(--card-bg));
 }
 
 .settings-section {

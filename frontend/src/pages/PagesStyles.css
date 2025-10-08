@@ -2,7 +2,7 @@
 .dedicated-page {
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: var(--background-gradient);
 }
 
 .page-header {
@@ -13,9 +13,9 @@
 .page-header h1 {
   font-size: 3rem;
   font-weight: 700;
-  color: #2d3748;
+  color: var(--text-primary);
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -23,7 +23,7 @@
 
 .page-header p {
   font-size: 1.2rem;
-  color: #718096;
+  color: var(--text-secondary);
   max-width: 600px;
   margin: 0 auto;
 }
@@ -50,7 +50,7 @@
 
 .retry-btn {
   padding: 12px 24px;
-  background: #4299e1;
+  background: var(--accent-gradient);
   color: white;
   border: none;
   border-radius: 8px;
@@ -60,15 +60,14 @@
 }
 
 .retry-btn:hover {
-  background: #3182ce;
   transform: translateY(-2px);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #4299e1;
+  border: 4px solid var(--border-color);
+  border-top: 4px solid var(--accent-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -117,7 +116,7 @@
 
 .search-bar input:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
@@ -133,7 +132,7 @@
 
 .filter-select:focus {
   outline: none;
-  border-color: #4299e1;
+  border-color: var(--accent-primary);
 }
 
 /* Timeline Styles */
@@ -152,7 +151,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(to bottom, #4299e1, #667eea);
+  background: linear-gradient(to bottom, var(--accent-primary), var(--accent-secondary));
 }
 
 .timeline-item {
@@ -167,13 +166,13 @@
   top: 1rem;
   width: 1.5rem;
   height: 1.5rem;
-  background: #4299e1;
+  background: var(--accent-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 0 0 4px white, 0 0 0 6px #4299e1;
+  box-shadow: 0 0 0 4px white, 0 0 0 6px var(--accent-primary);
 }
 
 .timeline-content {
@@ -354,7 +353,7 @@
 .skill-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -439,8 +438,8 @@
 }
 
 .project-tag {
-  background: #f0fff4;
-  color: #38a169;
+  background: rgba(var(--success-rgb), 0.06);
+  color: var(--success-color);
   padding: 0.125rem 0.5rem;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -448,13 +447,13 @@
 }
 
 .project-tag.more {
-  background: #edf2f7;
-  color: #718096;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 /* Skills Highlights Section */
 .skills-highlights-section {
-  background: #f8fafc;
+  background: var(--bg-secondary);
 }
 
 .skills-highlights-grid {
@@ -465,18 +464,18 @@
 }
 
 .skill-highlight-card {
-  background: white;
+  background: var(--card-bg);
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   text-align: center;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .skill-highlight-card:hover {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  border-color: #4299e1;
+  border-color: var(--accent-primary);
 }
 
 .skill-highlight-card .skill-icon {
@@ -487,7 +486,7 @@
   justify-content: center;
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border-radius: 50%;
   margin: 0 auto 1rem;
   color: white;
@@ -507,7 +506,7 @@
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: #e2e8f0;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -515,7 +514,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4299e1, #667eea);
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
   border-radius: 4px;
   transition: width 1s ease;
 }
@@ -523,7 +522,7 @@
 .skill-level {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4299e1;
+  color: var(--accent-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -536,8 +535,8 @@
 }
 
 .skill-experience {
-  background: #edf2f7;
-  color: #4a5568;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -565,7 +564,7 @@
 
 /* Skills Summary */
 .skills-summary {
-  background: white;
+  background: var(--card-bg);
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -594,7 +593,7 @@
 .stat-number {
   font-size: 2rem;
   font-weight: 700;
-  color: #4299e1;
+  color: var(--accent-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -682,7 +681,7 @@
   justify-content: center;
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border-radius: 50%;
   margin: 0 auto 1rem;
   color: white;
@@ -811,7 +810,7 @@
 }
 
 .contact-btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   color: white;
 }
 
