@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
-import database from './config/database.js';
-import User from './models/User.js';
+import database from '../config/database.js';
+import User from '../models/User.js';
 
 // Load environment variables
 dotenv.config();

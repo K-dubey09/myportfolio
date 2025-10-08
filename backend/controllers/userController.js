@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Counter from '../models/Counter.js';
 
 export const UserController = {
   // Get all users (admin only)
@@ -120,6 +121,57 @@ export const UserController = {
     } catch (error) {
       console.error('Get user stats error:', error);
       res.status(500).json({ error: 'Failed to fetch user statistics' });
+    }
+  }
+  ,
+
+  // Assign or generate a unique userNumber for a user (admin only)
+  async assignUserNumber(req, res) {
+    try {
+      const { id } = req.params;
+      const { userNumber } = req.body || {};
+
+      const user = await User.findById(id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      // If a userNumber was provided, validate it (alphanumeric, 4-32 chars)
+      if (userNumber) {
+        const candidate = String(userNumber).trim();
+        if (!/^[A-Za-z0-9_-]{4,32}$/.test(candidate)) {
+          return res.status(400).json({ error: 'Invalid userNumber format. Allowed: letters, numbers, _ and -, length 4-32.' });
+        }
+
+        // Check uniqueness
+        const existing = await User.findOne({ userNumber: candidate });
+        if (existing && existing._id.toString() !== id) {
+          return res.status(409).json({ error: 'userNumber already in use' });
+        }
+
+        user.userNumber = candidate;
+        await user.save();
+        return res.json({ message: 'userNumber assigned', user: user.toJSON() });
+      }
+
+      // Otherwise generate a sequential number using Counter
+      const counter = await Counter.findOneAndUpdate({ name: 'userNumber' }, { $inc: { seq: 1 } }, { new: true, upsert: true });
+      const next = counter.seq;
+      // Create a formatted userNumber, e.g. U000123
+      const formatted = `U${String(next).padStart(6, '0')}`;
+
+      // Ensure uniqueness just in case
+      const exists = await User.findOne({ userNumber: formatted });
+      if (exists) {
+        // extremely unlikely, but handle by appending timestamp
+        user.userNumber = `${formatted}-${Date.now().toString().slice(-4)}`;
+      } else {
+        user.userNumber = formatted;
+      }
+
+      await user.save();
+      return res.json({ message: 'userNumber generated', user: user.toJSON() });
+    } catch (error) {
+      console.error('assignUserNumber error:', error);
+      res.status(500).json({ error: 'Failed to assign userNumber' });
     }
   }
 };

@@ -5,7 +5,7 @@ import { Star, Quote } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const TestimonialsPage = () => {
-  const { user, isEditor } = useAuth()
+  const { user, isEditor, token } = useAuth()
   const [testimonials, setTestimonials] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -17,7 +17,7 @@ const TestimonialsPage = () => {
     try {
       setLoading(true)
       setError(null)
-      const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
+  const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
       
       const response = await fetch('http://localhost:5000/api/testimonials', { headers })
       
@@ -35,7 +35,7 @@ const TestimonialsPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [token])
 
   useEffect(() => {
     fetchTestimonials()
@@ -171,7 +171,7 @@ const TestimonialsPage = () => {
               // submit new testimonial
               const payload = { name: addForm.name, position: addForm.position, company: addForm.company, content: addForm.content, rating: Number(addForm.rating || 5), featured: !!addForm.featured, imageUrl: addForm.imageUrl };
               try {
-                const res = await fetch('http://localhost:5000/api/admin/testimonials', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` }, body: JSON.stringify(payload) });
+                  const res = await fetch('http://localhost:5000/api/admin/testimonials', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
                 if (!res.ok) {
                   const err = await res.json().catch(() => ({ error: 'Submission failed' }));
                   toast.error(err.error || 'Failed to add testimonial');

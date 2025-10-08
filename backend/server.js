@@ -168,6 +168,8 @@ app.get('/api/admin/users/stats', authenticateToken, requireAdmin, UserControlle
 app.get('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.getUserById);
 app.put('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('UPDATE_USER'), UserController.updateUserRole);
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('DELETE_USER'), UserController.deleteUser);
+// Assign or generate a unique userNumber for a user (admin only)
+app.post('/api/admin/users/:id/assign-id', authenticateToken, requireAdmin, auditLog('ASSIGN_USER_NUMBER'), UserController.assignUserNumber);
 
 // ==================== ADMIN UTILITY ROUTES ====================
 // Clear rate limits (admin only)

@@ -7,6 +7,8 @@ const AdminPanel = () => {
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [activeSubTab, setActiveSubTab] = useState('contactInfo');
+  // Testimonials sub-tab state (split Add vs Manage)
+  const [activeTestimonialsSubTab, setActiveTestimonialsSubTab] = useState('add');
   const [isLoading, setIsLoading] = useState(true);
   const [accessKeys, setAccessKeys] = useState([]);
   const [conversions, setConversions] = useState([]);
@@ -826,6 +828,94 @@ const AdminPanel = () => {
     { name: '', position: '', company: '', content: '', rating: 5, featured: false, imageUrl: '' },
     'testimonials'
   );
+
+  // Admin-side testimonials list and helpers (for Manage view)
+  const [adminTestimonials, setAdminTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(false);
+  const [testimonialsPage, setTestimonialsPage] = useState(1);
+  const [testimonialsPageSize, setTestimonialsPageSize] = useState(10);
+
+  const fetchAdminTestimonials = useCallback(async () => {
+    try {
+      setTestimonialsLoading(true);
+      const { res, json, text } = await apiFetch('/api/admin/testimonials', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('fetchAdminTestimonials non-ok:', res.status, text || json);
+        showMessage('Failed to load testimonials', 'error');
+        return;
+      }
+      // Some endpoints return { data: [...] } and some return raw array
+      const items = (json && (json.data || json)) || [];
+      setAdminTestimonials(Array.isArray(items) ? items : []);
+    } catch (e) {
+      console.error('fetchAdminTestimonials error', e);
+      showMessage('Failed to load testimonials', 'error');
+    } finally {
+      setTestimonialsLoading(false);
+    }
+  }, [apiFetch, token]);
+
+  // Refresh admin testimonials when opening Manage tab or when token changes
+  useEffect(() => {
+    if (activeTestimonialsSubTab === 'manage') fetchAdminTestimonials();
+  }, [activeTestimonialsSubTab, fetchAdminTestimonials]);
+
+  // Override some testimonial handlers to refresh admin list after changes
+  (function enhanceTestimonialHandlers() {
+    const origEdit = testimonialHandlers.edit;
+    const origSubmit = testimonialHandlers.submit;
+    // Wrap edit to also open add tab
+    testimonialHandlers.edit = (item) => {
+      origEdit(item);
+      setActiveTestimonialsSubTab('add');
+    };
+
+    // Wrap submit to refresh admin list after successful submit
+    testimonialHandlers.submit = async (e) => {
+      await origSubmit(e);
+      // refresh list if visible
+      if (activeTestimonialsSubTab === 'manage') await fetchAdminTestimonials();
+    };
+
+    // Replace confirmDelete to call API directly and refresh admin list
+    testimonialHandlers.confirmDelete = async (id) => {
+      try {
+        const success = await handleApiCall(`${API_BASE}/api/admin/testimonials/${id}`, 'DELETE');
+        if (success) {
+          await fetchAdminTestimonials();
+        }
+      } catch (err) {
+        console.error('confirmDelete testimonial error', err);
+        showMessage('Failed to delete testimonial', 'error');
+      } finally {
+        setShowDeleteConfirm(null);
+      }
+    };
+  }());
+
+  // Toggle boolean fields (featured / approved) on a testimonial
+  const toggleTestimonialFlag = async (id, updates) => {
+    try {
+      setIsSubmitting(true);
+      const { res, json, text } = await apiFetch(`/api/admin/testimonials/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) {
+        console.error('toggleTestimonialFlag failed', res.status, text || json);
+        showMessage('Failed to update testimonial', 'error');
+        return;
+      }
+      showMessage('Testimonial updated', 'success');
+      await fetchAdminTestimonials();
+    } catch (err) {
+      console.error(err);
+      showMessage('Network error', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const contactHandlers = createHandlers(
     contactForm,
@@ -2874,14 +2964,32 @@ const AdminPanel = () => {
     </div>
   );
 
-  // Render Testimonials Tab
+  // Render Testimonials Tab (split into Add / Manage)
   const renderTestimonialsTab = () => (
     <div className="tab-content">
       <div className="tab-header">
         <h2>Testimonials Management</h2>
+        <div className="sub-tabs" style={{ marginTop: '0.5rem' }}>
+          <button 
+            className={activeTestimonialsSubTab === 'add' ? 'sub-tab active' : 'sub-tab'}
+            onClick={() => setActiveTestimonialsSubTab('add')}
+            type="button"
+          >
+            Add Testimonial
+          </button>
+          <button 
+            className={activeTestimonialsSubTab === 'manage' ? 'sub-tab active' : 'sub-tab'}
+            onClick={() => setActiveTestimonialsSubTab('manage')}
+            type="button"
+          >
+            Manage Testimonials
+          </button>
+        </div>
       </div>
-      
-      <form onSubmit={testimonialHandlers.submit} className="admin-form">
+
+      {/* Add Testimonial view */}
+      {activeTestimonialsSubTab === 'add' && (
+        <form onSubmit={testimonialHandlers.submit} className="admin-form">
         <div className="form-row">
           <div className="form-group">
             <label>Client Name</label>
@@ -3006,39 +3114,51 @@ const AdminPanel = () => {
           )}
         </div>
       </form>
+      )}
 
-      <div className="items-list">
-        {filterItems(data?.testimonials || [], ['name', 'company', 'content']).map((testimonial) => (
-          <div key={testimonial._id || testimonial.id} className="item-card testimonial-card">
-            <div className="testimonial-header">
-              <div className="testimonial-avatar">
-                {testimonial.imageUrl ? (
-                  <img src={testimonial.imageUrl} alt={testimonial.name} />
-                ) : (
-                  <div className="avatar-placeholder">{testimonial.name.charAt(0)}</div>
+      {/* Manage Testimonials view */}
+      {activeTestimonialsSubTab === 'manage' && (
+        <div>
+          {renderControls(['all'])}
+          <div style={{ marginTop: '1rem' }}>
+            {testimonialsLoading ? (
+              <div className="loading"><div className="loading-spinner"></div><div className="loading-text">Loading testimonials...</div></div>
+            ) : (
+              <div className="items-list">
+                {filterItems(adminTestimonials || [], ['name', 'company', 'content']).length === 0 && (
+                  <div className="item-card">No testimonials found.</div>
                 )}
+                {filterItems(adminTestimonials || [], ['name', 'company', 'content']).map((testimonial) => (
+                  <div key={testimonial._id || testimonial.id} className="item-card testimonial-card">
+                    <div className="testimonial-header">
+                      <div className="testimonial-avatar">
+                        {testimonial.imageUrl ? (
+                          <img src={testimonial.imageUrl} alt={testimonial.name} />
+                        ) : (
+                          <div className="avatar-placeholder">{(testimonial.name || '').charAt(0)}</div>
+                        )}
+                      </div>
+                      <div className="testimonial-info">
+                        <h3>{testimonial.name}</h3>
+                        <p>{testimonial.position} at {testimonial.company}</p>
+                        <div className="rating">{'★'.repeat(testimonial.rating || 0)}{'☆'.repeat(5 - (testimonial.rating || 0))}</div>
+                      </div>
+                      {testimonial.featured && <span className="featured-badge">Featured</span>}
+                    </div>
+                    <p className="testimonial-content">"{testimonial.content}"</p>
+                    <div className="item-actions">
+                      <button onClick={() => { testimonialHandlers.edit(testimonial); setActiveTestimonialsSubTab('add'); }} className="edit-btn">Edit</button>
+                      <button onClick={() => testimonialHandlers.delete(testimonial._id || testimonial.id)} className="delete-btn">Delete</button>
+                      <button onClick={() => toggleTestimonialFlag(testimonial._id || testimonial.id, { featured: !testimonial.featured })} className="submit-btn" style={{ marginLeft: '8px' }}>{testimonial.featured ? 'Unfeature' : 'Feature'}</button>
+                      <button onClick={() => toggleTestimonialFlag(testimonial._id || testimonial.id, { approved: !testimonial.approved })} className="submit-btn" style={{ marginLeft: '8px' }}>{testimonial.approved ? 'Unapprove' : 'Approve'}</button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="testimonial-info">
-                <h3>{testimonial.name}</h3>
-                <p>{testimonial.position} at {testimonial.company}</p>
-                <div className="rating">
-                  {'★'.repeat(testimonial.rating)}{'☆'.repeat(5 - testimonial.rating)}
-                </div>
-              </div>
-              {testimonial.featured && <span className="featured-badge">Featured</span>}
-            </div>
-            <p className="testimonial-content">"{testimonial.content}"</p>
-            <div className="item-actions">
-              <button onClick={() => testimonialHandlers.edit(testimonial)} className="edit-btn">
-                Edit
-              </button>
-              <button onClick={() => testimonialHandlers.delete(testimonial._id || testimonial.id)} className="delete-btn">
-                Delete
-              </button>
-            </div>
+            )}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 

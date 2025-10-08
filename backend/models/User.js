@@ -32,6 +32,14 @@ const userSchema = new mongoose.Schema({
     type: String, // URL to avatar image
     default: ''
   },
+  // Optional human-friendly user number/identifier that can be chosen or generated
+  userNumber: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+    index: true
+  },
   lastLogin: {
     type: Date
   },
