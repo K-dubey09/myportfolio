@@ -9,6 +9,33 @@ const AdminPanel = () => {
   const [activeSubTab, setActiveSubTab] = useState('contactInfo');
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Mobile menu toggle
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  // Close mobile menu when tab changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [activeTab]);
+
+  // Handle escape key to close mobile menu
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen]);
 
   // Form states for all content types
   const [profileForm, setProfileForm] = useState({
@@ -413,6 +440,7 @@ const AdminPanel = () => {
     },
     delete: async (id) => {
       setShowDeleteConfirm(id);
+      setEditingType(endpoint);
     },
     confirmDelete: async (id) => {
       const success = await handleApiCall(`http://localhost:5000/api/admin/${endpoint}/${id}`, 'DELETE');
@@ -3234,8 +3262,36 @@ const AdminPanel = () => {
 
   return (
     <div className="admin-panel">
+      {/* Mobile Header */}
+      <div className="mobile-header">
+        <button 
+          className="mobile-menu-toggle" 
+          onClick={toggleMobileMenu}
+          aria-label="Toggle navigation menu"
+        >
+          ☰
+        </button>
+        <div className="mobile-title">Portfolio Admin</div>
+        <button onClick={logout} className="mobile-logout-btn" style={{
+          background: 'none',
+          border: 'none',
+          color: 'white',
+          fontSize: '0.875rem',
+          cursor: 'pointer',
+          padding: '0.5rem'
+        }}>
+          Logout
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      <div 
+        className={`mobile-overlay ${isMobileMenuOpen ? 'active' : ''}`} 
+        onClick={closeMobileMenu}
+      ></div>
+
       {/* Left Sidebar Navigation */}
-      <div className="admin-sidebar">
+      <div className={`admin-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <h2>Portfolio Admin</h2>
           <div className="status-indicator online"></div>

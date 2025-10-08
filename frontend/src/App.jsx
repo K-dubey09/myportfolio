@@ -20,7 +20,8 @@ import ServicesPage from './pages/ServicesPage'
 import AchievementsPage from './pages/AchievementsPage'
 import CertificationsPage from './pages/CertificationsPage'
 import StatisticsPage from './pages/StatisticsPage'
-import './App.css'
+import ProfilePage from './pages/ProfilePage'
+import SettingsPage from './pages/SettingsPage'
 import './App.css'
 
 const LoginRoute = () => {
@@ -78,6 +79,38 @@ const AdminRoute = () => {
   }
 
   return <AdminPanel />
+}
+
+const ProfileRoute = () => {
+  const { user, loading } = useAuth()
+  const navigate = useNavigate()
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Login onClose={() => navigate('/')} />
+  }
+
+  // Redirect admin users to admin panel instead of profile page
+  if (user.role === 'admin') {
+    navigate('/admin')
+    return null
+  }
+
+  return <ProfilePage />
 }
 
 function App() {
@@ -150,6 +183,12 @@ function App() {
             <Route path="/statistics" element={
               <ProtectedRoute>
                 <StatisticsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={<ProfileRoute />} />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             } />
           </Routes>

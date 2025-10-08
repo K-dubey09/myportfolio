@@ -125,6 +125,76 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        return { success: true, user: data.user };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error };
+      }
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      if (response.ok) {
+        return { success: true };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error };
+      }
+    } catch (error) {
+      console.error('Password change failed:', error);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/delete-account`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        logout(); // Clear auth state
+        return { success: true };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.error };
+      }
+    } catch (error) {
+      console.error('Account deletion failed:', error);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
   // Clear rate limit function (admin only)
   const clearRateLimit = async (identifier = null) => {
     try {
@@ -183,6 +253,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
+    changePassword,
+    deleteAccount,
     clearRateLimit,
     
     // Permission helpers
