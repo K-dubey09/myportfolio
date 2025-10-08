@@ -84,6 +84,12 @@ const AdminRoute = () => {
 const ProfileRoute = () => {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
+  // Ensure hooks run unconditionally: useEffect declared before any early returns
+  React.useEffect(() => {
+    if (!loading && user && user.role === 'admin') {
+      navigate('/admin')
+    }
+  }, [loading, user, navigate])
 
   if (loading) {
     return (
@@ -105,10 +111,11 @@ const ProfileRoute = () => {
   }
 
   // Redirect admin users to admin panel instead of profile page
-  if (user.role === 'admin') {
-    navigate('/admin')
-    return null
+  if (!user) {
+    return <Login onClose={() => navigate('/')} />
   }
+
+  if (user.role === 'admin') return null
 
   return <ProfilePage />
 }

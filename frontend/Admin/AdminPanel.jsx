@@ -8,6 +8,25 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [activeSubTab, setActiveSubTab] = useState('contactInfo');
   const [isLoading, setIsLoading] = useState(true);
+  const [accessKeys, setAccessKeys] = useState([]);
+  const [conversions, setConversions] = useState([]);
+  const [adminRequests, setAdminRequests] = useState([]);
+  const [genNotes, setGenNotes] = useState('');
+  const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5000';
+
+  // Small helper to call backend and safely parse JSON (avoids trying to parse HTML pages)
+  const apiFetch = useCallback(async (path, options = {}) => {
+    const url = `${API_BASE}${path}`;
+    const res = await fetch(url, options);
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const json = await res.json();
+      return { res, json };
+    }
+    // fallback: return text
+    const text = await res.text();
+    return { res, text };
+  }, [API_BASE]);
   const [message, setMessage] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -20,10 +39,159 @@ const AdminPanel = () => {
     setIsMobileMenuOpen(false);
   };
 
+  // Add/remove a body-level class so we can hide other page-level mobile close buttons
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isMobileMenuOpen) document.body.classList.add('admin-mobile-open');
+      else document.body.classList.remove('admin-mobile-open');
+    }
+    // Broadcast an event so other components (like global Navigation) can react
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('admin-mobile-open', { detail: isMobileMenuOpen }));
+      } catch {
+        // ignore in older browsers
+      }
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') document.body.classList.remove('admin-mobile-open');
+      if (typeof window !== 'undefined') {
+        try {
+          window.dispatchEvent(new CustomEvent('admin-mobile-open', { detail: false }));
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [isMobileMenuOpen]);
+
   // Close mobile menu when tab changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [activeTab]);
+
+  // Load access keys and conversions when admin opens panel or navigates to that tab
+  // NOTE: moved the viewer-editor load effect below where the fetch helpers are declared
+
+  const fetchAccessKeys = useCallback(async () => {
+    try {
+      const { res, json, text } = await apiFetch('/api/admin/access-keys', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('fetchAccessKeys non-ok:', res.status, text || json);
+        return;
+      }
+      if (json && json.success) setAccessKeys(json.data || []);
+    } catch (e) { console.error(e); }
+  }, [token, apiFetch]);
+
+  const fetchAdminRequests = useCallback(async () => {
+    try {
+      const { res, json, text } = await apiFetch('/api/admin/requests', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('fetchAdminRequests non-ok:', res.status, text || json);
+        return;
+      }
+      if (json && json.success) setAdminRequests(json.data || []);
+    } catch (e) { console.error(e); }
+  }, [token, apiFetch]);
+
+  const fetchConversions = useCallback(async () => {
+    try {
+      const { res, json, text } = await apiFetch('/api/admin/conversions', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('fetchConversions non-ok:', res.status, text || json);
+        return;
+      }
+      if (json && json.success) setConversions(json.data || []);
+    } catch (e) { console.error(e); }
+  }, [token, apiFetch]);
+
+  // Load access keys and conversions when admin opens panel or navigates to that tab
+  useEffect(() => {
+    if (activeTab === 'viewer-editor') {
+      fetchAccessKeys();
+      fetchConversions();
+      fetchAdminRequests();
+    }
+  }, [activeTab, fetchAccessKeys, fetchConversions, fetchAdminRequests]);
+
+  const handleGenerateKey = async () => {
+    try {
+      const { res, json, text } = await apiFetch('/api/admin/access-keys', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ notes: genNotes }) });
+      if (!res.ok) {
+        console.error('create key failed:', res.status, text || json);
+        showMessage('Failed to create key', 'error');
+        return;
+      }
+      if (json && json.success) {
+        setAccessKeys(prev => [json.key, ...prev]);
+        setGenNotes('');
+        showMessage('Key generated', 'success');
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteKey = async (id) => {
+    try {
+      const { res, json, text } = await apiFetch(`/api/admin/access-keys/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('delete key failed:', res.status, text || json);
+        showMessage('Failed to delete key', 'error');
+        return;
+      }
+      setAccessKeys(prev => prev.filter(k => k._id !== id));
+    } catch (e) { console.error(e); }
+  };
+
+  const handleCopy = (key) => {
+    try {
+      navigator.clipboard.writeText(key);
+      showMessage('Key copied to clipboard');
+    } catch {
+      showMessage('Copy failed', 'error');
+    }
+  };
+
+  const handleRevertUser = async (userId) => {
+    try {
+      const { res, json, text } = await apiFetch(`/api/admin/revert-user/${userId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('revert user failed:', res.status, text || json);
+        showMessage('Failed to revert user', 'error');
+        return;
+      }
+      showMessage('User reverted to viewer', 'success');
+      fetchConversions();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleApproveRequest = async (requestId) => {
+    try {
+      const { res, json, text } = await apiFetch(`/api/admin/requests/${requestId}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('approve request failed:', res.status, text || json);
+        showMessage('Failed to approve request', 'error');
+        return;
+      }
+      showMessage('Request approved and user promoted', 'success');
+      fetchAdminRequests();
+      fetchConversions();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    try {
+      const { res, json, text } = await apiFetch(`/api/admin/requests/${requestId}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        console.error('reject request failed:', res.status, text || json);
+        showMessage('Failed to reject request', 'error');
+        return;
+      }
+      showMessage('Request rejected', 'success');
+      fetchAdminRequests();
+    } catch (e) { console.error(e); }
+  };
 
   // Handle escape key to close mobile menu
   useEffect(() => {
@@ -243,14 +411,10 @@ const AdminPanel = () => {
   // Fetch portfolio data
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/portfolio/complete', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const { res: response, json, text } = await apiFetch('/api/portfolio/complete', { headers: { 'Authorization': `Bearer ${token}` } });
       
       if (response.ok) {
-        const result = await response.json();
+        const result = json || {};
         const portfolioData = result.data; // Extract data from the response
         setData(portfolioData);
         // Populate profile form with existing data
@@ -284,7 +448,7 @@ const AdminPanel = () => {
           }));
         }
       } else {
-        console.error('Failed to fetch portfolio data');
+        console.error('Failed to fetch portfolio data', response.status, text || json);
         showMessage('Failed to load portfolio data', 'error');
       }
     } catch (error) {
@@ -293,7 +457,7 @@ const AdminPanel = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, apiFetch]);
 
   useEffect(() => {
     if (token) {
@@ -332,8 +496,9 @@ const AdminPanel = () => {
         options.body = JSON.stringify(body);
       }
 
-      const response = await fetch(url, options);
-      const result = await response.json();
+  const fullUrl = url.startsWith('http') ? url.replace('http://localhost:5000', API_BASE) : url.replace(API_BASE, API_BASE);
+  const response = await fetch(fullUrl, options);
+  const result = await response.json();
 
       if (response.ok) {
         showMessage(result.message, 'success');
@@ -359,7 +524,7 @@ const AdminPanel = () => {
     formData.append('category', contentType);
 
     try {
-      const response = await fetch('http://localhost:5000/api/upload', {
+      const { res: response, json } = await apiFetch('/api/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -367,7 +532,7 @@ const AdminPanel = () => {
         body: formData
       });
 
-      const result = await response.json();
+      const result = json || {};
       if (response.ok) {
         return result.fileUrl;
       } else {
@@ -384,7 +549,7 @@ const AdminPanel = () => {
   // Profile handlers
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    await handleApiCall('http://localhost:5000/api/admin/profile', 'PUT', profileForm);
+    await handleApiCall(`${API_BASE}/api/admin/profile`, 'PUT', profileForm);
   };
 
   const handleProfilePictureUpload = async (e) => {
@@ -404,8 +569,8 @@ const AdminPanel = () => {
       setIsSubmitting(true);
       
       const url = editingId 
-        ? `http://localhost:5000/api/admin/${endpoint}/${editingId}`
-        : `http://localhost:5000/api/admin/${endpoint}`;
+        ? `${API_BASE}/api/admin/${endpoint}/${editingId}`
+        : `${API_BASE}/api/admin/${endpoint}`;
       
       const method = editingId ? 'PUT' : 'POST';
       const success = await handleApiCall(url, method, formState);
@@ -443,7 +608,7 @@ const AdminPanel = () => {
       setEditingType(endpoint);
     },
     confirmDelete: async (id) => {
-      const success = await handleApiCall(`http://localhost:5000/api/admin/${endpoint}/${id}`, 'DELETE');
+      const success = await handleApiCall(`${API_BASE}/api/admin/${endpoint}/${id}`, 'DELETE');
       if (success) {
         showMessage('Item deleted successfully!', 'success');
       }
@@ -527,8 +692,8 @@ const AdminPanel = () => {
       // Check if contact info already exists
       const existingContactInfo = data?.contactInfo;
       const url = existingContactInfo 
-        ? `http://localhost:5000/api/admin/contact-info/${existingContactInfo._id}`
-        : `http://localhost:5000/api/admin/contact-info`;
+        ? `${API_BASE}/api/admin/contact-info/${existingContactInfo._id}`
+        : `${API_BASE}/api/admin/contact-info`;
       
       const method = existingContactInfo ? 'PUT' : 'POST';
       const success = await handleApiCall(url, method, contactInfoForm);
@@ -578,7 +743,7 @@ const AdminPanel = () => {
   // Helper function to update contact status
   const updateContactStatus = async (contactId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/contacts/${contactId}`, {
+      const { res: response, json, text } = await apiFetch(`/api/admin/contacts/${contactId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -591,6 +756,7 @@ const AdminPanel = () => {
         showMessage(`Contact marked as ${newStatus}`, 'success');
         fetchData(); // Refresh data
       } else {
+        console.error('updateContactStatus failed', response.status, text || json);
         showMessage('Failed to update contact status', 'error');
       }
     } catch (error) {
@@ -603,17 +769,14 @@ const AdminPanel = () => {
   const refreshContacts = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/contacts', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
+      const { res: response, json, text } = await apiFetch('/api/contacts', { headers: { 'Authorization': `Bearer ${token}` } });
+
       if (response.ok) {
-        const contacts = await response.json();
+        const contacts = (json && json.data) || json || [];
         setData(prev => ({ ...prev, contacts }));
         showMessage('Contacts refreshed successfully', 'success');
       } else {
+        console.error('refreshContacts failed', response.status, text || json);
         showMessage('Failed to refresh contacts', 'error');
       }
     } catch (error) {
@@ -2423,6 +2586,131 @@ const AdminPanel = () => {
     </div>
   );
 
+  // Render Viewer -> Editor management
+  const renderViewerEditorTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>Viewer → Editor Keys</h2>
+        <p>Create one-time use secret keys that convert a viewer into an editor.</p>
+      </div>
+
+      <div className="admin-form">
+        <div className="form-row">
+          <div className="form-group" style={{flex: 1}}>
+            <label>Notes for key (optional)</label>
+            <input value={genNotes} onChange={(e) => setGenNotes(e.target.value)} className="form-input" placeholder="Purpose or user hint" />
+          </div>
+          <div className="form-group" style={{width: '220px', alignSelf: 'end'}}>
+            <button type="button" onClick={handleGenerateKey} className="submit-btn" style={{width: '100%'}}>Generate Key</button>
+          </div>
+        </div>
+      </div>
+
+      <h3 style={{marginTop: '1.5rem'}}>Active Keys</h3>
+      <div style={{overflowX: 'auto'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Notes</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accessKeys.length === 0 && (
+              <tr><td colSpan={4} style={{textAlign: 'center', padding: '12px'}}>No active keys</td></tr>
+            )}
+            {accessKeys.map(k => (
+              <tr key={k._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                <td style={{padding: '8px', fontFamily: 'monospace'}}>{k.key}</td>
+                <td style={{padding: '8px'}}>{k.notes}</td>
+                <td style={{padding: '8px'}}>{new Date(k.createdAt).toLocaleString()}</td>
+                <td style={{padding: '8px'}}>
+                  <button onClick={() => handleCopy(k.key)} className="submit-btn" style={{marginRight: '8px'}}>Copy</button>
+                  <button onClick={() => handleDeleteKey(k._id)} className="cancel-btn">Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style={{marginTop: '1.5rem'}}>Conversion History</h3>
+      <div style={{overflowX: 'auto'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Key</th>
+              <th>When</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {conversions.length === 0 && (
+              <tr><td colSpan={7} style={{textAlign: 'center', padding: '12px'}}>No conversions yet</td></tr>
+            )}
+            {conversions.map(c => (
+              <tr key={c._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                <td style={{padding: '8px'}}>{c.user?.name || '—'}</td>
+                <td style={{padding: '8px'}}>{c.user?.email || '—'}</td>
+                <td style={{padding: '8px'}}>{c.fromRole}</td>
+                <td style={{padding: '8px'}}>{c.toRole}</td>
+                <td style={{padding: '8px', fontFamily: 'monospace'}}>{c.keyUsed}</td>
+                <td style={{padding: '8px'}}>{new Date(c.usedAt).toLocaleString()}</td>
+                <td style={{padding: '8px'}}>
+                  <button onClick={() => handleRevertUser(c.user?._id)} className="cancel-btn">Revert to Viewer</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style={{marginTop: '1.5rem'}}>Admin Requests</h3>
+      <div style={{overflowX: 'auto'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Message</th>
+              <th>Status</th>
+              <th>Requested At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {adminRequests.length === 0 && (
+              <tr><td colSpan={6} style={{textAlign: 'center', padding: '12px'}}>No admin requests</td></tr>
+            )}
+            {adminRequests.map(r => (
+              <tr key={r._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                <td style={{padding: '8px'}}>{r.user?.name || '—'}</td>
+                <td style={{padding: '8px'}}>{r.user?.email || '—'}</td>
+                <td style={{padding: '8px'}}>{r.message || '—'}</td>
+                <td style={{padding: '8px'}}>{r.status}</td>
+                <td style={{padding: '8px'}}>{new Date(r.createdAt).toLocaleString()}</td>
+                <td style={{padding: '8px'}}>
+                  {r.status === 'pending' && (
+                    <>
+                      <button onClick={() => handleApproveRequest(r._id)} className="submit-btn" style={{marginRight: '8px'}}>Approve</button>
+                      <button onClick={() => handleRejectRequest(r._id)} className="cancel-btn">Reject</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   // Render Testimonials Tab
   const renderTestimonialsTab = () => (
     <div className="tab-content">
@@ -3287,7 +3575,7 @@ const AdminPanel = () => {
           <>
             <div className="mobile-title">Navigation</div>
             <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-              <button className="mobile-close-btn" onClick={closeMobileMenu} aria-label="Close navigation">
+              <button className="mobile-close-btn admin-mobile-close" onClick={closeMobileMenu} aria-label="Close navigation">
                 <svg className="close-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                   <path d="M6 6 L18 18 M6 18 L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </svg>
@@ -3309,11 +3597,7 @@ const AdminPanel = () => {
           <h2>Portfolio Admin</h2>
           <div className="status-indicator online"></div>
           <span className="status-text">Connected</span>
-          <button className="sidebar-close-btn" onClick={closeMobileMenu} aria-label="Close menu">
-            <svg className="close-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-              <path d="M6 6 L18 18 M6 18 L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
-          </button>
+          {/* left/floating sidebar close button removed to avoid duplicate close icon when navbar opens */}
           <div className="sidebar-actions">
             <button onClick={() => window.location.href = '/'} className="home-btn">
               Home
@@ -3388,6 +3672,12 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('services')}
             >
               <span>🛠️</span> Services
+            </button>
+            <button
+              className={activeTab === 'viewer-editor' ? 'nav-item active' : 'nav-item'}
+              onClick={() => setActiveTab('viewer-editor')}
+            >
+              <span>🔐</span> Viewer → Editor
             </button>
             <button 
               className={activeTab === 'testimonials' ? 'nav-item active' : 'nav-item'} 
@@ -3465,6 +3755,7 @@ const AdminPanel = () => {
           {activeTab === 'vlogs' && renderVlogsTab()}
           {activeTab === 'gallery' && renderGalleryTab()}
           {activeTab === 'services' && renderServicesTab()}
+          {activeTab === 'viewer-editor' && renderViewerEditorTab()}
           {activeTab === 'testimonials' && renderTestimonialsTab()}
           {activeTab === 'contacts' && renderContactsTab()}
         </div>

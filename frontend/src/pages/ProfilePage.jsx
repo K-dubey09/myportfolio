@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Camera, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, token, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -21,6 +22,10 @@ const ProfilePage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5000';
+  // removed unused becomingEditor state
+  const [secretKey, setSecretKey] = useState('');
+  const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -73,10 +78,10 @@ const ProfilePage = () => {
         const imageFormData = new FormData();
         imageFormData.append('profilePicture', profileImage);
         
-        const imageResponse = await fetch('/api/auth/upload-profile-image', {
+        const imageResponse = await fetch(`${API_BASE}/api/auth/upload-profile-image`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: imageFormData
         });
@@ -88,7 +93,7 @@ const ProfilePage = () => {
       }
 
       // Update profile information
-      const result = await updateProfile(updateData);
+  const result = await updateProfile(updateData);
       
       if (result.success) {
         setMessage('Profile updated successfully!');
@@ -102,6 +107,83 @@ const ProfilePage = () => {
       setMessage('An error occurred while updating profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Normalize various API response bodies into a user-friendly string
+  const formatMessage = (body) => {
+    if (!body && body !== '') return '';
+    if (typeof body === 'string') return body;
+    if (typeof body === 'boolean') return body ? 'Success' : 'Error';
+    if (typeof body === 'number') return String(body);
+    // objects: try common fields
+    if (body && typeof body === 'object') {
+      if (body.message) return String(body.message);
+      if (body.error) return String(body.error);
+      if (body.data && typeof body.data === 'string') return body.data;
+      try {
+        return JSON.stringify(body);
+      } catch {
+        return String(body);
+      }
+    }
+    return String(body);
+  };
+
+  // Request admin approval
+  const handleRequestAdmin = async () => {
+    setRequesting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/request-admin`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Requesting editor access' }) });
+      const ct = res.headers.get('content-type') || '';
+      let body;
+      if (ct.includes('application/json')) body = await res.json();
+      else body = await res.text();
+
+      if (res.ok) {
+        // prefer body.message or body.data
+        setMessage(formatMessage((body && (body.message || body.data || body.success)) || 'Request sent to admin'));
+      } else {
+        const errText = (body && (body.error || body.message)) || String(body) || `Status ${res.status}`;
+        // If token is invalid/expired, force logout and notify user
+        if (res.status === 401 || /invalid token|jwt malformed|token expired/i.test(errText)) {
+          setMessage('Session expired or invalid token. Please log in again.');
+          logout();
+        } else {
+          setMessage(formatMessage(errText.includes('Route not found') ? 'Server: Route not found. Try restarting backend.' : errText));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage('Network error');
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  // Use secret key to become editor
+  const handleUseKey = async () => {
+    if (!secretKey) return setMessage('Please enter a secret key');
+    try {
+      const res = await fetch(`${API_BASE}/api/access-keys/use`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ key: secretKey }) });
+      const ct = res.headers.get('content-type') || '';
+      const body = ct.includes('application/json') ? await res.json() : await res.text();
+      if (res.ok) {
+        setMessage(formatMessage((body && (body.message || 'You are now an editor')) || 'You are now an editor'));
+        // refresh user/auth state more gracefully later; for now reload to pick up new role
+        window.location.reload();
+      } else {
+        const errText = (body && (body.error || body.message)) || String(body) || `Status ${res.status}`;
+        if (res.status === 401 || /invalid token|jwt malformed|token expired/i.test(errText)) {
+          setMessage('Session expired or invalid token. Please log in again.');
+          logout();
+        } else {
+          setMessage(formatMessage(errText.includes('Route not found') ? 'Server: Route not found. Try restarting backend.' : errText));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage('Network error');
     }
   };
 
@@ -147,11 +229,11 @@ const ProfilePage = () => {
 
         {message && (
           <motion.div 
-            className={`message ${message.includes('success') ? 'success' : 'error'}`}
+            className={`message ${typeof message === 'string' && message.toLowerCase().includes('success') ? 'success' : 'error'}`}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {message}
+            {typeof message === 'string' ? message : JSON.stringify(message)}
             <button onClick={() => setMessage('')} className="close-message">×</button>
           </motion.div>
         )}
@@ -193,6 +275,22 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
+
+          {user.role === 'viewer' && (
+            <div className="be-editor-panel" style={{ marginTop: '1rem' }}>
+              <h3 style={{ marginBottom: '0.5rem' }}>Become an Editor</h3>
+              <p style={{ marginTop: 0, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Choose one of the options below to gain editor access.</p>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button className="edit-btn" onClick={handleRequestAdmin} disabled={requesting}>
+                  Request Admin Approval
+                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input type="text" placeholder="Enter secret key" value={secretKey} onChange={(e) => setSecretKey(e.target.value)} style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }} />
+                  <button className="save-btn" onClick={handleUseKey}>Use Secret Key</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="profile-main">
             <div className="profile-form">

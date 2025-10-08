@@ -2505,4 +2505,4 @@
 
 /* Utility: clamp long labels */
 .clamp-1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden; }

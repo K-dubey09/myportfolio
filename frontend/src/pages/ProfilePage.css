@@ -170,6 +170,23 @@
   padding: 2rem;
 }
 
+.be-editor-panel {
+  background: linear-gradient(180deg, rgba(var(--primary-rgb),0.04), transparent);
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.be-editor-panel h3 {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.be-editor-panel input[type="text"] {
+  background: var(--background-primary);
+  color: var(--text-primary);
+}
+
 .form-header {
   display: flex;
   justify-content: space-between;
@@ -545,5 +562,67 @@
 
   .profile-content {
     grid-template-columns: 260px 1fr;
+  }
+}
+
+/* Additional responsive improvements */
+/* Make image container keep a square aspect ratio and scale nicely */
+.profile-image-container {
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 1 / 1;
+  height: auto;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* On larger screens keep the sidebar visible while scrolling */
+@media (min-width: 769px) {
+  .profile-sidebar {
+    position: sticky;
+    top: 2rem;
+    align-self: start;
+  }
+}
+
+/* Stack action buttons and make them full width on small screens */
+@media (max-width: 768px) {
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .form-actions .edit-btn,
+  .form-actions .save-btn,
+  .form-actions .cancel-btn,
+  .edit-actions .save-btn,
+  .edit-actions .cancel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-image-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Small adjustments for very narrow screens */
+@media (max-width: 380px) {
+  .profile-content {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+
+  .profile-image-container {
+    max-width: 110px;
   }
 }

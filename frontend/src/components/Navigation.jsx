@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, User, Briefcase, BookOpen, MessageSquare, Star, LogIn, Settings,
@@ -17,11 +18,16 @@ const Navigation = () => {
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [suppressMobileControls, setSuppressMobileControls] = useState(false);
   const dropdownRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
   const themeTimeoutRef = useRef(null);
 
   useEffect(() => {
+    // copy refs to locals so cleanup uses stable values (avoids linter warning)
+    const dtRef = dropdownTimeoutRef;
+    const ttRef = themeTimeoutRef;
+
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
@@ -32,8 +38,10 @@ const Navigation = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      clearTimeout(dropdownTimeoutRef.current);
-      clearTimeout(themeTimeoutRef.current);
+      const dt = dtRef.current;
+      const tt = ttRef.current;
+      if (dt) clearTimeout(dt);
+      if (tt) clearTimeout(tt);
     };
   }, []);
 
@@ -68,6 +76,20 @@ const Navigation = () => {
       document.body.style.overflow = 'auto';
     };
   }, [isMobileMenuOpen]);
+
+  // Listen for admin mobile menu open events so we can suppress our own mobile controls
+  useEffect(() => {
+    const onAdminMobile = (e) => {
+      try {
+        setSuppressMobileControls(Boolean(e?.detail));
+      } catch {
+        setSuppressMobileControls(false);
+      }
+    };
+
+    window.addEventListener('admin-mobile-open', onAdminMobile);
+    return () => window.removeEventListener('admin-mobile-open', onAdminMobile);
+  }, []);
 
   const themeLabels = {
     light: '☀️ Light',
@@ -179,7 +201,7 @@ const Navigation = () => {
 
   return (
     <>
-      <motion.nav className="main-navigation" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+  <motion.nav className="main-navigation" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <div className="nav-container">
           <motion.div className="nav-brand" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <a href="/" className="brand-link">
@@ -189,15 +211,17 @@ const Navigation = () => {
           </motion.div>
 
           {/* Mobile Menu Toggle */}
-          <motion.button
-            className="mobile-menu-toggle"
-            onClick={toggleMobileMenu}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            aria-label="Toggle mobile menu"
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </motion.button>
+          {!suppressMobileControls && (
+            <motion.button
+              className="mobile-menu-toggle"
+              onClick={toggleMobileMenu}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </motion.button>
+          )}
 
           {/* Desktop Navigation */}
           <div className="nav-links desktop-nav">
@@ -287,9 +311,11 @@ const Navigation = () => {
               >
                 <div className="mobile-nav-header">
                   <h3>Navigation</h3>
-                  <button onClick={toggleMobileMenu} className="mobile-close-btn">
-                    <X size={24} />
-                  </button>
+                  {!suppressMobileControls && (
+                    <button onClick={toggleMobileMenu} className="mobile-close-btn">
+                      <X size={24} />
+                    </button>
+                  )}
                 </div>
 
                 <div className="mobile-nav-links">

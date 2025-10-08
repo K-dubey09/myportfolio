@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { 
   Settings as SettingsIcon, 
@@ -22,8 +23,8 @@ import { useTheme } from '../context/ThemeContext';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
-  const { user, changePassword, deleteAccount } = useAuth();
-  const { theme, setSpecificTheme, isAnimated, toggleAnimations, themes } = useTheme();
+  const { changePassword, deleteAccount } = useAuth();
+  const { theme, setSpecificTheme, isAnimated, toggleAnimations } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,6 +84,7 @@ const SettingsPage = () => {
         showMessage(result.error || 'Failed to change password', 'error');
       }
     } catch (error) {
+      console.error('Password change error:', error);
       showMessage('An error occurred while changing password', 'error');
     } finally {
       setLoading(false);
@@ -118,8 +120,8 @@ const SettingsPage = () => {
             showMessage(result.error || 'Failed to delete account', 'error');
           }
         } catch (error) {
-          console.error('Account deletion error:', error);
-          showMessage('Failed to delete account', 'error');
+            console.error('Account deletion error:', error);
+            showMessage('Failed to delete account', 'error');
         } finally {
           setLoading(false);
         }
@@ -144,7 +146,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <motion.div 
+  <motion.div 
       className="settings-page"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -167,7 +169,7 @@ const SettingsPage = () => {
           </motion.div>
         )}
 
-        <div className="settings-content">
+    <div className="settings-content">
           <div className="settings-sidebar">
             <nav className="settings-nav">
               {tabs.map((tab) => (

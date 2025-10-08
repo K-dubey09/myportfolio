@@ -60,21 +60,10 @@
 
 /* When the sidebar is open (mobile-open) always show a high-contrast close button */
 .admin-sidebar.mobile-open .sidebar-close-btn {
-  display: block;
-  /* make it fixed so it isn't clipped by overflow or container stacking */
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  z-index: 9999; /* very high to ensure visibility */
-  background: #ffffff; /* white circle for contrast */
-  color: #1a202c; /* dark X */
-  padding: 8px 10px;
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.28);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Hide the floating/overlay close button when the sidebar is open.
+     The intended close control is the in-panel navbar close (.mobile-close-btn)
+     so keep that visible and avoid duplicate X buttons. */
+  display: none;
 }
 
 .admin-sidebar.mobile-open .sidebar-close-btn:hover {
@@ -1453,6 +1442,33 @@
     width: 20px;
     height: 20px;
   }
+
+/* When the admin mobile nav is open, hide other components' mobile-close-btns to avoid duplicates.
+   The admin close button keeps the extra class `.admin-mobile-close` so it remains visible. */
+body.admin-mobile-open .mobile-close-btn {
+  display: none !important;
+}
+
+body.admin-mobile-open .mobile-close-btn.admin-mobile-close {
+  display: inline-flex !important;
+}
+/* Also hide the site's global mobile menu toggle (the left-side X/Menu button)
+   while the admin mobile navigation is open to prevent duplicate close icons. */
+body.admin-mobile-open .mobile-menu-toggle {
+  display: none !important;
+}
+/* Mobile-scoped stronger selectors to cover navigation-specific close/toggle buttons */
+@media (max-width: 768px) {
+  body.admin-mobile-open .main-navigation .mobile-menu-toggle,
+  body.admin-mobile-open .main-navigation .mobile-close-btn,
+  body.admin-mobile-open .mobile-nav-overlay .mobile-close-btn,
+  body.admin-mobile-open .main-navigation .mobile-menu-toggle > * {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
   
   /* Mobile Overlay */
   .mobile-overlay {
@@ -1980,6 +1996,38 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Table styles for admin lists */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.admin-table th, .admin-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.8rem;
 }
 
 .status-badge.unread {

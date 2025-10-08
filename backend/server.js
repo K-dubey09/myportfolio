@@ -9,6 +9,8 @@ import { ProfileController } from './controllers/profileController.js';
 import createCRUDController from './controllers/crudController.js';
 import { AuthController } from './controllers/authController.js';
 import { UserController } from './controllers/userController.js';
+import AccessKeyController from './controllers/accessKeyController.js';
+import AdminRequestController from './controllers/adminRequestController.js';
 import { FileController } from './controllers/fileController.js';
 import imageRoutes from './routes/imageRoutes.js';
 import portfolioRoutes from './routes/portfolioRoutes.js';
@@ -232,6 +234,26 @@ app.delete('/api/admin/profile/reset', authenticateToken, requirePermission('can
 // ==================== SKILLS ROUTES ====================
 app.get('/api/skills', skillController.getAll);
 app.get('/api/admin/skills', authenticateToken, skillController.getAll);
+
+// ==================== ACCESS KEYS (Admin) ====================
+app.post('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeyController.createKey);
+app.get('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeyController.listKeys);
+app.delete('/api/admin/access-keys/:id', authenticateToken, requireAdmin, AccessKeyController.deleteKey);
+
+// Public endpoint for using a key (authenticated user)
+app.post('/api/access-keys/use', authenticateToken, AccessKeyController.useKey);
+
+// Request admin approval (viewer -> request admin) (authenticated)
+app.post('/api/request-admin', authenticateToken, AdminRequestController.createRequest);
+
+// Admin: list and approve requests
+app.get('/api/admin/requests', authenticateToken, requireAdmin, AdminRequestController.listRequests);
+app.post('/api/admin/requests/:id/approve', authenticateToken, requireAdmin, AdminRequestController.approveRequest);
+app.post('/api/admin/requests/:id/reject', authenticateToken, requireAdmin, AdminRequestController.rejectRequest);
+
+// Admin: list conversions & revert
+app.get('/api/admin/conversions', authenticateToken, requireAdmin, AccessKeyController.listConversions);
+app.post('/api/admin/revert-user/:id', authenticateToken, requireAdmin, AccessKeyController.revertUser);
 app.get('/api/admin/skills/:id', authenticateToken, skillController.getById);
 app.post('/api/admin/skills', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_SKILL'), skillController.create);
 app.put('/api/admin/skills/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_SKILL'), skillController.update);
