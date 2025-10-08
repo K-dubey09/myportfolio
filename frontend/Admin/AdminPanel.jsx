@@ -3382,7 +3382,7 @@ const AdminPanel = () => {
           <option value="all">All Roles</option>
           <option value="viewer">viewer</option>
           <option value="editor">editor</option>
-          <option value="admin">admin</option>
+          {/* 'admin' and 'root admin' are intentionally omitted from the filter/options to avoid exposing them in the UI */}
         </select>
         <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-input" style={{width: '160px'}}>
           <option value="newest">Newest</option>
@@ -3406,7 +3406,13 @@ const AdminPanel = () => {
           <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>No users found.</div>
         ) : (
           (() => {
-            const { paged, total, totalPages, currentPage } = applyUsersPipeline(usersList);
+            // Filter out protected roles so they are not shown in the users list
+            const protectedRoles = ['admin', 'root admin'];
+            const filteredUsersList = Array.isArray(usersList)
+              ? usersList.filter(u => !protectedRoles.includes((u.role || '').toLowerCase()))
+              : [];
+
+            const { paged, total, totalPages, currentPage } = applyUsersPipeline(filteredUsersList);
             if (total === 0) return <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>No users match filters.</div>;
 
             return (
@@ -3414,6 +3420,7 @@ const AdminPanel = () => {
                 {paged.map((user) => {
                   const uid = user._id || user.id;
                   const localRole = editedRoles[uid] !== undefined ? editedRoles[uid] : (user.role || 'viewer');
+                  const isProtected = ['admin', 'root admin'].includes((user.role || '').toLowerCase());
                   return (
                     <div key={uid} className="item-card user-card">
                       <div className="item-info">
@@ -3424,14 +3431,19 @@ const AdminPanel = () => {
                         <p style={{fontSize: '11px', color: '#999'}}>Created: {new Date(user.createdAt || Date.now()).toLocaleString()}</p>
                       </div>
                       <div className="item-actions" style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                        <select value={localRole} onChange={(e) => handleLocalRoleChange(uid, e.target.value)} className="form-input" style={{width: '140px'}}>
-                          <option value="viewer">viewer</option>
-                          <option value="editor">editor</option>
-                          <option value="admin">admin</option>
-                        </select>
-                        <button onClick={() => saveUserRole(uid)} className="submit-btn" disabled={isSubmitting || !(editedRoles[uid])}>Save</button>
-                        <button onClick={() => setShowDeleteConfirm(uid)} className="delete-btn">Delete</button>
-                        <button onClick={() => assignUserId(uid)} className="submit-btn" title="Assign/Generate a userId">Assign ID</button>
+                        {/* If a user is protected (admin/root admin) show the role as text and disable actions */}
+                        {isProtected ? (
+                          <div style={{padding: '8px 12px', borderRadius: '6px', background: '#f5f5f5', color: '#333', fontSize: '13px'}}>{user.role}</div>
+                        ) : (
+                          <select value={localRole} onChange={(e) => handleLocalRoleChange(uid, e.target.value)} className="form-input" style={{width: '140px'}}>
+                            <option value="viewer">viewer</option>
+                            <option value="editor">editor</option>
+                          </select>
+                        )}
+
+                        <button onClick={() => saveUserRole(uid)} className="submit-btn" disabled={isSubmitting || !(editedRoles[uid]) || isProtected}>Save</button>
+                        <button onClick={() => { if (!isProtected) setShowDeleteConfirm(uid); }} className="delete-btn" disabled={isProtected}>Delete</button>
+                        <button onClick={() => assignUserId(uid)} className="submit-btn" title="Assign/Generate a userId" disabled={isProtected}>Assign ID</button>
                       </div>
                     </div>
                   );

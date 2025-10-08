@@ -46,6 +46,12 @@ export const UserController = {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      // Protect admin/root admin accounts from being modified through this endpoint
+      const protectedRoles = ['admin', 'root admin'];
+      if (protectedRoles.includes((user.role || '').toLowerCase())) {
+        return res.status(403).json({ error: 'Action not allowed on admin/root admin users' });
+      }
+
       // Prevent admin from changing their own role
       if (user._id.toString() === req.user.userId && role && role !== 'admin') {
         return res.status(400).json({ error: 'Cannot change your own admin role' });
@@ -80,10 +86,16 @@ export const UserController = {
         return res.status(400).json({ error: 'Cannot delete your own account' });
       }
 
-      const user = await User.findByIdAndDelete(id);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+      const user = await User.findById(id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      // Protect admin/root admin accounts from deletion
+      const protectedRoles = ['admin', 'root admin'];
+      if (protectedRoles.includes((user.role || '').toLowerCase())) {
+        return res.status(403).json({ error: 'Action not allowed on admin/root admin users' });
       }
+
+      await User.findByIdAndDelete(id);
 
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
@@ -133,6 +145,12 @@ export const UserController = {
 
       const user = await User.findById(id);
       if (!user) return res.status(404).json({ error: 'User not found' });
+
+      // Do not allow assigning/altering userNumber for protected roles
+      const protectedRoles = ['admin', 'root admin'];
+      if (protectedRoles.includes((user.role || '').toLowerCase())) {
+        return res.status(403).json({ error: 'Action not allowed on admin/root admin users' });
+      }
 
       // If a userNumber was provided, validate it (alphanumeric, 4-32 chars)
       if (userNumber) {
