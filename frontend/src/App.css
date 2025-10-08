@@ -2064,6 +2064,73 @@ body {
   margin-bottom: 3rem;
 }
 
+/* Testimonials Section Styles */
+.testimonials-section {
+  background: var(--bg-secondary);
+}
+
+.testimonials-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.testimonial-card {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+}
+
+.testimonial-body {
+  margin-bottom: 1rem;
+}
+
+.testimonial-text {
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.testimonial-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.testimonial-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.testimonial-author strong {
+  display: block;
+  font-weight: 700;
+}
+
+.testimonial-role {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.view-all-link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.view-all-link:hover {
+  text-decoration: underline;
+}
+
 .section-title {
   font-size: 2.5rem;
   font-weight: 700;

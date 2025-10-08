@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Trophy, Star, Search, Calendar, Target } from 'lucide-react';
 import './PagesStyles.css';
@@ -11,23 +11,26 @@ const AchievementsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
 
-  const fetchAchievements = async () => {
+  const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5000';
+
+  const fetchAchievements = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/achievements', {
+      const response = await fetch(`${API_BASE}/api/achievements`, {
         headers: user ? { Authorization: `Bearer ${user.token}` } : {}
       });
-      const data = await response.json();
-      setAchievements(data.achievements || []);
+      const json = await response.json();
+      if (Array.isArray(json)) setAchievements(json);
+      else setAchievements(json.achievements || json.data || []);
     } catch (error) {
       console.error('Error fetching achievements:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE, user]);
 
   useEffect(() => {
     fetchAchievements();
-  }, []);
+  }, [fetchAchievements]);
 
   const filteredAchievements = achievements.filter(achievement => {
     const matchesSearch = achievement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,7 +108,7 @@ const AchievementsPage = () => {
       ) : (
         <>
           <div className="achievements-grid">
-            {filteredAchievements.map((achievement, index) => (
+            {filteredAchievements.map((achievement) => (
               <div key={achievement._id} className="achievement-card">
                 <div className="achievement-icon">
                   {achievement.icon || '🏆'}

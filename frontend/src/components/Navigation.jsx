@@ -155,6 +155,7 @@ const Navigation = () => {
     { name: 'Experience', target: 'experience', icon: Briefcase },
     { name: 'Education', target: 'education', icon: GraduationCap },
     { name: 'Blogs', target: 'blogs', icon: BookOpen },
+    { name: 'Testimonials', target: 'testimonials', icon: Star },
     { name: 'Contact', target: 'contact', icon: MessageSquare },
   ];
 
@@ -225,7 +226,9 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="nav-links desktop-nav">
-            {mainNavLinks.map((item, index) => (
+            {mainNavLinks
+              .filter(item => !(item.target === 'testimonials' && user && user.role === 'admin'))
+              .map((item, index) => (
               <motion.button
                 key={item.target}
                 onClick={() => handleSectionClick(item.target)}
@@ -240,6 +243,22 @@ const Navigation = () => {
                 <span>{item.name}</span>
               </motion.button>
             ))}
+
+            {/* Explicit Testimonials button to ensure visibility in the header (hide for admin) */}
+            {!(user && user.role === 'admin') && (
+              <motion.button
+                onClick={() => handleSectionClick('testimonials')}
+                className="nav-link nav-btn"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.35 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Star size={18} />
+                <span>Testimonials</span>
+              </motion.button>
+            )}
 
             {user && (
               <>
@@ -333,6 +352,21 @@ const Navigation = () => {
                       <span>{item.name}</span>
                     </motion.button>
                   ))}
+
+                  {/* Explicit Testimonials mobile button (hide for admin) */}
+                  {!(user && user.role === 'admin') && (
+                    <motion.button
+                      onClick={() => handleSectionClick('testimonials')}
+                      className="mobile-nav-link"
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: mainNavLinks.length * 0.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Star size={20} />
+                      <span>Testimonials</span>
+                    </motion.button>
+                  )}
 
                   {user && (
                     <>

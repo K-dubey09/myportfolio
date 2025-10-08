@@ -11,8 +11,17 @@ const AdminPanel = () => {
   const [accessKeys, setAccessKeys] = useState([]);
   const [conversions, setConversions] = useState([]);
   const [adminRequests, setAdminRequests] = useState([]);
+  const [viewerEditorSubTab, setViewerEditorSubTab] = useState('manage-keys');
+  const [veAnimate, setVeAnimate] = useState(false);
   const [genNotes, setGenNotes] = useState('');
   const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5000';
+  const [usersList, setUsersList] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest'); // newest, oldest, name-asc, name-desc
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [editedRoles, setEditedRoles] = useState({}); // { userId: newRole }
 
   // Small helper to call backend and safely parse JSON (avoids trying to parse HTML pages)
   const apiFetch = useCallback(async (path, options = {}) => {
@@ -107,6 +116,119 @@ const AdminPanel = () => {
     } catch (e) { console.error(e); }
   }, [token, apiFetch]);
 
+  // Fetch users (admin)
+  const fetchUsers = useCallback(async () => {
+    try {
+      setUsersLoading(true);
+      const { res, json, text } = await apiFetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res || !res.ok) {
+        console.error('fetchUsers failed', res && res.status, text || json);
+        setUsersList([]);
+        return;
+      }
+      if (Array.isArray(json)) setUsersList(json);
+      else setUsersList(json.data || json.users || []);
+    } catch (e) { console.error('fetchUsers error', e); setUsersList([]); }
+    finally { setUsersLoading(false); }
+  }, [token, apiFetch]);
+
+  // Helper: apply filter, sort and pagination locally
+  const applyUsersPipeline = (list) => {
+    if (!Array.isArray(list)) return [];
+
+    let out = [...list];
+
+    // Role filter
+    if (roleFilter && roleFilter !== 'all') {
+      out = out.filter(u => (u.role || '').toLowerCase() === roleFilter.toLowerCase());
+    }
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      out = out.filter(u => (u.name || '').toLowerCase().includes(term) || (u.email || '').toLowerCase().includes(term));
+    }
+
+    // Sort
+    if (sortBy === 'newest') {
+      out.sort((a,b) => new Date(b.createdAt || b.createdAt) - new Date(a.createdAt || a.createdAt));
+    } else if (sortBy === 'oldest') {
+      out.sort((a,b) => new Date(a.createdAt || a.createdAt) - new Date(b.createdAt || b.createdAt));
+    } else if (sortBy === 'name-asc') {
+      out.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sortBy === 'name-desc') {
+      out.sort((a,b) => (b.name || '').localeCompare(a.name || ''));
+    }
+
+    // Pagination
+    const total = out.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const currentPage = Math.min(Math.max(1, page), totalPages);
+    const start = (currentPage - 1) * pageSize;
+    const paged = out.slice(start, start + pageSize);
+
+    return { paged, total, totalPages, currentPage };
+  };
+
+  const handleLocalRoleChange = (userId, newRole) => {
+    setEditedRoles(prev => ({ ...prev, [userId]: newRole }));
+  };
+
+  const saveUserRole = async (userId) => {
+    const newRole = editedRoles[userId];
+    if (!newRole) return showMessage('No role change to save', 'error');
+    const ok = await changeUserRole(userId, newRole);
+    if (ok) {
+      setEditedRoles(prev => { const p = { ...prev }; delete p[userId]; return p; });
+    }
+  };
+
+  // Assign a generated userid (if backend supports) or use existing _id as fallback
+  const assignUserId = async (userId) => {
+    try {
+      setIsSubmitting(true);
+      // Ask backend to assign a userId (endpoint should handle generation). If not supported, fallback to using _id
+      const { res, json, text } = await apiFetch(`/api/admin/users/${userId}/assign-id`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res || !res.ok) {
+        console.error('assignUserId failed', res && res.status, text || json);
+        showMessage('Failed to assign userid', 'error');
+        return false;
+      }
+      showMessage('UserID assigned', 'success');
+      await fetchUsers();
+      return true;
+    } catch (e) {
+      console.error('assignUserId error', e);
+      showMessage('Error assigning userid', 'error');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setPage(1);
+  };
+
+  // Helper to fetch achievements (used by admin tab)
+  const fetchAchievements = useCallback(async () => {
+    try {
+      const result = await apiFetch('/api/achievements', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = result.res;
+      if (res && res.ok && result.json) {
+        const payload = result.json;
+        if (Array.isArray(payload)) setAchievementsList(payload);
+        else if (payload.achievements) setAchievementsList(payload.achievements);
+        else setAchievementsList(payload.data || []);
+      }
+    } catch (e) { console.error('fetchAchievements error', e); }
+  }, [token, apiFetch]);
+
   // Load access keys and conversions when admin opens panel or navigates to that tab
   useEffect(() => {
     if (activeTab === 'viewer-editor') {
@@ -114,7 +236,13 @@ const AdminPanel = () => {
       fetchConversions();
       fetchAdminRequests();
     }
-  }, [activeTab, fetchAccessKeys, fetchConversions, fetchAdminRequests]);
+    if (activeTab === 'achievements') {
+      fetchAchievements();
+    }
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab, fetchAccessKeys, fetchConversions, fetchAdminRequests, fetchAchievements, fetchUsers]);
 
   const handleGenerateKey = async () => {
     try {
@@ -204,6 +332,13 @@ const AdminPanel = () => {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMobileMenuOpen]);
+
+  // Trigger a small entrance animation for viewer->editor subnav buttons on mount
+  useEffect(() => {
+    // slight delay so CSS can pick up and animate
+    const t = setTimeout(() => setVeAnimate(true), 40);
+    return () => clearTimeout(t);
+  }, []);
 
   // Form states for all content types
   const [profileForm, setProfileForm] = useState({
@@ -324,6 +459,21 @@ const AdminPanel = () => {
     featured: false,
     imageUrl: ''
   });
+
+  // Achievements form state
+  const [achievementForm, setAchievementForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    date: '',
+    organization: '',
+    number: '',
+    unit: '',
+    verificationUrl: ''
+  });
+
+  const [achievementsList, setAchievementsList] = useState([]);
+  const [achievementEditingId, setAchievementEditingId] = useState(null);
 
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -2590,124 +2740,137 @@ const AdminPanel = () => {
   const renderViewerEditorTab = () => (
     <div className="tab-content">
       <div className="tab-header">
-        <h2>Viewer → Editor Keys</h2>
-        <p>Create one-time use secret keys that convert a viewer into an editor.</p>
+        <h2>Viewer → Editor</h2>
+        <p>Manage one-time secret keys and handle user requests to gain editor access.</p>
       </div>
 
-      <div className="admin-form">
-        <div className="form-row">
-          <div className="form-group" style={{flex: 1}}>
-            <label>Notes for key (optional)</label>
-            <input value={genNotes} onChange={(e) => setGenNotes(e.target.value)} className="form-input" placeholder="Purpose or user hint" />
+      <div className="ve-subnav" style={{display: 'flex', gap: '8px', marginBottom: '12px'}}>
+  <button className={(viewerEditorSubTab === 'manage-keys' ? 'nav-subitem active' : 'nav-subitem') + (veAnimate ? ' animate-in' : '')} onClick={() => setViewerEditorSubTab('manage-keys')}>Manage Keys</button>
+  <button className={(viewerEditorSubTab === 'requests' ? 'nav-subitem active' : 'nav-subitem') + (veAnimate ? ' animate-in' : '')} onClick={() => setViewerEditorSubTab('requests')}>Handle Requests</button>
+      </div>
+
+      {viewerEditorSubTab === 'manage-keys' && (
+        <div>
+          <div className="admin-form">
+            <div className="form-row">
+              <div className="form-group" style={{flex: 1}}>
+                <label>Notes for key (optional)</label>
+                <input value={genNotes} onChange={(e) => setGenNotes(e.target.value)} className="form-input" placeholder="Purpose or user hint" />
+              </div>
+              <div className="form-group" style={{width: '220px', alignSelf: 'end'}}>
+                <button type="button" onClick={handleGenerateKey} className="submit-btn" style={{width: '100%'}}>Generate Key</button>
+              </div>
+            </div>
           </div>
-          <div className="form-group" style={{width: '220px', alignSelf: 'end'}}>
-            <button type="button" onClick={handleGenerateKey} className="submit-btn" style={{width: '100%'}}>Generate Key</button>
+
+          <h3 style={{marginTop: '1.5rem'}}>Active Keys</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Notes</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accessKeys.length === 0 && (
+                  <tr><td colSpan={4} style={{textAlign: 'center', padding: '12px'}}>No active keys</td></tr>
+                )}
+                {accessKeys.map(k => (
+                  <tr key={k._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                    <td style={{padding: '8px', fontFamily: 'monospace'}}>{k.key}</td>
+                    <td style={{padding: '8px'}}>{k.notes}</td>
+                    <td style={{padding: '8px'}}>{new Date(k.createdAt).toLocaleString()}</td>
+                    <td style={{padding: '8px'}}>
+                      <button onClick={() => handleCopy(k.key)} className="submit-btn" style={{marginRight: '8px'}}>Copy</button>
+                      <button onClick={() => handleDeleteKey(k._id)} className="cancel-btn">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style={{marginTop: '1.5rem'}}>Conversion History</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Key</th>
+                  <th>When</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {conversions.length === 0 && (
+                  <tr><td colSpan={7} style={{textAlign: 'center', padding: '12px'}}>No conversions yet</td></tr>
+                )}
+                {conversions.map(c => (
+                  <tr key={c._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                    <td style={{padding: '8px'}}>{c.user?.name || '—'}</td>
+                    <td style={{padding: '8px'}}>{c.user?.email || '—'}</td>
+                    <td style={{padding: '8px'}}>{c.fromRole}</td>
+                    <td style={{padding: '8px'}}>{c.toRole}</td>
+                    <td style={{padding: '8px', fontFamily: 'monospace'}}>{c.keyUsed}</td>
+                    <td style={{padding: '8px'}}>{new Date(c.usedAt).toLocaleString()}</td>
+                    <td style={{padding: '8px'}}>
+                      <button onClick={() => handleRevertUser(c.user?._id)} className="cancel-btn">Revert to Viewer</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+      )}
 
-      <h3 style={{marginTop: '1.5rem'}}>Active Keys</h3>
-      <div style={{overflowX: 'auto'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse'}}>
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Notes</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accessKeys.length === 0 && (
-              <tr><td colSpan={4} style={{textAlign: 'center', padding: '12px'}}>No active keys</td></tr>
-            )}
-            {accessKeys.map(k => (
-              <tr key={k._id} style={{borderTop: '1px solid #e6e6e6'}}>
-                <td style={{padding: '8px', fontFamily: 'monospace'}}>{k.key}</td>
-                <td style={{padding: '8px'}}>{k.notes}</td>
-                <td style={{padding: '8px'}}>{new Date(k.createdAt).toLocaleString()}</td>
-                <td style={{padding: '8px'}}>
-                  <button onClick={() => handleCopy(k.key)} className="submit-btn" style={{marginRight: '8px'}}>Copy</button>
-                  <button onClick={() => handleDeleteKey(k._id)} className="cancel-btn">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h3 style={{marginTop: '1.5rem'}}>Conversion History</h3>
-      <div style={{overflowX: 'auto'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse'}}>
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Email</th>
-              <th>From</th>
-              <th>To</th>
-              <th>Key</th>
-              <th>When</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {conversions.length === 0 && (
-              <tr><td colSpan={7} style={{textAlign: 'center', padding: '12px'}}>No conversions yet</td></tr>
-            )}
-            {conversions.map(c => (
-              <tr key={c._id} style={{borderTop: '1px solid #e6e6e6'}}>
-                <td style={{padding: '8px'}}>{c.user?.name || '—'}</td>
-                <td style={{padding: '8px'}}>{c.user?.email || '—'}</td>
-                <td style={{padding: '8px'}}>{c.fromRole}</td>
-                <td style={{padding: '8px'}}>{c.toRole}</td>
-                <td style={{padding: '8px', fontFamily: 'monospace'}}>{c.keyUsed}</td>
-                <td style={{padding: '8px'}}>{new Date(c.usedAt).toLocaleString()}</td>
-                <td style={{padding: '8px'}}>
-                  <button onClick={() => handleRevertUser(c.user?._id)} className="cancel-btn">Revert to Viewer</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h3 style={{marginTop: '1.5rem'}}>Admin Requests</h3>
-      <div style={{overflowX: 'auto'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse'}}>
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Email</th>
-              <th>Message</th>
-              <th>Status</th>
-              <th>Requested At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {adminRequests.length === 0 && (
-              <tr><td colSpan={6} style={{textAlign: 'center', padding: '12px'}}>No admin requests</td></tr>
-            )}
-            {adminRequests.map(r => (
-              <tr key={r._id} style={{borderTop: '1px solid #e6e6e6'}}>
-                <td style={{padding: '8px'}}>{r.user?.name || '—'}</td>
-                <td style={{padding: '8px'}}>{r.user?.email || '—'}</td>
-                <td style={{padding: '8px'}}>{r.message || '—'}</td>
-                <td style={{padding: '8px'}}>{r.status}</td>
-                <td style={{padding: '8px'}}>{new Date(r.createdAt).toLocaleString()}</td>
-                <td style={{padding: '8px'}}>
-                  {r.status === 'pending' && (
-                    <>
-                      <button onClick={() => handleApproveRequest(r._id)} className="submit-btn" style={{marginRight: '8px'}}>Approve</button>
-                      <button onClick={() => handleRejectRequest(r._id)} className="cancel-btn">Reject</button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {viewerEditorSubTab === 'requests' && (
+        <div>
+          <h3 style={{marginTop: '0.5rem'}}>Admin Requests</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Requested At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminRequests.length === 0 && (
+                  <tr><td colSpan={6} style={{textAlign: 'center', padding: '12px'}}>No admin requests</td></tr>
+                )}
+                {adminRequests.map(r => (
+                  <tr key={r._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                    <td style={{padding: '8px'}}>{r.user?.name || '—'}</td>
+                    <td style={{padding: '8px'}}>{r.user?.email || '—'}</td>
+                    <td style={{padding: '8px'}}>{r.message || '—'}</td>
+                    <td style={{padding: '8px'}}>{r.status}</td>
+                    <td style={{padding: '8px'}}>{new Date(r.createdAt).toLocaleString()}</td>
+                    <td style={{padding: '8px'}}>
+                      {r.status === 'pending' && (
+                        <>
+                          <button onClick={() => handleApproveRequest(r._id)} className="submit-btn" style={{marginRight: '8px'}}>Approve</button>
+                          <button onClick={() => handleRejectRequest(r._id)} className="cancel-btn">Reject</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -2879,6 +3042,138 @@ const AdminPanel = () => {
     </div>
   );
 
+  // Achievement handlers
+  const achievementHandlers = {
+    fetchAll: async () => {
+      return fetchAchievements();
+    },
+    submit: async (e) => {
+      e.preventDefault();
+      try {
+  const method = achievementEditingId ? 'PUT' : 'POST';
+  const path = achievementEditingId ? `/api/admin/achievements/${achievementEditingId}` : '/api/admin/achievements';
+        const body = JSON.stringify(achievementForm);
+        const result = await apiFetch(path, { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body });
+        const res = result.res;
+        if (!res || !res.ok) {
+          showMessage('Failed to save achievement', 'error');
+          return;
+        }
+        showMessage(achievementEditingId ? 'Achievement updated' : 'Achievement created', 'success');
+        setAchievementForm({ title: '', description: '', category: '', date: '', organization: '', number: '', unit: '', verificationUrl: '' });
+        setAchievementEditingId(null);
+        await fetchAchievements();
+      } catch (err) {
+        console.error(err);
+        showMessage('Error saving achievement', 'error');
+      }
+    },
+    edit: (achievement) => {
+      setAchievementForm({
+        title: achievement.title || '',
+        description: achievement.description || '',
+        category: achievement.category || '',
+        date: achievement.date ? new Date(achievement.date).toISOString().slice(0,10) : '',
+        organization: achievement.organization || '',
+        number: achievement.number || '',
+        unit: achievement.unit || '',
+        verificationUrl: achievement.verificationUrl || ''
+      });
+      setAchievementEditingId(achievement._id || achievement.id);
+      setEditingType('achievements');
+    },
+    delete: async (id) => {
+      try {
+  const { res } = await apiFetch(`/api/admin/achievements/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) {
+          showMessage('Failed to delete achievement', 'error');
+          return;
+        }
+        showMessage('Achievement deleted', 'success');
+        await fetchAchievements();
+      } catch (e) { console.error(e); showMessage('Delete failed', 'error'); }
+    },
+    confirmDelete: (id) => setShowDeleteConfirm(id)
+  };
+
+  // Render Achievements Tab
+  const renderAchievementsTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>Achievements Management</h2>
+        <p>Manage achievements shown on the portfolio home and dedicated page.</p>
+      </div>
+
+      <form onSubmit={achievementHandlers.submit} className="admin-form">
+        <div className="form-row">
+          <div className="form-group">
+            <label>Title</label>
+            <input type="text" value={achievementForm.title} onChange={(e) => setAchievementForm({ ...achievementForm, title: e.target.value })} className="form-input" required />
+          </div>
+          <div className="form-group">
+            <label>Category</label>
+            <input type="text" value={achievementForm.category} onChange={(e) => setAchievementForm({ ...achievementForm, category: e.target.value })} className="form-input" />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+          <textarea value={achievementForm.description} onChange={(e) => setAchievementForm({ ...achievementForm, description: e.target.value })} className="form-input" rows="3" />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Date</label>
+            <input type="date" value={achievementForm.date} onChange={(e) => setAchievementForm({ ...achievementForm, date: e.target.value })} className="form-input" />
+          </div>
+          <div className="form-group">
+            <label>Organization</label>
+            <input type="text" value={achievementForm.organization} onChange={(e) => setAchievementForm({ ...achievementForm, organization: e.target.value })} className="form-input" />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Number / Value</label>
+            <input type="text" value={achievementForm.number} onChange={(e) => setAchievementForm({ ...achievementForm, number: e.target.value })} className="form-input" />
+          </div>
+          <div className="form-group">
+            <label>Unit</label>
+            <input type="text" value={achievementForm.unit} onChange={(e) => setAchievementForm({ ...achievementForm, unit: e.target.value })} className="form-input" />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Verification URL</label>
+          <input type="url" value={achievementForm.verificationUrl} onChange={(e) => setAchievementForm({ ...achievementForm, verificationUrl: e.target.value })} className="form-input" />
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">{achievementEditingId ? 'Update Achievement' : 'Add Achievement'}</button>
+          {achievementEditingId && <button type="button" onClick={() => { setAchievementEditingId(null); setAchievementForm({ title: '', description: '', category: '', date: '', organization: '', number: '', unit: '', verificationUrl: '' }); }} className="cancel-btn">Cancel</button>}
+        </div>
+      </form>
+
+      <div className="items-list">
+        {(achievementsList || data?.achievements || []).map(a => (
+          <div key={a._id || a.id} className="item-card achievement-card">
+            <div className="achievement-header">
+              <h3>{a.title}</h3>
+              <div className="achievement-meta">{a.category} {a.date && <span> • {new Date(a.date).toLocaleDateString()}</span>}</div>
+            </div>
+            <p>{a.description}</p>
+            <div className="item-actions">
+              <button onClick={() => achievementHandlers.edit(a)} className="edit-btn">Edit</button>
+              <button onClick={() => achievementHandlers.delete(a._id || a.id)} className="delete-btn">Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  
+
   // Render Contacts Tab
   const renderContactsTab = () => (
     <div className="tab-content">
@@ -2899,6 +3194,142 @@ const AdminPanel = () => {
         </div>
         
         {activeSubTab === 'contactInfo' ? renderContactInfoSection() : renderContactMessagesSection()}
+      </div>
+    </div>
+  );
+
+  // User management handlers
+  const changeUserRole = async (userId, newRole) => {
+    try {
+      setIsSubmitting(true);
+      const { res, json, text } = await apiFetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      });
+      if (!res || !res.ok) {
+        console.error('changeUserRole failed', res && res.status, text || json);
+        showMessage('Failed to update user role', 'error');
+        return false;
+      }
+      showMessage('User role updated', 'success');
+      await fetchUsers();
+      return true;
+    } catch (e) {
+      console.error('changeUserRole error', e);
+      showMessage('Error updating role', 'error');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    try {
+      setIsSubmitting(true);
+      const { res, json, text } = await apiFetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res || !res.ok) {
+        console.error('deleteUser failed', res && res.status, text || json);
+        showMessage('Failed to delete user', 'error');
+        return false;
+      }
+      showMessage('User deleted', 'success');
+      await fetchUsers();
+      return true;
+    } catch (e) {
+      console.error('deleteUser error', e);
+      showMessage('Error deleting user', 'error');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Render Users Tab
+  const renderUsersTab = () => (
+    <div className="tab-content">
+      <div className="tab-header">
+        <h2>User Management</h2>
+        <p>View and manage registered users and their roles</p>
+      </div>
+
+      <div className="users-controls" style={{display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '12px'}}>
+        <input type="text" placeholder="Search users..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input" />
+        <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }} className="form-input" style={{width: '160px'}}>
+          <option value="all">All Roles</option>
+          <option value="viewer">viewer</option>
+          <option value="editor">editor</option>
+          <option value="admin">admin</option>
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-input" style={{width: '160px'}}>
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="name-asc">Name A → Z</option>
+          <option value="name-desc">Name Z → A</option>
+        </select>
+        <select value={pageSize} onChange={(e) => handlePageSizeChange(Number(e.target.value))} className="form-input" style={{width: '110px'}}>
+          <option value={5}>5 / page</option>
+          <option value={10}>10 / page</option>
+          <option value={25}>25 / page</option>
+          <option value={50}>50 / page</option>
+        </select>
+        <button className="submit-btn" onClick={() => { setPage(1); fetchUsers(); }} disabled={usersLoading}>Refresh</button>
+      </div>
+
+      <div className="items-list">
+        {usersLoading ? (
+          <div className="loading">Loading users...</div>
+        ) : (!usersList || usersList.length === 0) ? (
+          <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>No users found.</div>
+        ) : (
+          (() => {
+            const { paged, total, totalPages, currentPage } = applyUsersPipeline(usersList);
+            if (total === 0) return <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>No users match filters.</div>;
+
+            return (
+              <>
+                {paged.map((user) => {
+                  const uid = user._id || user.id;
+                  const localRole = editedRoles[uid] !== undefined ? editedRoles[uid] : (user.role || 'viewer');
+                  return (
+                    <div key={uid} className="item-card user-card">
+                      <div className="item-info">
+                        <h4>{user.name || 'Unnamed'}</h4>
+                        <p>{user.email}</p>
+                        <p style={{fontSize: '12px', color: '#666'}}>Role: <strong>{user.role}</strong></p>
+                        <p style={{fontSize: '12px', color: '#666'}}>UserID: <strong>{user.userId || uid}</strong></p>
+                        <p style={{fontSize: '11px', color: '#999'}}>Created: {new Date(user.createdAt || Date.now()).toLocaleString()}</p>
+                      </div>
+                      <div className="item-actions" style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                        <select value={localRole} onChange={(e) => handleLocalRoleChange(uid, e.target.value)} className="form-input" style={{width: '140px'}}>
+                          <option value="viewer">viewer</option>
+                          <option value="editor">editor</option>
+                          <option value="admin">admin</option>
+                        </select>
+                        <button onClick={() => saveUserRole(uid)} className="submit-btn" disabled={isSubmitting || !(editedRoles[uid])}>Save</button>
+                        <button onClick={() => setShowDeleteConfirm(uid)} className="delete-btn">Delete</button>
+                        <button onClick={() => assignUserId(uid)} className="submit-btn" title="Assign/Generate a userId">Assign ID</button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Pagination controls */}
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px'}}>
+                  <div style={{color: '#555'}}>{`Showing ${paged.length} of ${total} users`}</div>
+                  <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                    <button className="cancel-btn" onClick={() => handlePageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>Prev</button>
+                    <span style={{minWidth: '60px', textAlign: 'center'}}>Page {currentPage} / {totalPages}</span>
+                    <button className="submit-btn" onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>Next</button>
+                  </div>
+                </div>
+              </>
+            );
+          })()
+        )}
       </div>
     </div>
   );
@@ -3641,6 +4072,12 @@ const AdminPanel = () => {
             >
               <span>🎓</span> Education
             </button>
+            <button 
+              className={activeTab === 'achievements' ? 'nav-item active' : 'nav-item'} 
+              onClick={() => setActiveTab('achievements')}
+            >
+              <span>🏆</span> Achievements
+            </button>
           </div>
           
           <div className="nav-section">
@@ -3691,6 +4128,12 @@ const AdminPanel = () => {
             >
               <span>📧</span> Contacts
             </button>
+            <button
+              className={activeTab === 'users' ? 'nav-item active' : 'nav-item'}
+              onClick={() => setActiveTab('users')}
+            >
+              <span>👥</span> Users
+            </button>
           </div>
         </nav>
       </div>
@@ -3723,8 +4166,10 @@ const AdminPanel = () => {
                         vlogs: vlogHandlers,
                         gallery: galleryHandlers,
                         testimonials: testimonialHandlers,
+                          achievements: achievementHandlers,
                         contacts: contactHandlers,
                         services: serviceHandlers
+                      , users: { confirmDelete: deleteUser }
                       };
                       handlers[editingType]?.confirmDelete(showDeleteConfirm);
                     }
@@ -3757,6 +4202,8 @@ const AdminPanel = () => {
           {activeTab === 'services' && renderServicesTab()}
           {activeTab === 'viewer-editor' && renderViewerEditorTab()}
           {activeTab === 'testimonials' && renderTestimonialsTab()}
+          {activeTab === 'achievements' && renderAchievementsTab()}
+          {activeTab === 'users' && renderUsersTab()}
           {activeTab === 'contacts' && renderContactsTab()}
         </div>
       </div>

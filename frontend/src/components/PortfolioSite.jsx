@@ -14,6 +14,8 @@ const PortfolioSite = () => {
   const [education, setEducation] = useState([])
   const [blogs, setBlogs] = useState([])
   const [contactInfo, setContactInfo] = useState(null)
+  const [testimonialsPreview, setTestimonialsPreview] = useState([])
+  const [achievementsPreview, setAchievementsPreview] = useState([])
   const [loading, setLoading] = useState(true)
   
   // Contact form state
@@ -69,6 +71,18 @@ const PortfolioSite = () => {
         } else {
           setContactInfo(null)
         }
+        // (testimonials will be fetched separately below)
+        // Fetch achievements preview separately as well
+        try {
+          const aRes = await fetch(`${API_BASE_URL}/api/achievements`)
+          if (aRes.ok) {
+            const aJson = await aRes.json()
+            const items = Array.isArray(aJson) ? aJson : (aJson.achievements || aJson.data || [])
+            setAchievementsPreview(items.slice(0, 3))
+          }
+        } catch (err) {
+          console.warn('Could not fetch achievements preview', err)
+        }
         
         console.log('Services data:', servicesData)
         console.log('Projects data:', projectsData)
@@ -76,6 +90,16 @@ const PortfolioSite = () => {
         console.log('Education data:', educationData)
         console.log('Blogs data:', blogsData)
         console.log('Contact info data:', contactInfoData)
+        // Fetch testimonials separately to avoid complicated ordering assumptions
+        try {
+          const tRes = await fetch(`${API_BASE_URL}/api/testimonials`)
+          if (tRes.ok) {
+            const tJson = await tRes.json()
+            setTestimonialsPreview(Array.isArray(tJson) ? tJson.slice(0, 3) : (tJson.testimonials?.slice(0, 3) || []))
+          }
+        } catch (err) {
+          console.warn('Could not fetch testimonials preview', err)
+        }
         
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -235,6 +259,42 @@ const PortfolioSite = () => {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* testimonials preview removed from hero; moved lower down to sit after Blogs and before Contact */}
+        </div>
+      </section>
+
+      {/* Achievements Preview Section - placed just after Home as requested */}
+      <section id="achievements" className={`section achievements-section ${isAnimated ? 'fade-in' : ''}`}>
+        <div className="container">
+          <div className="section-header">
+            <h2>Achievements</h2>
+            <a href="/achievements" className="view-all-link">View All</a>
+          </div>
+
+          <div className="achievements-grid">
+            {achievementsPreview && achievementsPreview.length > 0 ? (
+              achievementsPreview.map((a, idx) => (
+                <div key={a._id || a.id || idx} className="achievement-card">
+                  <div className="achievement-icon">{a.icon || '🏆'}</div>
+                  {(a.number || a.value) && (
+                    <div className="achievement-number">
+                      {a.number || a.value}
+                      {a.unit && <span className="unit">{a.unit}</span>}
+                    </div>
+                  )}
+                  <h3>{a.title}</h3>
+                  {a.description && <p>{a.description}</p>}
+                  <div className="achievement-meta">
+                    {a.category && <span className="achievement-category">{a.category}</span>}
+                    {a.date && <span className="achievement-date"> • {new Date(a.date).toLocaleDateString()}</span>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No achievements added yet.</p>
+            )}
           </div>
         </div>
       </section>
@@ -411,6 +471,36 @@ const PortfolioSite = () => {
       </section>
 
       {/* Contact Section */}
+      {/* Testimonials Section - placed after Blogs and before Contact */}
+      <section id="testimonials" className={`section testimonials-section ${isAnimated ? 'fade-in' : ''}`}>
+        <div className="container">
+          <div className="section-header">
+            <h2>Testimonials</h2>
+            <a href="/testimonials" className="view-all-link">View All</a>
+          </div>
+
+          <div className="testimonials-list">
+            {testimonialsPreview && testimonialsPreview.length > 0 ? (
+              testimonialsPreview.map((t) => (
+                <div key={t._id || t.id} className="testimonial-card">
+                  <div className="testimonial-body">
+                    <p className="testimonial-text">{t.content || t.testimonial}</p>
+                  </div>
+                  <div className="testimonial-meta">
+                    {t.imageUrl && <img src={t.imageUrl} alt={t.name} className="testimonial-avatar" />}
+                    <div className="testimonial-author">
+                      <strong>{t.name}</strong>
+                      <div className="testimonial-role">{t.position}{t.company ? ` • ${t.company}` : ''}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No testimonials available yet.</p>
+            )}
+          </div>
+        </div>
+      </section>
       <section id="contact" className={`section contact-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
           <div className="section-header">

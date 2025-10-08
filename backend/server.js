@@ -52,6 +52,7 @@ import Service from './models/Service.js';
 import Contact from './models/Contact.js';
 import ContactInfo from './models/ContactInfo.js';
 import contactInfoController from './controllers/contactInfoController.js';
+import Achievement from './models/Achievement.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -195,6 +196,7 @@ const galleryController = createCRUDController(Gallery, 'Gallery');
 const testimonialController = createCRUDController(Testimonial, 'Testimonial');
 const serviceController = createCRUDController(Service, 'Service');
 const contactController = createCRUDController(Contact, 'Contact');
+const achievementController = createCRUDController(Achievement, 'Achievement');
 // ContactInfo uses specialized controller to ensure only one record exists
 
 // ==================== FILE ROUTES (GridFS) ====================
@@ -324,6 +326,14 @@ app.post('/api/admin/testimonials', authenticateToken, requirePermission('canCre
 app.put('/api/admin/testimonials/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_TESTIMONIAL'), testimonialController.update);
 app.delete('/api/admin/testimonials/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_TESTIMONIAL'), testimonialController.delete);
 app.post('/api/admin/testimonials/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('avatar'), testimonialController.uploadFile);
+
+// ==================== ACHIEVEMENTS ROUTES ====================
+app.get('/api/achievements', achievementController.getAll);
+app.get('/api/admin/achievements', authenticateToken, achievementController.getAll);
+app.get('/api/admin/achievements/:id', authenticateToken, achievementController.getById);
+app.post('/api/admin/achievements', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_ACHIEVEMENT'), achievementController.create);
+app.put('/api/admin/achievements/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_ACHIEVEMENT'), achievementController.update);
+app.delete('/api/admin/achievements/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_ACHIEVEMENT'), achievementController.delete);
 
 // ==================== SERVICES ROUTES ====================
 app.get('/api/services', serviceController.getAll);

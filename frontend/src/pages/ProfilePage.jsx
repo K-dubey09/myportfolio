@@ -43,6 +43,17 @@ const ProfilePage = () => {
     }
   }, [user]);
 
+  // If there's a fixed header, compute its height and set a CSS var so layout can clear it
+  useEffect(() => {
+    try {
+      const header = document.querySelector('header') || document.querySelector('.site-header') || document.querySelector('nav');
+      const h = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
+      document.documentElement.style.setProperty('--profile-top-offset', `${h}px`);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -136,12 +147,9 @@ const ProfilePage = () => {
     try {
       const res = await fetch(`${API_BASE}/api/request-admin`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Requesting editor access' }) });
       const ct = res.headers.get('content-type') || '';
-      let body;
-      if (ct.includes('application/json')) body = await res.json();
-      else body = await res.text();
+      const body = ct.includes('application/json') ? await res.json() : await res.text();
 
       if (res.ok) {
-        // prefer body.message or body.data
         setMessage(formatMessage((body && (body.message || body.data || body.success)) || 'Request sent to admin'));
       } else {
         const errText = (body && (body.error || body.message)) || String(body) || `Status ${res.status}`;
@@ -149,7 +157,11 @@ const ProfilePage = () => {
         if (res.status === 401 || /invalid token|jwt malformed|token expired/i.test(errText)) {
           setMessage('Session expired or invalid token. Please log in again.');
           logout();
+        } else if (res.status === 403 || /blocked|forbidden/i.test(errText)) {
+          // Server explicitly blocked this user from requesting
+          setMessage(formatMessage('You have been blocked from requesting editor access.')); 
         } else {
+          // Allow re-request when server responds with rejection (e.g., previous request was rejected)
           setMessage(formatMessage(errText.includes('Route not found') ? 'Server: Route not found. Try restarting backend.' : errText));
         }
       }
@@ -240,13 +252,16 @@ const ProfilePage = () => {
 
         <div className="profile-content">
           <div className="profile-sidebar">
+            <div className="sidebar-card-title">
+              <h2>Personal Information</h2>
+            </div>
             <div className="profile-image-section">
               <div className="profile-image-container">
                 {previewImage ? (
                   <img src={previewImage} alt="Profile" className="profile-image" />
                 ) : (
                   <div className="profile-image-placeholder">
-                    <User size={48} />
+                    <User size={64} />
                   </div>
                 )}
                 {isEditing && (
@@ -261,38 +276,62 @@ const ProfilePage = () => {
                     />
                   </label>
                 )}
-              </div>
-              <div className="profile-role">
-                <Shield size={16} />
-                <span>{user.role}</span>
+                <div className="profile-role">
+                  <Shield size={16} />
+                  <span>{user.role}</span>
+                </div>
               </div>
             </div>
 
-            <div className="profile-stats">
-              <div className="stat-item">
-                <Calendar size={16} />
-                <span>Member since {new Date(user.createdAt || Date.now()).getFullYear()}</span>
+            {/* Account Details Section */}
+            <div className="profile-details-section">
+              <h3>Account Details</h3>
+              <div className="profile-details-list">
+                <div className="detail-item">
+                  <Calendar size={18} />
+                  <div className="detail-info">
+                    <span className="detail-label">Member Since</span>
+                    <span className="detail-value">{new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <User size={18} />
+                  <div className="detail-info">
+                    <span className="detail-label">Username</span>
+                    <span className="detail-value">{user.name || 'Not set'}</span>
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <Mail size={18} />
+                  <div className="detail-info">
+                    <span className="detail-label">Email</span>
+                    <span className="detail-value">{user.email || 'Not set'}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {user.role === 'viewer' && (
-            <div className="be-editor-panel" style={{ marginTop: '1rem' }}>
-              <h3 style={{ marginBottom: '0.5rem' }}>Become an Editor</h3>
-              <p style={{ marginTop: 0, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Choose one of the options below to gain editor access.</p>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <button className="edit-btn" onClick={handleRequestAdmin} disabled={requesting}>
-                  Request Admin Approval
-                </button>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input type="text" placeholder="Enter secret key" value={secretKey} onChange={(e) => setSecretKey(e.target.value)} style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }} />
-                  <button className="save-btn" onClick={handleUseKey}>Use Secret Key</button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* moved Become an Editor panel into the main column below (renders only for viewers) */}
 
           <div className="profile-main">
+            {/* Right column: Become an Editor panel (visible only to viewers) */}
+            {(user.role && String(user.role).toLowerCase() === 'viewer') && (
+              <div className="be-editor-panel" style={{ marginBottom: '1rem' }}>
+                <h3 style={{ marginBottom: '0.5rem' }}>Become an Editor</h3>
+                <p style={{ marginTop: 0, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Choose one of the options below to gain editor access.</p>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button className="edit-btn" onClick={handleRequestAdmin} disabled={requesting}>
+                    Request Admin Approval
+                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input type="text" placeholder="Enter secret key" value={secretKey} onChange={(e) => setSecretKey(e.target.value)} style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)' }} />
+                    <button className="save-btn" onClick={handleUseKey}>Use Secret Key</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="profile-form">
               <div className="form-header">
                 <h2>Personal Information</h2>

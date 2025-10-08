@@ -5,11 +5,13 @@ import { Star, Quote } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const TestimonialsPage = () => {
-  const { user } = useAuth()
+  const { user, isEditor } = useAuth()
   const [testimonials, setTestimonials] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all')
+  const [showAdd, setShowAdd] = useState(false)
+  const [addForm, setAddForm] = useState({ name: '', position: '', company: '', content: '', rating: 5, featured: false, imageUrl: '' })
 
   const fetchTestimonials = useCallback(async () => {
     try {
@@ -105,6 +107,12 @@ const TestimonialsPage = () => {
             <option value="4-star">4 Star Reviews</option>
           </select>
         </div>
+        {/* Editor-only add testimonial form toggle/area */}
+        {user && isEditor() && (
+          <div style={{marginLeft: '16px'}}>
+            <button className="submit-btn" onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'Close' : 'Add Testimonial / Feedback'}</button>
+          </div>
+        )}
       </motion.div>
 
       <motion.div 
@@ -153,6 +161,79 @@ const TestimonialsPage = () => {
           ))
         )}
       </motion.div>
+      {/* Add Testimonial Modal / Form (editor only) */}
+      {user && isEditor() && showAdd && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Add Testimonial / Feedback</h3>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              // submit new testimonial
+              const payload = { name: addForm.name, position: addForm.position, company: addForm.company, content: addForm.content, rating: Number(addForm.rating || 5), featured: !!addForm.featured, imageUrl: addForm.imageUrl };
+              try {
+                const res = await fetch('http://localhost:5000/api/admin/testimonials', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` }, body: JSON.stringify(payload) });
+                if (!res.ok) {
+                  const err = await res.json().catch(() => ({ error: 'Submission failed' }));
+                  toast.error(err.error || 'Failed to add testimonial');
+                  return;
+                }
+                toast.success('Testimonial added');
+                setShowAdd(false);
+                setAddForm({ name: '', position: '', company: '', content: '', rating: 5, featured: false, imageUrl: '' });
+                await fetchTestimonials();
+              } catch (err) {
+                console.error('Add testimonial failed', err);
+                toast.error('Failed to submit testimonial');
+              }
+            }}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Name</label>
+                  <input className="form-input" value={addForm.name} onChange={(e) => setAddForm(prev => ({...prev, name: e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label>Position</label>
+                  <input className="form-input" value={addForm.position} onChange={(e) => setAddForm(prev => ({...prev, position: e.target.value}))} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Company</label>
+                  <input className="form-input" value={addForm.company} onChange={(e) => setAddForm(prev => ({...prev, company: e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label>Rating</label>
+                  <select className="form-input" value={addForm.rating} onChange={(e) => setAddForm(prev => ({...prev, rating: e.target.value}))}>
+                    <option value={5}>5</option>
+                    <option value={4}>4</option>
+                    <option value={3}>3</option>
+                    <option value={2}>2</option>
+                    <option value={1}>1</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Content</label>
+                <textarea rows={4} className="form-input" value={addForm.content} onChange={(e) => setAddForm(prev => ({...prev, content: e.target.value}))} required />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Image URL (optional)</label>
+                  <input className="form-input" value={addForm.imageUrl} onChange={(e) => setAddForm(prev => ({...prev, imageUrl: e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label>Featured</label>
+                  <input type="checkbox" checked={addForm.featured} onChange={(e) => setAddForm(prev => ({...prev, featured: e.target.checked}))} />
+                </div>
+              </div>
+              <div className="form-actions">
+                <button type="submit" className="submit-btn">Submit</button>
+                <button type="button" className="cancel-btn" onClick={() => setShowAdd(false)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
