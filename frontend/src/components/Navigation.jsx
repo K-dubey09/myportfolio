@@ -244,21 +244,7 @@ const Navigation = () => {
               </motion.button>
             ))}
 
-            {/* Explicit Testimonials button to ensure visibility in the header (hide for admin) */}
-            {!(user && user.role === 'admin') && (
-              <motion.button
-                onClick={() => handleSectionClick('testimonials')}
-                className="nav-link nav-btn"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: 0.35 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Star size={18} />
-                <span>Testimonials</span>
-              </motion.button>
-            )}
+            {/* Testimonials entry provided via mainNavLinks; no duplicate button needed */}
 
             {user && (
               <>
@@ -353,20 +339,7 @@ const Navigation = () => {
                     </motion.button>
                   ))}
 
-                  {/* Explicit Testimonials mobile button (hide for admin) */}
-                  {!(user && user.role === 'admin') && (
-                    <motion.button
-                      onClick={() => handleSectionClick('testimonials')}
-                      className="mobile-nav-link"
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2, delay: mainNavLinks.length * 0.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Star size={20} />
-                      <span>Testimonials</span>
-                    </motion.button>
-                  )}
+                  {/* Testimonials entry is part of mainNavLinks; no separate mobile duplicate */}
 
                   {user && (
                     <>
