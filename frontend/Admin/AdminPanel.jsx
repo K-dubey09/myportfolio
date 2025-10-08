@@ -3264,24 +3264,37 @@ const AdminPanel = () => {
     <div className="admin-panel">
       {/* Mobile Header */}
       <div className="mobile-header">
-        <button 
-          className="mobile-menu-toggle" 
-          onClick={toggleMobileMenu}
-          aria-label="Toggle navigation menu"
-        >
-          ☰
-        </button>
-        <div className="mobile-title">Portfolio Admin</div>
-        <button onClick={logout} className="mobile-logout-btn" style={{
-          background: 'none',
-          border: 'none',
-          color: 'white',
-          fontSize: '0.875rem',
-          cursor: 'pointer',
-          padding: '0.5rem'
-        }}>
-          Logout
-        </button>
+        {!isMobileMenuOpen ? (
+          <>
+            <button 
+              className="mobile-menu-toggle" 
+              onClick={toggleMobileMenu}
+              aria-label="Toggle navigation menu"
+            >
+              ☰
+            </button>
+            <div className="mobile-title">Portfolio Admin</div>
+            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+              <button onClick={() => window.location.href = '/'} className="mobile-home-btn">
+                Home
+              </button>
+              <button onClick={logout} className="mobile-logout-btn">
+                Logout
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mobile-title">Navigation</div>
+            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+              <button className="mobile-close-btn" onClick={closeMobileMenu} aria-label="Close navigation">
+                <svg className="close-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <path d="M6 6 L18 18 M6 18 L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Mobile Overlay */}
@@ -3296,9 +3309,19 @@ const AdminPanel = () => {
           <h2>Portfolio Admin</h2>
           <div className="status-indicator online"></div>
           <span className="status-text">Connected</span>
-          <button onClick={logout} className="logout-btn">
-            Logout
+          <button className="sidebar-close-btn" onClick={closeMobileMenu} aria-label="Close menu">
+            <svg className="close-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <path d="M6 6 L18 18 M6 18 L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
           </button>
+          <div className="sidebar-actions">
+            <button onClick={() => window.location.href = '/'} className="home-btn">
+              Home
+            </button>
+            <button onClick={logout} className="logout-btn">
+              Logout
+            </button>
+          </div>
         </div>
         
         <nav className="sidebar-nav">

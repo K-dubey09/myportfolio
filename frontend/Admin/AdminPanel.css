@@ -38,6 +38,59 @@
   gap: 0.5rem;
 }
 
+/* Close button inside the sidebar header for mobile view */
+.sidebar-close-btn {
+  display: none; /* shown on mobile */
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,0.06);
+  color: white;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
+
+/* When the sidebar is open (mobile-open) always show a high-contrast close button */
+.admin-sidebar.mobile-open .sidebar-close-btn {
+  display: block;
+  /* make it fixed so it isn't clipped by overflow or container stacking */
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 9999; /* very high to ensure visibility */
+  background: #ffffff; /* white circle for contrast */
+  color: #1a202c; /* dark X */
+  padding: 8px 10px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-sidebar.mobile-open .sidebar-close-btn:hover {
+  transform: translateY(-1px);
+  background: #f3f4f6;
+}
+
+/* Ensure SVG close icon inherits color and has proper size */
+.sidebar-close-btn .close-icon,
+.mobile-close-btn .close-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
+
 .sidebar-header h2 {
   margin: 0;
   font-size: 1.5rem;
@@ -83,6 +136,71 @@
 .logout-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(229, 62, 62, 0.4);
+}
+
+/* Home button (matches logout aesthetics but uses primary/indigo accent) */
+.home-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white !important;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.home-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+/* Sidebar actions wrapper (for Home + Logout grouping) */
+.sidebar-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+/* Mobile header home button */
+.mobile-home-btn {
+  background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+  color: white;
+  border: none;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-left: 0.5rem;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.mobile-home-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.28);
+}
+
+/* Mobile header logout button (red) */
+.mobile-logout-btn {
+  background: linear-gradient(135deg, #ef4444, #c53030);
+  color: white;
+  border: none;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-left: 0.25rem;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.mobile-logout-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.28);
 }
 
 /* Sidebar Navigation */
@@ -1301,6 +1419,40 @@
     font-size: 1.25rem;
     font-weight: 600;
   }
+
+  /* Mobile header close button (top-right X) */
+  .mobile-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+
+  .mobile-close-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+  }
+
+  /* increase hit area and contrast for mobile close */
+  .mobile-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.02);
+    border-radius: 8px;
+  }
+
+  .mobile-close-btn .close-icon {
+    color: white;
+    width: 20px;
+    height: 20px;
+  }
   
   /* Mobile Overlay */
   .mobile-overlay {
@@ -1321,6 +1473,12 @@
   /* Sidebar adjustments for mobile */
   .sidebar-header {
     padding-top: 80px; /* Account for mobile header */
+    position: relative;
+  }
+
+  /* show the sidebar close button on mobile */
+  .sidebar-close-btn {
+    display: block;
   }
   
   .nav-section h3 {

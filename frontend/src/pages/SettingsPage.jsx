@@ -215,12 +215,17 @@ const SettingsPage = () => {
                       <span>Enable Animations</span>
                       <p>Turn on/off motion and transition effects</p>
                     </div>
-                    <button
-                      className={`toggle-switch ${isAnimated ? 'active' : ''}`}
-                      onClick={toggleAnimations}
-                    >
-                      <div className="toggle-slider"></div>
-                    </button>
+                    <label className={`toggle-switch ${isAnimated ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        className="toggle-input"
+                        checked={isAnimated}
+                        onChange={() => toggleAnimations()}
+                      />
+                      <span className="toggle-track">
+                        <span className="toggle-knob"><span className="knob-icon" /></span>
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -243,12 +248,17 @@ const SettingsPage = () => {
                       <div className="setting-info">
                         <span>{label}</span>
                       </div>
-                      <button
-                        className={`toggle-switch ${notifications[key] ? 'active' : ''}`}
-                        onClick={() => handleNotificationChange(key)}
-                      >
-                        <div className="toggle-slider"></div>
-                      </button>
+                      <label className={`toggle-switch ${notifications[key] ? 'active' : ''}`}>
+                        <input
+                          type="checkbox"
+                          className="toggle-input"
+                          checked={!!notifications[key]}
+                          onChange={() => handleNotificationChange(key)}
+                        />
+                        <span className="toggle-track">
+                          <span className="toggle-knob"><span className="knob-icon" /></span>
+                        </span>
+                      </label>
                     </div>
                   ))}
                 </div>
@@ -260,12 +270,17 @@ const SettingsPage = () => {
                       <span>Browser Notifications</span>
                       <p>Get notified about important updates</p>
                     </div>
-                    <button
-                      className={`toggle-switch ${notifications.pushNotifications ? 'active' : ''}`}
-                      onClick={() => handleNotificationChange('pushNotifications')}
-                    >
-                      <div className="toggle-slider"></div>
-                    </button>
+                    <label className={`toggle-switch ${notifications.pushNotifications ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        className="toggle-input"
+                        checked={!!notifications.pushNotifications}
+                        onChange={() => handleNotificationChange('pushNotifications')}
+                      />
+                      <span className="toggle-track">
+                        <span className="toggle-knob"><span className="knob-icon" /></span>
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -313,12 +328,17 @@ const SettingsPage = () => {
                       <div className="setting-info">
                         <span>{label}</span>
                       </div>
-                      <button
-                        className={`toggle-switch ${privacy[key] ? 'active' : ''}`}
-                        onClick={() => handlePrivacyChange(key, !privacy[key])}
-                      >
-                        <div className="toggle-slider"></div>
-                      </button>
+                      <label className={`toggle-switch ${privacy[key] ? 'active' : ''}`}>
+                        <input
+                          type="checkbox"
+                          className="toggle-input"
+                          checked={!!privacy[key]}
+                          onChange={() => handlePrivacyChange(key, !privacy[key])}
+                        />
+                        <span className="toggle-track">
+                          <span className="toggle-knob"><span className="knob-icon" /></span>
+                        </span>
+                      </label>
                     </div>
                   ))}
                 </div>
