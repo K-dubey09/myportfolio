@@ -1,13 +1,205 @@
+
 import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Camera, Shield } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Shield, MessageCircle, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './ProfilePage.css';
+import '../components/ChatPanel.css';
+
+// Inline chat panel component used in profile page
+function ChatPanelInline() {
+  const { token, user } = useAuth();
+  const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5000';
+  const [chats, setChats] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchError, setSearchError] = useState('');
+  const [showNewChat, setShowNewChat] = useState(false);
+
+  const apiFetch = async (path, opts = {}) => {
+    const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
+    const headers = opts.headers || {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch(url, { ...opts, headers });
+      const ct = res.headers.get('content-type') || '';
+      const body = ct.includes('application/json') ? await res.json() : await res.text();
+      return { res, body };
+    } catch (err) {
+      console.error('apiFetch error', err);
+      return { res: null, err };
+    }
+  };
+
+  const fetchChats = async () => {
+    setLoadingChats(true);
+    try {
+      const { res, body } = await apiFetch('/api/chats');
+      if (res && res.ok) {
+        const list = Array.isArray(body) ? body : (body.data || body.chats || []);
+        setChats(list);
+        if (!activeChatId && list[0]) setActiveChatId(list[0]._id || list[0].id);
+      }
+    } catch (err) { console.error(err); }
+    setLoadingChats(false);
+  };
+
+  const fetchMessages = async (chatId) => {
+    if (!chatId) return;
+    setLoadingMessages(true);
+    try {
+      const { res, body } = await apiFetch(`/api/chats/${chatId}`);
+      if (res && res.ok) {
+        const payload = body.data || body.chat || body;
+        setMessages(payload.messages || payload || []);
+      }
+    } catch (err) { console.error(err); }
+    setLoadingMessages(false);
+  };
+
+  useEffect(() => { fetchChats(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // fetchMessages is defined in this component; we intentionally omit it from deps to avoid recreating the effect
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeChatId) fetchMessages(activeChatId); else setMessages([]); }, [activeChatId]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !activeChatId) return;
+    try {
+      const { res } = await apiFetch(`/api/chats/${activeChatId}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: newMessage }) });
+      if (res && res.ok) {
+        setNewMessage('');
+        await fetchMessages(activeChatId);
+        await fetchChats();
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSearchUsers = async (q) => {
+    setSearchError('');
+    setSearchResults([]);
+    if (!q || q.trim().length < 1) return;
+    try {
+      const { res, body } = await apiFetch(`/api/users?search=${encodeURIComponent(q)}`);
+      if (res && res.ok) {
+        const list = Array.isArray(body) ? body : (body.users || body.data || []);
+        setSearchResults(list);
+      } else if (res && (res.status === 403 || res.status === 401)) {
+        setSearchError('You do not have permission to search users.');
+      } else {
+        setSearchError('No users found or search not available.');
+      }
+    } catch (err) { console.error(err); setSearchError('Search failed'); }
+  };
+
+  const handleStartChatWithUser = async (otherUserId) => {
+    try {
+      const payload = { participantIds: [otherUserId] };
+      const { res, body } = await apiFetch('/api/chats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (res && (res.ok || res.status === 201)) {
+        const newChat = body.data || body.chat || body;
+        await fetchChats();
+        setActiveChatId(newChat._id || newChat.id);
+        setShowNewChat(false);
+      } else if (res && res.status === 403) {
+        setSearchError('Not allowed to start chat with that user');
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  return (
+    <div className="chat-panel">
+      <div className="chat-list">
+        <div className="search-row">
+          <Search size={16} />
+          <input className="" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search users..." onKeyDown={(e) => { if (e.key === 'Enter') handleSearchUsers(searchQuery); }} />
+          <button onClick={() => handleSearchUsers(searchQuery)}>Go</button>
+        </div>
+
+        <div style={{ marginTop: 8 }}>
+          <button onClick={() => setShowNewChat(s => !s)} className="new-chat-btn">{showNewChat ? 'Close' : 'New Chat'}</button>
+        </div>
+
+        {showNewChat && (
+          <div className="new-chat-area">
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+              {searchResults.length === 0 && <div className="muted">No results</div>}
+              {searchResults.map(u => (
+                <div key={u._id || u.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 4px', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{u.name || u.username || u.email}</div>
+                    <div className="muted" style={{ fontSize: '0.85rem' }}>{u.email}</div>
+                  </div>
+                  <div>
+                    <button onClick={() => handleStartChatWithUser(u._id || u.id)}>Chat</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <input placeholder="Search users to start chat" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <button onClick={() => handleSearchUsers(searchQuery)}>Search</button>
+            </div>
+            {searchError && <div className="muted" style={{ marginTop: 8 }}>{searchError}</div>}
+          </div>
+        )}
+
+        <div style={{ marginTop: 12 }}>
+          <h4>Your Chats</h4>
+          {loadingChats && <div className="muted">Loading...</div>}
+          {!loadingChats && chats.length === 0 && <div className="muted">No chats yet</div>}
+          <div style={{ maxHeight: 320, overflowY: 'auto', marginTop: 8 }}>
+            {chats.map(c => (
+              <div key={c._id || c.id} onClick={() => setActiveChatId(c._id || c.id)} className={`chat-item ${String(activeChatId) === String(c._id || c.id) ? 'active' : ''}`}>
+                <div style={{ fontWeight: 700 }}>{c.subject || (c.participants && c.participants.map(p => p.name).join(', '))}</div>
+                <div className="muted" style={{ fontSize: '0.85rem' }}>{c.updatedAt ? new Date(c.updatedAt).toLocaleString() : ''}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="conversation">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h4 style={{ margin: 0 }}>Conversation</h4>
+          <div>
+            <button onClick={fetchChats} className="refresh-btn">Refresh</button>
+          </div>
+        </div>
+        <div className="messages">
+          {loadingMessages && <div className="muted">Loading messages...</div>}
+          {!loadingMessages && messages.length === 0 && <div className="muted">Select a chat to view messages</div>}
+          {messages.map(m => {
+            const isMine = m.author && ((m.author._id && String(m.author._id) === String(user && user._id)) || (m.author === (user && user._id)));
+            return (
+              <div key={m._id || m.id} className="message-row">
+                <div className="meta"><strong>{(m.author && (m.author.name || m.author.email)) || (m.authorName) || (m.author === (user && user._id) ? 'You' : 'User')}</strong> <span style={{ marginLeft: 8 }}>{m.createdAt ? new Date(m.createdAt).toLocaleString() : ''}</span></div>
+                <div className={`bubble ${isMine ? 'outgoing' : 'incoming'}`}>{m.text || m.content}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="composer">
+          <textarea value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message..." />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <button onClick={handleSendMessage} className="send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ProfilePage = () => {
   const { user, updateProfile, token, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [activeSidebar, setActiveSidebar] = useState('profile');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,17 +235,6 @@ const ProfilePage = () => {
     }
   }, [user]);
 
-  // If there's a fixed header, compute its height and set a CSS var so layout can clear it
-  useEffect(() => {
-    try {
-      const header = document.querySelector('header') || document.querySelector('.site-header') || document.querySelector('nav');
-      const h = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
-      document.documentElement.style.setProperty('--profile-top-offset', `${h}px`);
-    } catch {
-      // ignore
-    }
-  }, []);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -62,20 +243,7 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setMessage('Image size should be less than 5MB');
-        return;
-      }
-      
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setPreviewImage(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
+  // handleImageChange removed (was unused)
 
   const handleSave = async () => {
     setLoading(true);
@@ -216,6 +384,7 @@ const ProfilePage = () => {
     setMessage('');
   };
 
+
   if (!user) {
     return (
       <div className="profile-page">
@@ -226,21 +395,55 @@ const ProfilePage = () => {
     );
   }
 
+
+  // Sidebar navigation items
+  const sidebarNav = [
+    { key: 'profile', label: 'Profile', icon: <User size={18} /> },
+    { key: 'chat', label: 'Chat & Collaboration', icon: <MessageCircle size={18} /> },
+    // Add more options here if needed
+  ];
+  // (moved to top for correct hook order)
+
   return (
-    <motion.div 
-      className="profile-page"
+    <motion.div
+      className="profile-page profile-admin-layout"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="profile-container">
-        <div className="profile-header">
-          <h1>My Profile</h1>
-          <p>Manage your personal information and preferences</p>
+      <div className="profile-admin-sidebar">
+        <div className="sidebar-header">
+          <div className="profile-image-container">
+            {previewImage ? (
+              <img src={previewImage} alt="Profile" className="profile-image" />
+            ) : (
+              <div className="profile-image-placeholder">
+                <User size={48} />
+              </div>
+            )}
+            <div className="profile-role">
+              <Shield size={14} />
+              <span>{user.role}</span>
+            </div>
+          </div>
+          <div className="sidebar-username">{user.name || 'User'}</div>
         </div>
-
+        <nav className="sidebar-nav">
+          {sidebarNav.map(item => (
+            <button
+              key={item.key}
+              className={`sidebar-nav-item${activeSidebar === item.key ? ' active' : ''}`}
+              onClick={() => setActiveSidebar(item.key)}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+  <div className="profile-admin-main">
         {message && (
-          <motion.div 
+          <motion.div
             className={`message ${typeof message === 'string' && message.toLowerCase().includes('success') ? 'success' : 'error'}`}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -250,72 +453,15 @@ const ProfilePage = () => {
           </motion.div>
         )}
 
-        <div className="profile-content">
-          <div className="profile-sidebar">
-            <div className="sidebar-card-title">
-              <h2>Personal Information</h2>
-            </div>
-            <div className="profile-image-section">
-              <div className="profile-image-container">
-                {previewImage ? (
-                  <img src={previewImage} alt="Profile" className="profile-image" />
-                ) : (
-                  <div className="profile-image-placeholder">
-                    <User size={64} />
-                  </div>
-                )}
-                {isEditing && (
-                  <label htmlFor="profile-image" className="image-upload-overlay">
-                    <Camera size={20} />
-                    <input
-                      id="profile-image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                )}
-                <div className="profile-role">
-                  <Shield size={16} />
-                  <span>{user.role}</span>
-                </div>
-              </div>
+        {/* Main content area switches by sidebar selection */}
+        {activeSidebar === 'profile' && (
+          <div className="profile-main-content">
+            <div className="profile-header">
+              <h1>My Profile</h1>
+              <p>Manage your personal information and preferences</p>
             </div>
 
-            {/* Account Details Section */}
-            <div className="profile-details-section">
-              <h3>Account Details</h3>
-              <div className="profile-details-list">
-                <div className="detail-item">
-                  <Calendar size={18} />
-                  <div className="detail-info">
-                    <span className="detail-label">Member Since</span>
-                    <span className="detail-value">{new Date(user.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
-                  </div>
-                </div>
-                <div className="detail-item">
-                  <User size={18} />
-                  <div className="detail-info">
-                    <span className="detail-label">Username</span>
-                    <span className="detail-value">{user.name || 'Not set'}</span>
-                  </div>
-                </div>
-                <div className="detail-item">
-                  <Mail size={18} />
-                  <div className="detail-info">
-                    <span className="detail-label">Email</span>
-                    <span className="detail-value">{user.email || 'Not set'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* moved Become an Editor panel into the main column below (renders only for viewers) */}
-
-          <div className="profile-main">
-            {/* Right column: Become an Editor panel (visible only to viewers) */}
+            {/* Become an Editor panel (visible only to viewers) */}
             {(user.role && String(user.role).toLowerCase() === 'viewer') && (
               <div className="be-editor-panel" style={{ marginBottom: '1rem' }}>
                 <h3 style={{ marginBottom: '0.5rem' }}>Become an Editor</h3>
@@ -499,10 +645,47 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {activeSidebar === 'chat' && (
+          <div className="profile-chat-collab">
+            <h2><MessageCircle size={22} style={{verticalAlign:'middle',marginRight:8}}/>Chat & Collaboration</h2>
+            <p>Start a chat or collaborate with support/admins. Your conversations are private and secure.</p>
+            <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+              <div style={{ flex: '0 0 30%', minWidth: 240 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Search size={18} />
+                  <input style={{ flex: 1 }} placeholder="Search groups or users..." value={''} onChange={() => {}} />
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <h4>Your Chats</h4>
+                  {/* placeholder: actual chat list is rendered in center/right in the expanded view below */}
+                  <div className="muted">Use the collaboration panel to manage chats here.</div>
+                </div>
+              </div>
+
+              <div style={{ flex: '1 1 50%', minWidth: 360 }}>
+                {/* Embed the chat area inline so users don't need a modal */}
+                <div className="chat-panel">
+                  <ChatPanelInline />
+                </div>
+              </div>
+
+              <div style={{ flex: '0 0 25%', minWidth: 220 }}>
+                <h4>Quick Actions</h4>
+                <p className="muted">Start a new conversation or search users to invite.</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="new-chat-btn">New Chat</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
 };
 
 export default ProfilePage;
+
+

@@ -1,0 +1,68 @@
+.chat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.chat-modal {
+  width: min(1100px, 96%);
+  height: min(700px, 92%);
+  background: var(--card-bg, #fff);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.chat-body {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 12px;
+  padding: 12px;
+}
+
+.chat-list {
+  width: 320px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-list .chat-list-actions { display:flex; gap:8px; padding-bottom:8px }
+.chat-items { overflow:auto; flex:1; display:flex; flex-direction:column; gap:6px }
+.chat-item { padding:8px; border-radius:6px; cursor:pointer }
+.chat-item.active { background: rgba(0,0,0,0.06) }
+.chat-subject { font-weight:600 }
+.chat-meta { font-size:12px; color:var(--text-secondary,#666) }
+
+.chat-window { flex:1; display:flex; flex-direction:column; gap:8px }
+.messages-list { flex:1; overflow:auto; padding:8px; background: rgba(0,0,0,0.02); border-radius:8px }
+.message { margin-bottom:10px; max-width:78%; padding:8px; border-radius:8px }
+.message.mine { background: #DCF8C6; margin-left:auto }
+.message.other { background: #fff }
+.message-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary,#666); margin-bottom:4px }
+.chat-input-row { display:flex; gap:8px; align-items:flex-end }
+.chat-input-row textarea { flex:1; min-height:56px; border:1px solid var(--border-color,#ddd); padding:8px; border-radius:8px }
+.chat-input-actions { display:flex; align-items:center; gap:8px }
+.send-btn { background:var(--accent,#0b74ff); color:#fff; border:none; padding:8px 12px; border-radius:8px }
+.close-btn { background:transparent; border:none; font-size:22px; cursor:pointer }
+
+@media (max-width: 880px) {
+  .chat-modal { width: 96%; height: 92%; }
+  .chat-list { display:none }
+}

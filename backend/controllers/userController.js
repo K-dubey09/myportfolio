@@ -137,6 +137,29 @@ export const UserController = {
   }
   ,
 
+  // Search users (authenticated). Non-admins will not see admin/root-admin accounts.
+  async searchUsers(req, res) {
+    try {
+      const { search = '', limit = 20 } = req.query;
+      const q = String(search || '').trim();
+      if (!q) return res.json({ users: [] });
+
+      const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, ''), 'i');
+      const query = { $or: [{ name: regex }, { email: regex }] };
+
+      // Hide admin/root-admin accounts from non-admin requesters
+      if (!req.user || String(req.user.role).toLowerCase() !== 'admin') {
+        query.role = { $nin: ['admin', 'root admin'] };
+      }
+
+      const users = await User.find(query, 'name email avatar role').limit(parseInt(limit, 10)).sort({ name: 1 });
+      res.json({ users });
+    } catch (error) {
+      console.error('searchUsers error:', error);
+      res.status(500).json({ error: 'Failed to search users' });
+    }
+  },
+
   // Assign or generate a unique userNumber for a user (admin only)
   async assignUserNumber(req, res) {
     try {

@@ -832,8 +832,6 @@ const AdminPanel = () => {
   // Admin-side testimonials list and helpers (for Manage view)
   const [adminTestimonials, setAdminTestimonials] = useState([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(false);
-  const [testimonialsPage, setTestimonialsPage] = useState(1);
-  const [testimonialsPageSize, setTestimonialsPageSize] = useState(10);
 
   const fetchAdminTestimonials = useCallback(async () => {
     try {

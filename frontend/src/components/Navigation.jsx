@@ -101,7 +101,6 @@ const Navigation = () => {
     setSpecificTheme(selectedTheme);
     setIsThemeDropdownOpen(false);
     setIsDropdownOpen(false);
-    setShowAdvanced(false);
   };
 
   const handleDropdownMouseEnter = () => {
@@ -272,6 +271,20 @@ const Navigation = () => {
                   >
                     <Settings size={18} />
                     <span>Admin</span>
+                  </motion.button>
+                )}
+                {user.role === 'admin' && (
+                  <motion.button
+                    onClick={() => navigate('/social')}
+                    className="nav-link nav-btn admin-social-link"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: 0.55 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <MessageSquare size={18} />
+                    <span>Social</span>
                   </motion.button>
                 )}
               </>
@@ -484,6 +497,19 @@ const Navigation = () => {
                         >
                           <Settings size={20} />
                           <span>Admin Panel</span>
+                        </motion.button>
+                      )}
+                      {user.role === 'admin' && (
+                        <motion.button
+                          onClick={() => navigate('/social')}
+                          className="mobile-nav-link admin-social-link"
+                          initial={{ opacity: 0, x: 50 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.2, delay: (mainNavLinks.length + additionalPages.length + 1) * 0.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <MessageSquare size={20} />
+                          <span>Social</span>
                         </motion.button>
                       )}
 

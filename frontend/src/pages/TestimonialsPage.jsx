@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { Star, Quote } from 'lucide-react'

@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import Navigation from './components/Navigation'
 import PortfolioSite from './components/PortfolioSite'
 import AdminPanel from '../Admin/AdminPanel'
+import SocialPanel from './pages/SocialPanel'
 import RegistrationPage from './components/RegistrationPage'
 import Login from './components/Login'
 import ProjectsPage from './pages/ProjectsPage'
@@ -81,6 +82,32 @@ const AdminRoute = () => {
   return <AdminPanel />
 }
 
+const SocialRoute = () => {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    )
+  }
+
+  // Only allow admin users to access social panel
+  if (!user || user.role !== 'admin') {
+    return <PortfolioSite />
+  }
+
+  return <SocialPanel />
+}
+
 const ProfileRoute = () => {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -132,6 +159,7 @@ function App() {
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/register" element={<RegistrationPage />} />
             <Route path="/admin" element={<AdminRoute />} />
+            <Route path="/social" element={<SocialRoute />} />
             <Route path="/projects" element={
               <ProtectedRoute>
                 <ProjectsPage />

@@ -14,6 +14,7 @@ import AdminRequestController from './controllers/adminRequestController.js';
 import { FileController } from './controllers/fileController.js';
 import imageRoutes from './routes/imageRoutes.js';
 import portfolioRoutes from './routes/portfolioRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 import { 
   authenticateToken, 
   requireRole, 
@@ -171,6 +172,9 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('DE
 // Assign or generate a unique userNumber for a user (admin only)
 app.post('/api/admin/users/:id/assign-id', authenticateToken, requireAdmin, auditLog('ASSIGN_USER_NUMBER'), UserController.assignUserNumber);
 
+// Public (authenticated) user search for chat initiation
+app.get('/api/users', authenticateToken, UserController.searchUsers);
+
 // ==================== ADMIN UTILITY ROUTES ====================
 // Clear rate limits (admin only)
 app.post('/api/admin/clear-rate-limit', authenticateToken, requireAdmin, (req, res) => {
@@ -222,6 +226,12 @@ app.post('/api/admin/upload', authenticateToken, requirePermission('canUploadFil
 
 // ==================== IMAGE MANAGEMENT ROUTES ====================
 app.use('/api/images', imageRoutes);
+
+// ==================== CHAT ROUTES ====================
+// User chat endpoints
+app.use('/api/chats', chatRoutes);
+// Admin route to list all chats (mounted separately for clarity)
+app.get('/api/admin/chats', authenticateToken, requireAdmin, (req, res, next) => { req.url = '/admin/all'; next(); }, chatRoutes);
 
 // ==================== PORTFOLIO ROUTES ====================
 app.use('/api/portfolio', portfolioRoutes);

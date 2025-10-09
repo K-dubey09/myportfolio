@@ -2902,3 +2902,160 @@
     font-size: 2rem;
   }
 }
+
+/* Admin-like Sidebar for Profile and Social pages */
+.profile-admin-layout,
+.social-panel-admin {
+  display: flex;
+  min-height: 100vh;
+  background-color: transparent; /* let page background show through */
+}
+
+.profile-admin-sidebar,
+.social-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: linear-gradient(145deg, #0f1724, #1f2937);
+  color: #e6eef8;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  box-shadow: 2px 0 18px rgba(3, 7, 18, 0.35);
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 900;
+  overflow-y: auto;
+  gap: 0.75rem;
+}
+
+.profile-admin-sidebar .sidebar-header,
+.social-sidebar .sidebar-header {
+  padding: 0.5rem 0 1rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.profile-admin-sidebar .sidebar-header h2,
+.social-sidebar .sidebar-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg,#7c93ff 0%, #9b6bff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.profile-admin-sidebar .sidebar-username {
+  margin-top: 0.75rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.profile-admin-sidebar .profile-image-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile-admin-main,
+.social-main {
+  flex: 1;
+  margin-left: 260px;
+  padding: 2rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Sidebar navigation buttons - scoped so it doesn't clash with admin CSS */
+.profile-admin-sidebar .sidebar-nav .sidebar-nav-item,
+.social-sidebar .sidebar-nav .nav-item,
+.profile-admin-sidebar .sidebar-nav .nav-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(230,238,248,0.95);
+  padding: 0.75rem 0.6rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.profile-admin-sidebar .sidebar-nav .sidebar-nav-item:hover,
+.social-sidebar .sidebar-nav .nav-item:hover,
+.profile-admin-sidebar .sidebar-nav .nav-item:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.profile-admin-sidebar .sidebar-nav .sidebar-nav-item.active,
+.social-sidebar .sidebar-nav .nav-item.active,
+.profile-admin-sidebar .sidebar-nav .nav-item.active {
+  background: linear-gradient(90deg, rgba(124,147,255,0.12), rgba(155,107,255,0.08));
+  color: #ffffff;
+  border-left: 4px solid rgba(124,147,255,0.9);
+}
+
+.sidebar-actions,
+.social-sidebar .sidebar-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.admin-chat-btn,
+.chat-btn,
+.create-room-btn,
+.manage-rooms-btn {
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  background: linear-gradient(135deg,#7c93ff,#9b6bff);
+  color: white;
+}
+
+/* Responsive: collapse sidebar on small screens */
+@media (max-width: 768px) {
+  .profile-admin-sidebar,
+  .social-sidebar {
+    position: fixed;
+    left: -100%;
+    width: 100%;
+    min-width: 100%;
+    top: 0;
+    height: 100vh;
+    transition: left 0.28s ease;
+  }
+
+  .profile-admin-sidebar.mobile-open,
+  .social-sidebar.mobile-open {
+    left: 0;
+  }
+
+  .profile-admin-main,
+  .social-main {
+    margin-left: 0;
+    padding: 1rem;
+    padding-top: 72px; /* space for mobile header if any */
+  }
+}
+
+/* Small tweak: make sure avatar role badge readable on dark sidebar */
+.profile-role {
+  background: rgba(255,255,255,0.06);
+  color: #e6eef8;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
