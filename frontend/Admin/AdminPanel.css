@@ -2542,3 +2542,14 @@ body.admin-mobile-open .mobile-menu-toggle {
     font-size: 0.75rem;
   }
 }
+
+/* Override: hide decorative elliptical rings around hero/profile if present */
+.hero-ellipse, .hero-oval, .profile-ellipse, .ellipse-ring, .oval-ring {
+  display: none !important;
+}
+.profile-picture-container::before,
+.profile-picture-container::after,
+.hero::before,
+.hero::after {
+  display: none !important;
+}

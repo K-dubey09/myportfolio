@@ -1473,17 +1473,16 @@ body {
 
 .user-info {
   position: relative;
-  top: -40px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 25px;
-  backdrop-filter: blur(10px);
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
   flex-shrink: 0;
-  transition: all 0.3s ease;
+  transition: all 0.18s ease;
   cursor: pointer;
   user-select: none;
 }
@@ -1586,6 +1585,40 @@ body {
   color: white;
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+/* Navbar inline user styles */
+.nav-user-inline .user-avatar img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.nav-user-inline .user-details { display: flex; flex-direction: column; line-height: 1; }
+.nav-user-inline .username { font-weight: 600; font-size: 13px; }
+.nav-user-inline .user-role { font-size: 11px; color: #6b7280; text-transform: capitalize; }
+
+/* Remove elliptical ring around hero/profile images by hiding common ellipse classes and pseudo-elements */
+.hero-ellipse, .hero-oval, .profile-ellipse, .ellipse-ring, .oval-ring { display: none !important; }
+.profile-picture-container::before, .profile-picture-container::after, .hero::before, .hero::after { display: none !important; }
+.profile-preview-circular { box-shadow: 0 12px 30px rgba(8,25,75,0.18); border: 6px solid rgba(255,255,255,0.92); }
+
+/* Positioning: place userinfo at the far right and slightly raised from navbar baseline */
+.nav-user-inline {
+  position: absolute;
+  right: 18px; /* base offset from right edge */
+  top: 10px;   /* base offset from top */
+  z-index: 2000;
+  /* visually move right by 70px and up by 30px */
+  transform: translate(70px, -30px);
+  transition: transform 180ms ease;
+}
+
+/* Slightly reduce padding so it sits compactly in the navbar */
+.nav-user-inline .user-info {
+  padding: 6px 10px;
+  border-radius: 12px;
+}
+
+/* Responsive: on very small screens fall back to inline (no absolute positioning) */
+@media (max-width: 680px) {
+  .nav-user-inline { position: static; right: auto; top: auto; transform: none; }
+  .nav-user-inline .user-details { display: none; }
 }
 
 .theme-options {

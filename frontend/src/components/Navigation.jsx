@@ -15,13 +15,12 @@ const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [suppressMobileControls, setSuppressMobileControls] = useState(false);
   const dropdownRef = useRef(null);
   const dropdownTimeoutRef = useRef(null);
   const themeTimeoutRef = useRef(null);
+  const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
 
   useEffect(() => {
     // copy refs to locals so cleanup uses stable values (avoids linter warning)
@@ -32,7 +31,6 @@ const Navigation = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
         setIsThemeDropdownOpen(false);
-        setShowAdvanced(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -115,14 +113,12 @@ const Navigation = () => {
     dropdownTimeoutRef.current = setTimeout(() => {
       setIsDropdownOpen(false);
       setIsThemeDropdownOpen(false);
-      setShowAdvanced(false);
     }, 300);
   };
 
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
     setIsThemeDropdownOpen(false);
-    setShowAdvanced(false);
   };
 
   // Dropdown menu items (conditionally include Profile based on user role)
@@ -293,6 +289,124 @@ const Navigation = () => {
               </motion.button>
             )}
           </div>
+
+          {/* Desktop User Dropdown moved into nav container */}
+          {user && (
+            <div
+              className="user-dropdown desktop-only nav-user-inline"
+              ref={dropdownRef}
+              onMouseEnter={handleDropdownMouseEnter}
+              onMouseLeave={handleDropdownMouseLeave}
+              style={{ position: 'relative', zIndex: 1000, order: 3 }}
+            >
+              <motion.div
+                className="user-info"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                onClick={handleDropdownToggle}
+                onTouchEnd={handleDropdownToggle}
+                style={{ cursor: 'pointer', touchAction: 'manipulation' }}
+              >
+                <div className="user-avatar">
+                  {user.profileImage ? (
+                    <img src={user.profileImage} alt={user.username} />
+                  ) : (
+                    <User size={20} />
+                  )}
+                </div>
+                <div className="user-details">
+                  <span className="username">{user.username}</span>
+                  <span className="user-role">{user.role}</span>
+                </div>
+                <motion.div animate={{ rotate: isDropdownOpen ? 180 : 0 }}>
+                  <ChevronDown size={16} />
+                </motion.div>
+              </motion.div>
+
+              {/* Dropdown menu rendered from the inline navbar user block */}
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div
+                    className="user-dropdown-menu"
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      minWidth: '180px',
+                      maxWidth: '260px',
+                      backgroundColor: '#fff',
+                      boxShadow: '0 8px 30px rgba(12,24,60,0.12)',
+                      borderRadius: '10px',
+                      zIndex: 9999,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {dropdownItems.map((item) => (
+                      <motion.div
+                        key={item.name}
+                        className={`dropdown-item ${item.danger ? 'danger' : ''} ${item.isToggler ? 'toggler' : ''} ${item.hasSubmenu ? 'has-submenu' : ''} ${item.isThemeSelector && isThemeDropdownOpen ? 'submenu-open' : ''}`}
+                        onClick={() => {
+                          item.action?.();
+                          if (item.isThemeSelector) {
+                            setIsThemeDropdownOpen((prev) => !prev);
+                          }
+                          // close dropdown unless it's a theme selector toggle
+                          if (!item.isThemeSelector) setIsDropdownOpen(false);
+                        }}
+                        onMouseEnter={item.isThemeSelector ? () => setIsThemeDropdownOpen(true) : undefined}
+                        onMouseLeave={item.isThemeSelector ? () => setTimeout(() => setIsThemeDropdownOpen(false), 300) : undefined}
+                        whileHover={{ backgroundColor: item.danger ? '#fee2e2' : '#f7fafc' }}
+                        whileTap={{ scale: 0.995 }}
+                        style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.9rem', cursor: 'pointer' }}
+                      >
+                        <item.icon size={16} />
+                        <span style={{ fontSize: '0.95rem' }}>{item.name}</span>
+
+                        {item.hasSubmenu && (
+                          <>
+                            <ChevronLeft size={14} className="submenu-arrow" />
+                            <AnimatePresence>
+                              {item.isThemeSelector && isThemeDropdownOpen && (
+                                <motion.div
+                                  className="theme-submenu"
+                                  style={{
+                                    position: 'absolute',
+                                    left: '-100%',
+                                    top: 0,
+                                    backgroundColor: '#fff',
+                                    border: '1px solid #e5e7eb',
+                                    padding: '8px',
+                                    zIndex: 9999,
+                                    minWidth: '160px',
+                                    boxShadow: '0 6px 20px rgba(12,24,60,0.08)',
+                                    borderRadius: '8px'
+                                  }}
+                                  initial={{ opacity: 0, x: 8, scale: 0.98 }}
+                                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                                  exit={{ opacity: 0, x: 8, scale: 0.98 }}
+                                  transition={{ duration: 0.16 }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {Object.entries(themeLabels).map(([key, label]) => (
+                                    <button key={key} onClick={() => { handleThemeSelect(key); setIsThemeDropdownOpen(false); setIsDropdownOpen(false); }} style={{ display: 'block', width: '100%', padding: '8px 10px', textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer' }}>{label}</button>
+                                  ))}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         {/* Mobile Navigation Overlay */}
@@ -449,175 +563,7 @@ const Navigation = () => {
         </AnimatePresence>
       </motion.nav>
 
-      {/* Desktop User Dropdown */}
-      {user && (
-        <div
-          className="user-dropdown desktop-only"
-          ref={dropdownRef}
-          onMouseEnter={handleDropdownMouseEnter}
-          onMouseLeave={handleDropdownMouseLeave}
-          style={{ position: 'relative', zIndex: 1000 }}
-        >
-          <motion.div
-            className="user-info"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            onClick={handleDropdownToggle}
-            onTouchEnd={handleDropdownToggle}
-            style={{ cursor: 'pointer', touchAction: 'manipulation' }}
-          >
-            <div className="user-avatar">
-              {user.profileImage ? (
-                <img src={user.profileImage} alt={user.username} />
-              ) : (
-                <User size={20} />
-              )}
-            </div>
-            <div className="user-details">
-              <span className="username">{user.username}</span>
-              <span className="user-role">{user.role}</span>
-            </div>
-            <motion.div animate={{ rotate: isDropdownOpen ? 180 : 0 }}>
-              <ChevronDown size={16} />
-            </motion.div>
-          </motion.div>
-
-          <AnimatePresence>
-            {isDropdownOpen && (
-              <motion.div
-                className="user-dropdown-menu"
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  minWidth: '160px',
-                  maxWidth: '200px',
-                  backgroundColor: '#fff',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  borderRadius: '8px',
-                  zIndex: 9999
-                }}
-              >
-                {dropdownItems.map((item) => (
-                  <motion.div
-                    key={item.name}
-                    className={`dropdown-item ${item.danger ? 'danger' : ''} ${item.isToggler ? 'toggler' : ''} ${item.hasSubmenu ? 'has-submenu' : ''} ${item.isThemeSelector && isThemeDropdownOpen ? 'submenu-open' : ''}`}
-                    onClick={() => {
-                      item.action?.();
-                      if (item.isThemeSelector) {
-                        setIsThemeDropdownOpen((prev) => !prev);
-                      }
-                    }}
-                    onMouseEnter={item.isThemeSelector ? () => setIsThemeDropdownOpen(true) : undefined}
-                    onMouseLeave={item.isThemeSelector ? () => setTimeout(() => setIsThemeDropdownOpen(false), 300) : undefined}
-                    whileHover={{ backgroundColor: item.danger ? '#fee2e2' : '#f3f4f6' }}
-                    whileTap={{ scale: 0.98 }}
-                    style={{ position: 'relative' }}
-                  >
-                    <item.icon size={18} />
-                    <span>{item.name}</span>
-
-                    {item.hasSubmenu && (
-                      <>
-                        <ChevronLeft size={16} className="submenu-arrow" />
-                        <AnimatePresence>
-                          {item.isThemeSelector && isThemeDropdownOpen && (
-                            <motion.div
-                              className="theme-submenu"
-                              style={{
-                                position: 'absolute',
-                                left: '-100%',
-                                top: '0',
-                                backgroundColor: '#fff',
-                                border: '1px solid #ccc',
-                                padding: '12px',
-                                zIndex: 9999,
-                                minWidth: '160px',
-                                maxWidth: '200px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                borderRadius: '8px'
-                              }}
-                              initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                              animate={{ opacity: 1, x: 0, scale: 1 }}
-                              exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                              transition={{ duration: 0.2, ease: "easeOut" }}
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseEnter={(e) => e.stopPropagation()}
-                              onMouseLeave={(e) => {
-                                e.stopPropagation();
-                                setTimeout(() => setIsThemeDropdownOpen(false), 300);
-                              }}
-                            >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
-                                <h4 style={{ marginBottom: '8px' }}>Select Theme</h4>
-                                {Object.entries(themeLabels).map(([key, label]) => (
-                                  <div
-                                    key={key}
-                                    style={{ position: 'relative' }}
-                                    onMouseEnter={() => key === 'purple' && setShowAdvanced(true)}
-                                    onMouseLeave={() => key === 'purple' && setTimeout(() => setShowAdvanced(false), 300)}
-                                  >
-                                    <button
-                                      onClick={() => handleThemeSelect(key)}
-                                      style={{
-                                        padding: '8px 12px',
-                                        backgroundColor: theme === key ? '#e0f7e9' : '#f9f9f9',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        fontWeight: theme === key ? 'bold' : 'normal',
-                                        width: '100%'
-                                      }}
-                                    >
-                                      {label}
-                                    </button>
-
-                                    {key === 'purple' && showAdvanced && (
-                                      <motion.div
-                                        className="advanced-submenu"
-                                        style={{
-                                          position: 'absolute',
-                                          right: '100%',
-                                          top: '0',
-                                          backgroundColor: '#fff',
-                                          border: '1px solid #ccc',
-                                          padding: '12px',
-                                          zIndex: 9999,
-                                          minWidth: '140px',
-                                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                          borderRadius: '8px'
-                                        }}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -10 }}
-                                        transition={{ duration: 0.2 }}
-                                      >
-                                        <h4 style={{ marginBottom: '8px' }}>Advanced</h4>
-                                        <button onClick={() => console.log('Cosmic Dust')}>Cosmic Dust</button>
-                                        <button onClick={() => console.log('Nebula Pulse')}>Nebula Pulse</button>
-                                      </motion.div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </>
-                    )}
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+      
     </>
   );
 };
