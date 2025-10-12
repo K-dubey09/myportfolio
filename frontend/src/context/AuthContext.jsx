@@ -22,6 +22,26 @@ export const AuthProvider = ({ children }) => {
   // API base URL
   const API_BASE = 'http://localhost:5000/api';
 
+  // Exchange refresh cookie for a new access token
+  const refreshAccessToken = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      if (data.accessToken) {
+        localStorage.setItem('authToken', data.accessToken);
+        setToken(data.accessToken);
+        return true;
+      }
+    } catch (err) {
+      console.error('refreshAccessToken failed', err);
+    }
+    return false;
+  }, []);
+
   const verifyToken = useCallback(async () => {
     try {
       if (!token) {
@@ -79,38 +99,27 @@ export const AuthProvider = ({ children }) => {
     return null;
   }, [token]);
 
-  // Exchange refresh cookie for a new access token
-  const refreshAccessToken = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      if (!response.ok) return false;
-      const data = await response.json();
-      if (data.accessToken) {
-        localStorage.setItem('authToken', data.accessToken);
-        setToken(data.accessToken);
-        return true;
-      }
-    } catch (err) {
-      console.error('refreshAccessToken failed', err);
-    }
-    return false;
-  }, []);
-
+  // Initialization: attempt to verify existing token or refresh via cookie
   useEffect(() => {
     const init = async () => {
-      if (token) {
-        await verifyToken();
-      } else {
-        // Try refresh using cookie
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
+      try {
+        console.log('AuthProvider:init start', { token });
+        if (token) {
           await verifyToken();
         } else {
-          setLoading(false);
+          // Try refresh using cookie
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            await verifyToken();
+          } else {
+            setLoading(false);
+          }
         }
+  console.log('AuthProvider:init complete', { token });
+      } catch (err) {
+        // Catch any unexpected error to prevent React error boundary noise and log details
+        console.error('AuthProvider:init unexpected error', err);
+        setLoading(false);
       }
     };
     init();
@@ -334,9 +343,21 @@ export const AuthProvider = ({ children }) => {
     canViewAnalytics
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  try {
+    return (
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
+    );
+  } catch (renderError) {
+    // Log and render an inline error so the React error boundary message is replaced
+    // with a more actionable message and stack in the console.
+    console.error('AuthProvider render error:', renderError);
+    return (
+      <div style={{ padding: 20, color: 'crimson' }}>
+        <h3>Authentication initialization error</h3>
+        <pre style={{ whiteSpace: 'pre-wrap' }}>{renderError && renderError.message}</pre>
+      </div>
+    );
+  }
 };

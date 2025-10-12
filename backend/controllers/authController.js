@@ -260,35 +260,4 @@ export const AuthController = {
 };
 
 export default AuthController;
-    try {
-      const refreshToken = req.cookies && req.cookies.refreshToken;
-      if (!refreshToken) return res.status(401).json({ error: 'No refresh token' });
-
-      // verify token
-      const secret = process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET;
-      let payload;
-      try {
-        payload = jwt.verify(refreshToken, secret);
-      } catch (err) {
-        return res.status(401).json({ error: 'Invalid refresh token' });
-      }
-
-      const user = await User.findById(payload.userId);
-      if (!user || user.refreshToken !== refreshToken) {
-        return res.status(401).json({ error: 'Invalid refresh token' });
-      }
-
-      // generate new access token
-      const accessToken = jwt.sign(
-        { userId: user._id, email: user.email, role: user.role, permissions: user.permissions },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-
-      res.json({ accessToken });
-    } catch (error) {
-      console.error('Refresh token error:', error);
-      res.status(500).json({ error: 'Failed to refresh token' });
-    }
-  },
-};
+ 
