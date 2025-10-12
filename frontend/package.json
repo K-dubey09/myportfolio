@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "framer-motion": "^12.23.22",
+    "libphonenumber-js": "^1.12.24",
     "lucide-react": "^0.544.0",
+    "ngrok": "^5.0.0-beta.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",

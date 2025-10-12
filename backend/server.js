@@ -25,6 +25,7 @@ import {
   auditLog,
   clearRateLimit
 } from './middleware/auth.js';
+import cookieParser from 'cookie-parser';
 
 // Load environment variables
 dotenv.config();
@@ -65,6 +66,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(cookieParser());
 
 // Add health check and test routes
 app.get('/api/health', (req, res) => {
@@ -158,10 +160,14 @@ await initializeAdmin();
 // ==================== AUTHENTICATION ROUTES ====================
 app.post('/api/auth/register', auditLog('USER_REGISTER'), AuthController.register);
 app.post('/api/auth/login', AuthController.login); // Removed auditLog temporarily
+app.post('/api/auth/refresh', AuthController.refresh);
 app.post('/api/auth/logout', authenticateToken, auditLog('USER_LOGOUT'), AuthController.logout);
 app.get('/api/auth/profile', authenticateToken, AuthController.getProfile);
 app.put('/api/auth/profile', authenticateToken, auditLog('PROFILE_UPDATE'), AuthController.updateProfile);
 app.put('/api/auth/change-password', authenticateToken, auditLog('PASSWORD_CHANGE'), AuthController.changePassword);
+// Phone OTP endpoints
+app.post('/api/auth/phone/send-otp', authenticateToken, AuthController.sendPhoneOtp);
+app.post('/api/auth/phone/verify-otp', authenticateToken, AuthController.verifyPhoneOtp);
 
 // ==================== USER MANAGEMENT ROUTES (Admin Only) ====================
 app.get('/api/admin/users', authenticateToken, requireAdmin, auditLog('VIEW_USERS'), UserController.getAllUsers);
@@ -174,6 +180,10 @@ app.post('/api/admin/users/:id/assign-id', authenticateToken, requireAdmin, audi
 
 // Public (authenticated) user search for chat initiation
 app.get('/api/users', authenticateToken, UserController.searchUsers);
+// Recent users helper for default suggestions
+app.get('/api/users/recent', authenticateToken, UserController.recentUsers);
+// Public (authenticated) single user fetch for chat add flows
+app.get('/api/users/:id', authenticateToken, UserController.getPublicUserById);
 
 // ==================== ADMIN UTILITY ROUTES ====================
 // Clear rate limits (admin only)

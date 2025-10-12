@@ -24,6 +24,11 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = useCallback(async () => {
     try {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -35,10 +40,14 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setIsAuthenticated(true);
       } else {
-        localStorage.removeItem('authToken');
-        setToken(null);
-        setUser(null);
-        setIsAuthenticated(false);
+        // Try to refresh via cookie
+        const refreshed = await refreshAccessToken();
+        if (!refreshed) {
+          localStorage.removeItem('authToken');
+          setToken(null);
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       }
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -49,25 +58,74 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  }, [token, refreshAccessToken]);
+
+  // Expose a refreshUser helper to re-fetch the current user profile and update context
+  const refreshUser = useCallback(async () => {
+    if (!token) return null;
+    try {
+      const response = await fetch(`${API_BASE}/auth/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setIsAuthenticated(true);
+        return userData;
+      }
+    } catch (err) {
+      console.error('refreshUser failed', err);
+    }
+    return null;
   }, [token]);
 
-  useEffect(() => {
-    if (token) {
-      verifyToken();
-    } else {
-      setLoading(false);
+  // Exchange refresh cookie for a new access token
+  const refreshAccessToken = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      if (data.accessToken) {
+        localStorage.setItem('authToken', data.accessToken);
+        setToken(data.accessToken);
+        return true;
+      }
+    } catch (err) {
+      console.error('refreshAccessToken failed', err);
     }
-  }, [token, verifyToken]);
+    return false;
+  }, []);
 
-  const login = async (email, password) => {
+  useEffect(() => {
+    const init = async () => {
+      if (token) {
+        await verifyToken();
+      } else {
+        // Try refresh using cookie
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          await verifyToken();
+        } else {
+          setLoading(false);
+        }
+      }
+    };
+    init();
+  }, [token, verifyToken, refreshAccessToken]);
+
+  const login = async (identifier, password) => {
     try {
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
+        credentials: 'include', // allow refresh token cookie
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ identifier, password })
       });
 
       if (!response.ok) {
@@ -77,9 +135,10 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      if (data.token && data.user) {
-        localStorage.setItem('authToken', data.token);
-        setToken(data.token);
+      // Backend now returns accessToken and sets refresh cookie
+      if (data.accessToken && data.user) {
+        localStorage.setItem('authToken', data.accessToken);
+        setToken(data.accessToken);
         setUser(data.user);
         setIsAuthenticated(true);
         return { success: true, user: data.user };
@@ -255,6 +314,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    refreshUser,
     changePassword,
     deleteAccount,
     clearRateLimit,

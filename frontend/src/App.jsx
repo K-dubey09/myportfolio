@@ -266,6 +266,12 @@ const ConditionalNavigation = () => {
   if (location.pathname.startsWith('/admin') && user && user.role === 'admin') {
     return null
   }
+
+  // Hide navigation on the Profile route to provide a focused profile view
+  if (location.pathname === '/profile' || location.pathname.startsWith('/profile/')) {
+    return null
+  }
+
   return <Navigation />
 }
 

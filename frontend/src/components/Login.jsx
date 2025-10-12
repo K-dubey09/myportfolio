@@ -9,7 +9,7 @@ import './Login.css';
 
 const Login = ({ onClose }) => {
   const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [credentials, setCredentials] = useState({ identifier: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,14 +20,14 @@ const Login = ({ onClose }) => {
     setLoading(true);
     setError('');
 
-    if (!credentials.email || !credentials.password) {
+    if (!credentials.identifier || !credentials.password) {
       setError('Please fill in all fields');
       setLoading(false);
       return;
     }
 
     try {
-      const result = await login(credentials.email, credentials.password);
+  const result = await login(credentials.identifier, credentials.password);
       
       if (result.success) {
         toast.success(`Welcome back, ${result.user.name}!`);
@@ -88,20 +88,20 @@ const Login = ({ onClose }) => {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email">
+            <label htmlFor="identifier">
               <User size={18} />
-              Email Address
+              Email or Phone
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={credentials.email}
+              type="text"
+              id="identifier"
+              name="identifier"
+              value={credentials.identifier}
               onChange={handleChange}
-              placeholder="Enter your email"
+              placeholder="Email address or phone number"
               required
               disabled={loading}
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
           

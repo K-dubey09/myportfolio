@@ -35,6 +35,23 @@ export const UserController = {
     }
   },
 
+  // Public: get user by id (authenticated) - hides sensitive fields
+  async getPublicUserById(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id, 'name email avatar role userNumber');
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      // Hide admin/root admin for non-admin requesters
+      if (user.role && String(user.role).toLowerCase() === 'admin' && (!req.user || String(req.user.role).toLowerCase() !== 'admin')) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      res.json({ user });
+    } catch (error) {
+      console.error('getPublicUserById error', error);
+      res.status(500).json({ error: 'Failed to fetch user' });
+    }
+  },
+
   // Update user role and permissions (admin only)
   async updateUserRole(req, res) {
     try {
@@ -137,12 +154,42 @@ export const UserController = {
   }
   ,
 
+  // Return recent users for default suggestions (authenticated)
+  async recentUsers(req, res) {
+    try {
+      const limit = parseInt(req.query.limit, 10) || 5;
+      const query = {};
+      // exclude requester
+      if (req.user && req.user._id) query._id = { $ne: req.user._id };
+      // hide admin/root-admin from non-admin requesters
+      if (!req.user || String(req.user.role).toLowerCase() !== 'admin') {
+        query.role = { $nin: ['admin', 'root admin'] };
+      }
+
+      const users = await User.find(query, 'name email avatar role').sort({ createdAt: -1 }).limit(limit);
+      res.json({ users });
+    } catch (error) {
+      console.error('recentUsers error', error);
+      res.status(500).json({ error: 'Failed to fetch recent users' });
+    }
+  },
+
   // Search users (authenticated). Non-admins will not see admin/root-admin accounts.
   async searchUsers(req, res) {
     try {
       const { search = '', limit = 20 } = req.query;
       const q = String(search || '').trim();
-      if (!q) return res.json({ users: [] });
+      // If no search query provided, but a limit is requested, return recent/top users
+      if (!q) {
+        const l = parseInt(limit, 10) || 20;
+        const query = {};
+        if (req.user && req.user._id) query._id = { $ne: req.user._id };
+        if (!req.user || String(req.user.role).toLowerCase() !== 'admin') {
+          query.role = { $nin: ['admin', 'root admin'] };
+        }
+        const users = await User.find(query, 'name email avatar role').sort({ createdAt: -1 }).limit(l);
+        return res.json({ users });
+      }
 
       const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, ''), 'i');
       const query = { $or: [{ name: regex }, { email: regex }] };

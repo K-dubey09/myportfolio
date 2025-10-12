@@ -19,7 +19,14 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    req.user = decoded;
+    // Normalize req.user: include both userId and _id (some code expects one or the other)
+    req.user = {
+      userId: String(user._id),
+      _id: String(user._id),
+      role: user.role,
+      email: user.email,
+      permissions: user.permissions || {}
+    };
     next();
   } catch (error) {
     console.error('Authentication error:', error);

@@ -7,7 +7,9 @@
 
 /* Admin Panel Layout */
 .admin-panel {
+  /* Mobile-first: stack header/sidebar above main content by default */
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background-color: #f8fafc;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -15,19 +17,20 @@
 
 /* Left Sidebar */
 .admin-sidebar {
-  width: 280px;
-  min-width: 280px;
+  /* Mobile: full-width stacked block */
+  width: 100%;
+  min-width: auto;
   background: linear-gradient(145deg, #1a202c, #2d3748);
   color: white;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  position: fixed;
-  height: 100vh;
-  left: 0;
-  top: 0;
-  z-index: 1000;
-  overflow-y: auto;
+  box-shadow: none;
+  position: static;
+  height: auto;
+  left: auto;
+  top: auto;
+  z-index: 1;
+  overflow-y: visible;
 }
 
 .sidebar-header {
@@ -40,7 +43,7 @@
 
 /* Close button inside the sidebar header for mobile view */
 .sidebar-close-btn {
-  display: none; /* shown on mobile */
+  display: none; /* shown on mobile when sidebar becomes overlay */
   position: absolute;
   top: 12px;
   right: 12px;
@@ -60,9 +63,8 @@
 
 /* When the sidebar is open (mobile-open) always show a high-contrast close button */
 .admin-sidebar.mobile-open .sidebar-close-btn {
-  /* Hide the floating/overlay close button when the sidebar is open.
-     The intended close control is the in-panel navbar close (.mobile-close-btn)
-     so keep that visible and avoid duplicate X buttons. */
+  /* when in mobile overlay mode, the mobile close button inside panel may be hidden
+     - actual overlay close UI handled separately */
   display: none;
 }
 
@@ -256,10 +258,48 @@
 /* Main Content Area */
 .admin-main {
   flex: 1;
-  margin-left: 280px;
-  padding: 2rem;
+  padding: 1rem;
   min-height: 100vh;
   background-color: #f8fafc;
+}
+
+/* Desktop/tablet: make sidebar fixed and main content sit to the right */
+@media (min-width: 768px) {
+  .admin-panel {
+    flex-direction: row;
+  }
+  .admin-sidebar {
+    width: 280px;
+    min-width: 280px;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+    overflow-y: auto;
+  }
+  .admin-main {
+    margin-left: 280px;
+    padding: 2rem;
+  }
+}
+
+/* Mobile overlay mode: sidebar becomes an overlay above content when .mobile-open applied */
+@media (max-width: 767px) {
+  .admin-sidebar.mobile-open {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 92vw;
+    max-width: 360px;
+    height: 100vh;
+    z-index: 1200;
+    box-shadow: 0 12px 40px rgba(2,6,23,0.4);
+    overflow-y: auto;
+    border-radius: 0 12px 12px 0;
+  }
+  /* show the close button inside overlay mode */
+  .admin-sidebar.mobile-open .sidebar-close-btn { display: block; }
 }
 
 /* Message Styles */

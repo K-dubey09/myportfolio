@@ -32,6 +32,24 @@ const userSchema = new mongoose.Schema({
     type: String, // URL to avatar image
     default: ''
   },
+  // Multiple phone numbers with verification state
+  phones: [{
+    number: { type: String },
+    verified: { type: Boolean, default: false },
+    verifiedAt: { type: Date }
+  }],
+  // External code accounts (e.g., GitHub) - store username and optional profile url
+  githubAccounts: [{
+    username: { type: String },
+    url: { type: String }
+  }],
+  // Repositories the user may choose to share publicly on profile; store meta and share boolean
+  sharedRepos: [{
+    repoId: { type: String },
+    name: { type: String },
+    url: { type: String },
+    shared: { type: Boolean, default: false }
+  }],
   // Optional human-friendly user number/identifier that can be chosen or generated
   userNumber: {
     type: String,
