@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "create-admin": "node scripts/createAppwriteAdmin.js"
   },
   "dependencies": {
+    "appwrite": "^21.2.1",
     "framer-motion": "^12.23.22",
     "libphonenumber-js": "^1.12.24",
     "lucide-react": "^0.544.0",

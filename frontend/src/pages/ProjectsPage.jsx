@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { Github, ExternalLink, Star, Calendar, Filter } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { API_BASE_URL } from '../config/api'
 
 const ProjectsPage = () => {
   const { user } = useAuth()
@@ -19,7 +20,7 @@ const ProjectsPage = () => {
       setError(null)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
       
-      const response = await fetch('http://localhost:5000/api/projects', { headers })
+      const response = await fetch(`${API_BASE_URL}/projects`, { headers })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch projects: ${response.status}`)

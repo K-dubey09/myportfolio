@@ -1,16 +1,49 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
+// Helper to generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Helper to send email (mock for now - integrate with real email service)
+const sendEmailOTP = async (email, otp) => {
+  console.log(`📧 Sending OTP to ${email}: ${otp}`);
+  // TODO: Integrate with real email service (SendGrid, AWS SES, etc.)
+  // For now, just log to console
+  return true;
+};
+
 export const AuthController = {
-  // Register new user
+  // Step 1: Register new user and send OTP
   async register(req, res) {
     try {
-      const { email, password, name, role = 'viewer' } = req.body;
+      const { email, password, username, name, role = 'viewer' } = req.body;
 
-      // Check if user already exists
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ error: 'User already exists with this email' });
+      // Validate required fields
+      if (!email || !password || !username || !name) {
+        return res.status(400).json({ error: 'Email, password, username, and name are required' });
+      }
+
+      // Validate username format
+      if (!/^[a-z0-9_]+$/.test(username)) {
+        return res.status(400).json({ error: 'Username can only contain lowercase letters, numbers, and underscores' });
+      }
+
+      if (username.length < 3 || username.length > 30) {
+        return res.status(400).json({ error: 'Username must be between 3 and 30 characters' });
+      }
+
+      // Check if email already exists
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+
+      // Check if username already exists
+      const existingUsername = await User.findOne({ username: username.toLowerCase() });
+      if (existingUsername) {
+        return res.status(400).json({ error: 'Username already taken' });
       }
 
       // Validate role
@@ -23,43 +56,38 @@ export const AuthController = {
       const userCount = await User.countDocuments();
       const userRole = userCount === 0 ? 'admin' : role;
 
-      // Create new user
+      // Generate OTP
+      const otp = generateOTP();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Create new user (not verified yet)
       const user = new User({
         email,
         password,
+        username: username.toLowerCase(),
         name,
-        role: userRole
+        role: userRole,
+        emailVerified: false,
+        emailVerificationOTP: otp,
+        emailOTPExpires: otpExpires
       });
 
       await user.save();
 
-      // Generate token
-      const token = jwt.sign(
-        {
-          userId: user._id,
-          email: user.email,
-          role: user.role,
-          permissions: user.permissions
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      // Send OTP email
+      await sendEmailOTP(email, otp);
 
       res.status(201).json({
-        message: 'User registered successfully',
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          permissions: user.permissions
-        }
+        message: 'Registration initiated. Please verify your email with the OTP sent.',
+        userId: user._id,
+        email: user.email,
+        requiresVerification: true
       });
     } catch (error) {
       console.error('Registration error:', error);
       if (error.code === 11000) {
-        res.status(400).json({ error: 'Email already exists' });
+        const field = Object.keys(error.keyPattern)[0];
+        res.status(400).json({ error: `${field === 'username' ? 'Username' : 'Email'} already exists` });
       } else if (error.name === 'ValidationError') {
         res.status(400).json({ error: error.message });
       } else {
@@ -68,7 +96,132 @@ export const AuthController = {
     }
   },
 
-  // Login user (accept email or phone as identifier)
+  // Step 2: Verify email OTP
+  async verifyEmail(req, res) {
+    try {
+      const { email, otp } = req.body;
+
+      if (!email || !otp) {
+        return res.status(400).json({ error: 'Email and OTP are required' });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ error: 'Email already verified' });
+      }
+
+      if (!user.emailVerificationOTP || !user.emailOTPExpires) {
+        return res.status(400).json({ error: 'No OTP found. Please request a new one.' });
+      }
+
+      if (new Date() > user.emailOTPExpires) {
+        return res.status(400).json({ error: 'OTP expired. Please request a new one.' });
+      }
+
+      if (user.emailVerificationOTP !== otp) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+      }
+
+      // Verify user
+      user.emailVerified = true;
+      user.emailVerificationOTP = null;
+      user.emailOTPExpires = null;
+      await user.save();
+
+      // Generate tokens
+      const accessToken = jwt.sign(
+        {
+          userId: user._id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          permissions: user.permissions
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      user.refreshToken = refreshToken;
+      await user.save();
+
+      // Set refresh token cookie
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      };
+      res.cookie('refreshToken', refreshToken, cookieOptions);
+
+      res.json({
+        message: 'Email verified successfully',
+        accessToken,
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          permissions: user.permissions,
+          emailVerified: user.emailVerified
+        }
+      });
+    } catch (error) {
+      console.error('Email verification error:', error);
+      res.status(500).json({ error: 'Verification failed' });
+    }
+  },
+
+  // Resend OTP
+  async resendOTP(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      if (user.emailVerified) {
+        return res.status(400).json({ error: 'Email already verified' });
+      }
+
+      // Generate new OTP
+      const otp = generateOTP();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      user.emailVerificationOTP = otp;
+      user.emailOTPExpires = otpExpires;
+      await user.save();
+
+      // Send OTP email
+      await sendEmailOTP(email, otp);
+
+      res.json({
+        message: 'OTP sent successfully',
+        email: user.email
+      });
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      res.status(500).json({ error: 'Failed to resend OTP' });
+    }
+  },
+
+  // Login user (accept email, username, or phone as identifier)
   async login(req, res) {
     console.log('🔐 LOGIN ATTEMPT - Body:', req.body);
     try {
@@ -78,13 +231,25 @@ export const AuthController = {
         return res.status(400).json({ error: 'Identifier and password are required' });
       }
 
-      // Find by email or by phone
+      // Find by email, username, or phone
       let user = await User.findOne({ email: identifier, isActive: true });
+      if (!user) {
+        user = await User.findOne({ username: identifier.toLowerCase(), isActive: true });
+      }
       if (!user) {
         user = await User.findOne({ 'phones.number': identifier, isActive: true });
       }
 
       if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+      // Check if email is verified
+      if (!user.emailVerified) {
+        return res.status(403).json({ 
+          error: 'Email not verified. Please verify your email first.',
+          requiresVerification: true,
+          email: user.email
+        });
+      }
 
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) return res.status(401).json({ error: 'Invalid credentials' });
@@ -245,24 +410,6 @@ export const AuthController = {
     try {
       const refreshToken = req.cookies && req.cookies.refreshToken;
       if (!refreshToken) return res.status(401).json({ error: 'No refresh token' });
-      const secret = process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET;
-      let payload;
-      try { payload = jwt.verify(refreshToken, secret); } catch (err) { return res.status(401).json({ error: 'Invalid refresh token' }); }
-      const user = await User.findById(payload.userId);
-      if (!user || user.refreshToken !== refreshToken) return res.status(401).json({ error: 'Invalid refresh token' });
-      const accessToken = jwt.sign({ userId: user._id, email: user.email, role: user.role, permissions: user.permissions }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ accessToken });
-    } catch (error) {
-      console.error('Refresh token error:', error);
-      res.status(500).json({ error: 'Failed to refresh token' });
-    }
-  }
-};
-
-export default AuthController;
-    try {
-      const refreshToken = req.cookies && req.cookies.refreshToken;
-      if (!refreshToken) return res.status(401).json({ error: 'No refresh token' });
 
       // verify token
       const secret = process.env.REFRESH_JWT_SECRET || process.env.JWT_SECRET;
@@ -290,5 +437,7 @@ export default AuthController;
       console.error('Refresh token error:', error);
       res.status(500).json({ error: 'Failed to refresh token' });
     }
-  },
+  }
 };
+
+export default AuthController;

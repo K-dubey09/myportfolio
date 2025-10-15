@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { GraduationCap, Calendar, MapPin, Award, Search } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 import './PagesStyles.css';
 
 const EducationPage = () => {
@@ -17,7 +18,7 @@ const EducationPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/education', {
+      const response = await fetch(`${API_BASE_URL}/education`, {
         headers: {
           'Content-Type': 'application/json',
           ...(user ? { Authorization: `Bearer ${user.token}` } : {})

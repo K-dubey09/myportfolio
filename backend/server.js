@@ -159,6 +159,8 @@ await initializeAdmin();
 
 // ==================== AUTHENTICATION ROUTES ====================
 app.post('/api/auth/register', auditLog('USER_REGISTER'), AuthController.register);
+app.post('/api/auth/verify-email', AuthController.verifyEmail);
+app.post('/api/auth/resend-otp', AuthController.resendOTP);
 app.post('/api/auth/login', AuthController.login); // Removed auditLog temporarily
 app.post('/api/auth/refresh', AuthController.refresh);
 app.post('/api/auth/logout', authenticateToken, auditLog('USER_LOGOUT'), AuthController.logout);

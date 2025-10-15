@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { Star, Quote } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { API_BASE_URL } from '../config/api'
 
 const TestimonialsPage = () => {
   const { user, isEditor, token } = useAuth()
@@ -20,7 +21,7 @@ const TestimonialsPage = () => {
       setError(null)
   const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
       
-      const response = await fetch('http://localhost:5000/api/testimonials', { headers })
+      const response = await fetch(`${API_BASE_URL}/testimonials`, { headers })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch testimonials: ${response.status}`)
@@ -172,7 +173,7 @@ const TestimonialsPage = () => {
               // submit new testimonial
               const payload = { name: addForm.name, position: addForm.position, company: addForm.company, content: addForm.content, rating: Number(addForm.rating || 5), featured: !!addForm.featured, imageUrl: addForm.imageUrl };
               try {
-                  const res = await fetch('http://localhost:5000/api/admin/testimonials', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
+                  const res = await fetch(`${API_BASE_URL.replace('/api', '')}/api/admin/testimonials`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
                 if (!res.ok) {
                   const err = await res.json().catch(() => ({ error: 'Submission failed' }));
                   toast.error(err.error || 'Failed to add testimonial');

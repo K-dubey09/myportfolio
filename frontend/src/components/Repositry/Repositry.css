@@ -1,0 +1,168 @@
+/* ============================================
+   REPOSITORY COMPONENT STYLES
+   Modern GitHub-inspired design
+   ============================================ */
+
+.repo-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #1f2328);
+  min-height: 400px;
+}
+
+/* ==================== HEADER ==================== */
+.repo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-color, #d0d7de);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.repo-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2328);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.repo-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #0969da 0%, #0550ae 100%);
+  border-radius: 8px;
+  color: white;
+  font-size: 18px;
+}
+
+.repo-username {
+  color: var(--text-secondary, #656d76);
+  font-weight: 400;
+}
+
+/* ==================== CONTROLS ==================== */
+.repo-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.repo-search-input,
+.repo-sort-select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #d0d7de);
+  background: var(--bg-secondary, #f6f8fa);
+  color: var(--text-primary, #1f2328);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.repo-search-input {
+  min-width: 220px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23656d76' d='M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.5 4.5 0 1 0-8.999 0A4.5 4.5 0 0 0 11.5 7Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  padding-left: 38px;
+}
+
+.repo-search-input:focus,
+.repo-sort-select:focus {
+  border-color: #0969da;
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+  background-color: #ffffff;
+}
+
+.repo-search-input::placeholder {
+  color: var(--text-tertiary, #656d76);
+}
+
+.repo-sort-select {
+  min-width: 180px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23656d76' d='M4.427 9.573l3.396 3.396a.25.25 0 0 0 .354 0l3.396-3.396A.25.25 0 0 0 11.396 9H4.604a.25.25 0 0 0-.177.427Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 12px) center;
+  padding-right: 36px;
+}
+
+/* ==================== STATS BAR ==================== */
+.repo-stats {
+  display: flex;
+  gap: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f6f8fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color, #d0d7de);
+  flex-wrap: wrap;
+}
+
+.repo-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.repo-stat-icon {
+  font-size: 20px;
+}
+
+.repo-stat-label {
+  font-size: 12px;
+  color: var(--text-secondary, #656d76);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.repo-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2328);
+}
+
+/* ==================== REPOSITORY GRID ==================== */
+.repo-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* ==================== REPOSITORY CARD ==================== */
+.repo-card {
+  background: var(--bg-secondary, #f6f8fa);
+  border: 1px solid var(--border-color, #d0d7de);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 180px;
+}
+
+/* ... rest of CSS is identical to original file ... */

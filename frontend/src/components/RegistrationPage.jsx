@@ -11,24 +11,62 @@ const RegistrationPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [step, setStep] = useState(1); // For multi-step animation
-  const { register } = useAuth();
+  const [step, setStep] = useState(1); // 1: basic info, 2: password, 3: OTP verification, 4: success
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const { register, verifyEmail, resendOTP } = useAuth();
+
+  const nextStep = () => {
+    if (step === 1) {
+      // Validate basic info before moving to password
+      const newErrors = {};
+      if (!formData.name.trim()) newErrors.name = 'Full name is required';
+      if (!formData.username.trim()) newErrors.username = 'Username is required';
+      else if (!/^[a-z0-9_]+$/.test(formData.username.trim())) newErrors.username = 'Username can only contain lowercase letters, numbers, and underscores';
+      if (!formData.email) newErrors.email = 'Email is required';
+      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Please enter a valid email address';
+      
+      setErrors(newErrors);
+      if (Object.keys(newErrors).length === 0) {
+        setStep(2);
+      } else {
+        toast.error('Please fix the errors below');
+      }
+    }
+  };
+
+  const prevStep = () => {
+    if (step > 1 && step < 3) {
+      setStep(step - 1);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Full name is required';
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
+    }
+
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.trim().length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    } else if (formData.username.trim().length > 30) {
+      newErrors.username = 'Username must be 30 characters or less';
+    } else if (!/^[a-z0-9_]+$/.test(formData.username.trim())) {
+      newErrors.username = 'Username can only contain lowercase letters, numbers, and underscores';
     }
 
     if (!formData.email) {
@@ -64,13 +102,17 @@ const RegistrationPage = () => {
     setLoading(true);
 
     try {
-      const result = await register(formData.email, formData.password, formData.name, 'viewer');
+      const result = await register(formData.email, formData.password, formData.username, formData.name, 'viewer');
       
-      if (result.success) {
-        setStep(3); // Success step
-        toast.success('Registration successful! Welcome to the platform!');
+      if (result.success && result.requiresVerification) {
+        setRegisteredEmail(formData.email);
+        setStep(3); // OTP verification step
+        toast.success('Registration initiated! Please check your email for OTP.');
+      } else if (result.success) {
+        setStep(4); // Success step
+        toast.success('Registration successful!');
         setTimeout(() => {
-          navigate('/login');
+          navigate('/profile');
         }, 2000);
       } else {
         toast.error(result.error || 'Registration failed');
@@ -80,6 +122,53 @@ const RegistrationPage = () => {
       console.error('Registration error:', error);
       toast.error('Network error. Please try again.');
       setErrors({ submit: 'Network error. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    
+    if (!otp || otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await verifyEmail(registeredEmail, otp);
+      
+      if (result.success) {
+        setStep(4); // Success step
+        toast.success('Email verified successfully! Welcome!');
+        setTimeout(() => {
+          navigate('/profile');
+        }, 2000);
+      } else {
+        toast.error(result.error || 'Verification failed');
+        setErrors({ otp: result.error || 'Verification failed' });
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      const result = await resendOTP(registeredEmail);
+      if (result.success) {
+        toast.success('OTP resent successfully! Check your email.');
+      } else {
+        toast.error(result.error || 'Failed to resend OTP');
+      }
+    } catch (error) {
+      toast.error('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -101,24 +190,101 @@ const RegistrationPage = () => {
     }
   };
 
-  const nextStep = () => {
-    if (step === 1) {
-      if (formData.name.trim() && formData.email.trim()) {
-        setStep(2);
-      } else {
-        toast.error('Please fill in your name and email');
-      }
-    }
-  };
+  // OTP Verification step
+  if (step === 3) {
+    return (
+      <motion.div 
+        className="registration-page"
+        initial={{ opacity: 0, x: 100 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -100 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="registration-container">
+          <motion.div 
+            className="registration-header"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <h1>
+              <Mail className="header-icon" />
+              Verify Your Email
+            </h1>
+            <p>We've sent a 6-digit OTP to <strong>{registeredEmail}</strong></p>
+          </motion.div>
 
-  const prevStep = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
+          <form onSubmit={handleVerifyOTP} className="registration-form">
+            <motion.div 
+              className="form-step"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="form-group">
+                <label htmlFor="otp">
+                  Enter OTP Code
+                </label>
+                <motion.input
+                  type="text"
+                  id="otp"
+                  name="otp"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength="6"
+                  className={errors.otp ? 'error' : ''}
+                  disabled={loading}
+                  style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                />
+                {errors.otp && (
+                  <motion.span 
+                    className="error-text"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {errors.otp}
+                  </motion.span>
+                )}
+              </div>
+
+              <motion.button 
+                type="submit"
+                className="register-button"
+                disabled={loading || otp.length !== 6}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {loading ? 'Verifying...' : 'Verify Email'}
+              </motion.button>
+
+              <motion.button 
+                type="button"
+                onClick={handleResendOTP}
+                className="back-button"
+                disabled={loading}
+                style={{ marginTop: '1rem', width: '100%' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+              >
+                Resend OTP
+              </motion.button>
+            </motion.div>
+          </form>
+        </div>
+      </motion.div>
+    );
+  }
 
   // Success step
-  if (step === 3) {
+  if (step === 4) {
     return (
       <motion.div 
         className="registration-page success-page"
@@ -141,7 +307,7 @@ const RegistrationPage = () => {
             <CheckCircle className="success-icon" size={80} />
           </motion.div>
           <h2>Welcome Aboard! 🎉</h2>
-          <p>Your account has been created successfully.</p>
+          <p>Your email has been verified successfully.</p>
           <p className="role-info">You now have <strong>Viewer</strong> access to exclusive content!</p>
           <motion.div 
             className="success-features"
@@ -256,6 +422,38 @@ const RegistrationPage = () => {
                     {errors.name}
                   </motion.span>
                 )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="username">
+                  <User size={18} />
+                  Username (unique)
+                </label>
+                <motion.input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="Choose a unique username"
+                  className={errors.username ? 'error' : ''}
+                  disabled={loading}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 }}
+                />
+                {errors.username && (
+                  <motion.span 
+                    className="error-text"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    {errors.username}
+                  </motion.span>
+                )}
+                <small style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                  Only lowercase letters, numbers, and underscores (3-30 characters)
+                </small>
               </div>
 
               <div className="form-group">

@@ -23,6 +23,7 @@
     "multer": "^1.4.5-lts.1",
     "multer-gridfs-storage": "^5.0.2",
     "ngrok": "^5.0.0-beta.2",
+    "node-appwrite": "^20.2.1",
     "node-fetch": "^3.3.2",
     "sharp": "^0.32.6",
     "uuid": "^13.0.0"

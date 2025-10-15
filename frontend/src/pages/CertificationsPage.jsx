@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Award, Search, Calendar, ExternalLink, CheckCircle } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 import './PagesStyles.css';
 
 const CertificationsPage = () => {
@@ -13,7 +14,7 @@ const CertificationsPage = () => {
 
   const fetchCertifications = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/certifications', {
+      const response = await fetch(`${API_BASE_URL}/certifications`, {
         headers: user ? { Authorization: `Bearer ${user.token}` } : {}
       });
       const data = await response.json();

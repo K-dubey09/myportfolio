@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
+import { API_BASE_URL } from '../config/api'
 
 // reference to satisfy certain static analyzers about usage
 const __motionStatsRef = typeof motion === 'undefined' ? null : motion;
@@ -15,7 +16,7 @@ const StatisticsPage = () => {
     try {
       setLoading(true)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
-      const response = await fetch('http://localhost:5000/api/statistics', { headers })
+      const response = await fetch(`${API_BASE_URL}/statistics`, { headers })
       const data = await response.json()
       setStatistics(data.statistics || data || [])
     } catch (error) {

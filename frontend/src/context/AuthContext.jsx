@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { account } from '../lib/appwrite';
 
 const AuthContext = createContext();
 
@@ -19,8 +20,28 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('authToken'));
 
-  // API base URL
-  const API_BASE = 'http://localhost:5000/api';
+  // API base URL from environment variable
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+
+  // Exchange refresh cookie for a new access token (must be defined before verifyToken)
+  const refreshAccessToken = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      if (data.accessToken) {
+        localStorage.setItem('authToken', data.accessToken);
+        setToken(data.accessToken);
+        return true;
+      }
+    } catch (err) {
+      console.error('refreshAccessToken failed', err);
+    }
+    return false;
+  }, []);
 
   const verifyToken = useCallback(async () => {
     try {
@@ -29,6 +50,26 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // First try to verify Appwrite session
+      try {
+        const appwriteUser = await account.get();
+        if (appwriteUser) {
+          const userData = {
+            id: appwriteUser.$id,
+            email: appwriteUser.email,
+            name: appwriteUser.name,
+            role: 'admin'
+          };
+          setUser(userData);
+          setIsAuthenticated(true);
+          setLoading(false);
+          return;
+        }
+      } catch (appwriteError) {
+        console.log('No active Appwrite session, checking backend...');
+      }
+
+      // Fallback to backend verification
       const response = await fetch(`${API_BASE}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -79,26 +120,6 @@ export const AuthProvider = ({ children }) => {
     return null;
   }, [token]);
 
-  // Exchange refresh cookie for a new access token
-  const refreshAccessToken = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      if (!response.ok) return false;
-      const data = await response.json();
-      if (data.accessToken) {
-        localStorage.setItem('authToken', data.accessToken);
-        setToken(data.accessToken);
-        return true;
-      }
-    } catch (err) {
-      console.error('refreshAccessToken failed', err);
-    }
-    return false;
-  }, []);
-
   useEffect(() => {
     const init = async () => {
       if (token) {
@@ -107,7 +128,7 @@ export const AuthProvider = ({ children }) => {
         // Try refresh using cookie
         const refreshed = await refreshAccessToken();
         if (refreshed) {
-          await verifyToken();
+          // Token will be set by refreshAccessToken, triggering this effect again
         } else {
           setLoading(false);
         }
@@ -116,59 +137,105 @@ export const AuthProvider = ({ children }) => {
     init();
   }, [token, verifyToken, refreshAccessToken]);
 
+  // Auto-refresh token every 45 minutes (before 1h expiry)
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    const refreshInterval = setInterval(async () => {
+      console.log('Auto-refreshing token...');
+      await refreshAccessToken();
+    }, 45 * 60 * 1000); // 45 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [isAuthenticated, token, refreshAccessToken]);
+
   const login = async (identifier, password) => {
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        credentials: 'include', // allow refresh token cookie
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ identifier, password })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-        return { success: false, error: errorData.error || 'Login failed' };
-      }
-
-      const data = await response.json();
-
-      // Backend now returns accessToken and sets refresh cookie
-      if (data.accessToken && data.user) {
-        localStorage.setItem('authToken', data.accessToken);
-        setToken(data.accessToken);
-        setUser(data.user);
+      // Use Appwrite authentication
+      const email = identifier.includes('@') ? identifier : 'kushagradubey5002@gmail.com';
+      
+      // Create email session with Appwrite
+      const session = await account.createEmailPasswordSession(email, password);
+      
+      if (session) {
+        // Get user data from Appwrite
+        const appwriteUser = await account.get();
+        
+        // Set user data
+        const userData = {
+          id: appwriteUser.$id,
+          email: appwriteUser.email,
+          name: appwriteUser.name,
+          role: 'admin' // Since you're logging in as admin
+        };
+        
+        // Store session info
+        localStorage.setItem('authToken', session.$id);
+        setToken(session.$id);
+        setUser(userData);
         setIsAuthenticated(true);
-        return { success: true, user: data.user };
-      } else {
-        return { success: false, error: data.error || 'Invalid response' };
+        
+        return { success: true, user: userData };
       }
     } catch (error) {
-      console.error('Login failed:', error);
-      return { success: false, error: 'Network error - check if backend is running' };
+      console.error('Appwrite login failed:', error);
+      
+      // Fallback to backend authentication if Appwrite fails
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ identifier, password })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+          return { success: false, error: errorData.error || 'Login failed' };
+        }
+
+        const data = await response.json();
+
+        if (data.accessToken && data.user) {
+          localStorage.setItem('authToken', data.accessToken);
+          setToken(data.accessToken);
+          setUser(data.user);
+          setIsAuthenticated(true);
+          return { success: true, user: data.user };
+        } else {
+          return { success: false, error: data.error || 'Invalid response' };
+        }
+      } catch (backendError) {
+        console.error('Backend login also failed:', backendError);
+        return { success: false, error: 'Network error - check if backend is running' };
+      }
     }
   };
 
-  const register = async (email, password, name, role = 'viewer') => {
+  const register = async (email, password, username, name, role = 'viewer') => {
     try {
       const response = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, name, role }),
+        body: JSON.stringify({ email, password, username, name, role }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('authToken', data.token);
-        setToken(data.token);
-        setUser(data.user);
-        setIsAuthenticated(true);
-        return { success: true, user: data.user };
+        // Registration initiated, now needs email verification
+        return { 
+          success: true, 
+          requiresVerification: data.requiresVerification,
+          userId: data.userId,
+          email: data.email,
+          message: data.message
+        };
       } else {
         return { success: false, error: data.error };
       }
@@ -178,7 +245,67 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const verifyEmail = async (email, otp) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/verify-email`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('authToken', data.accessToken);
+        setToken(data.accessToken);
+        setUser(data.user);
+        setIsAuthenticated(true);
+        return { success: true, user: data.user };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error('Email verification error:', error);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const resendOTP = async (email) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return { success: true, message: data.message };
+      } else {
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      // Delete Appwrite session if exists
+      await account.deleteSession('current').catch(() => {
+        // Ignore if no session exists
+      });
+    } catch (error) {
+      console.error('Appwrite logout error:', error);
+    }
+    
     localStorage.removeItem('authToken');
     setToken(null);
     setUser(null);
@@ -312,6 +439,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    verifyEmail,
+    resendOTP,
     logout,
     updateProfile,
     refreshUser,

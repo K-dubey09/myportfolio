@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Settings, Star, Search, DollarSign, Clock } from 'lucide-react';
+import { API_BASE_URL, API_ROOT_URL } from '../config/api';
 import './PagesStyles.css';
 
 const ServicesPage = () => {
@@ -15,7 +16,7 @@ const ServicesPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/services', {
+      const response = await fetch(`${API_BASE_URL}/services`, {
         headers: {
           'Content-Type': 'application/json',
           ...(user ? { Authorization: `Bearer ${user.token}` } : {})
@@ -124,7 +125,7 @@ const ServicesPage = () => {
                 {service.image && (
                   <div className="service-image">
                     <img 
-                      src={service.image.startsWith('http') ? service.image : `http://localhost:5000/api/files/${service.image}`} 
+                      src={service.image.startsWith('http') ? service.image : `${API_ROOT_URL}/api/files/${service.image}`} 
                       alt={service.title}
                       onError={(e) => e.target.style.display = 'none'}
                     />
@@ -180,7 +181,7 @@ const ServicesPage = () => {
                         {service.images.slice(0, 3).map((img, imgIndex) => (
                           <img 
                             key={imgIndex} 
-                            src={img.startsWith('http') ? img : `http://localhost:5000/api/files/${img}`}
+                            src={img.startsWith('http') ? img : `${API_ROOT_URL}/api/files/${img}`}
                             alt={`${service.title} example ${imgIndex + 1}`}
                             className="gallery-thumb"
                             onError={(e) => e.target.style.display = 'none'}

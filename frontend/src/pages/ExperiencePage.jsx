@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, MapPin, Building, ExternalLink, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config/api';
 import './PagesStyles.css';
 
 const ExperiencePage = () => {
@@ -18,7 +19,7 @@ const ExperiencePage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/experiences', {
+      const response = await fetch(`${API_BASE_URL}/experiences`, {
         headers: user ? { Authorization: `Bearer ${user.token}` } : {}
       });
       

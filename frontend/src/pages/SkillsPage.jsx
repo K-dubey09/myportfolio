@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Code, Star, Search, TrendingUp, BarChart } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 import './PagesStyles.css';
 
 const SkillsPage = () => {
@@ -18,7 +19,7 @@ const SkillsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/skills', {
+      const response = await fetch(`${API_BASE_URL}/skills`, {
         headers: {
           'Content-Type': 'application/json',
           ...(user ? { Authorization: `Bearer ${user.token}` } : {})

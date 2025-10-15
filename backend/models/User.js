@@ -9,10 +9,32 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerificationOTP: {
+    type: String,
+    default: null
+  },
+  emailOTPExpires: {
+    type: Date,
+    default: null
+  },
   password: { 
     type: String, 
     required: true, 
     minlength: 6
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    minlength: 3,
+    maxlength: 30,
+    match: /^[a-z0-9_]+$/
   },
   name: { 
     type: String, 
@@ -60,6 +82,10 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  refreshToken: {
+    type: String,
+    default: null
   },
   permissions: {
     canCreatePosts: { type: Boolean, default: false },

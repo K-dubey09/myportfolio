@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './ContactsList.css';
+import { API_ROOT_URL } from '../config/api';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = API_ROOT_URL;
 
-const ContactsList = () => {
+const ContactsList = ({ token }) => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
