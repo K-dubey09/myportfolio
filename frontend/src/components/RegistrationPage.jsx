@@ -167,7 +167,7 @@ const RegistrationPage = () => {
       } else {
         toast.error(result.error || 'Failed to resend OTP');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setLoading(false);

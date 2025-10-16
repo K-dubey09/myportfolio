@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       console.error('refreshAccessToken failed', err);
     }
     return false;
-  }, []);
+  }, [API_BASE]);
 
   const verifyToken = useCallback(async () => {
     try {
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         }
-      } catch (appwriteError) {
+      } catch {
         console.log('No active Appwrite session, checking backend...');
       }
 
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [token, refreshAccessToken]);
+  }, [token, refreshAccessToken, API_BASE]);
 
   // Expose a refreshUser helper to re-fetch the current user profile and update context
   const refreshUser = useCallback(async () => {
@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
       console.error('refreshUser failed', err);
     }
     return null;
-  }, [token]);
+  }, [token, API_BASE]);
 
   useEffect(() => {
     const init = async () => {
