@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTheme } from '../context/ThemeContext'
-
-const API_BASE_URL = 'http://localhost:5000'
+import API_BASE_URL from '../config/api'
 
 const PortfolioSite = () => {
   const { theme, isAnimated } = useTheme()

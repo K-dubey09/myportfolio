@@ -1,7 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import API_BASE_URL from '../config/api';
 
 const AuthContext = createContext();
+const API_BASE = `${API_BASE_URL}/api`;
 
 export { AuthContext }; // Export the context
 
@@ -18,9 +20,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('authToken'));
-
-  // API base URL
-  const API_BASE = 'http://localhost:5000/api';
 
   // Exchange refresh cookie for a new access token
   const refreshAccessToken = useCallback(async () => {

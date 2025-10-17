@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
-const API_BASE_URL = 'http://localhost:5000'
+import API_BASE_URL from '../config/api';
 
 const UserRegistration = ({ onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({

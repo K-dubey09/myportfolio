@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './ContactsList.css';
 
-const API_BASE_URL = 'http://localhost:5000';
+import API_BASE_URL from '../config/api';
+const API_BASE = API_BASE_URL;
 
 const ContactsList = () => {
   const [contacts, setContacts] = useState([]);
@@ -15,7 +16,7 @@ const ContactsList = () => {
   const fetchContacts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/contacts`);
+      const response = await fetch(`${API_BASE}/api/contacts`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch contacts');
