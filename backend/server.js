@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import database from './config/database.js';
+import appwriteService from './config/appwrite.js';
 import { upload, GridFSUtils, initializeGridFS } from './utils/fileUpload.js';
 import { ProfileController } from './controllers/profileController.js';
 import createCRUDController from './controllers/crudController.js';
@@ -34,6 +35,7 @@ dotenv.config();
 console.log('🔧 JWT_SECRET loaded:', process.env.JWT_SECRET ? 'YES' : 'NO');
 console.log('🔧 Environment:', process.env.NODE_ENV);
 console.log('🔧 MongoDB URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
+console.log('🔧 Appwrite Endpoint:', process.env.APPWRITE_ENDPOINT ? 'SET' : 'NOT SET');
 
 // Get directory name for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -135,6 +137,9 @@ const initializeServer = async () => {
     
     // Initialize GridFS after database connection
     initializeGridFS();
+
+    // Initialize Appwrite (optional, won't throw error if not configured)
+    appwriteService.initialize();
 
 // Initialize first admin user if no users exist
 const initializeAdmin = async () => {

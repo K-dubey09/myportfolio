@@ -1,12 +1,24 @@
 import { GridFSUtils } from '../utils/fileUpload.js';
+import appwriteStorage from '../utils/appwriteStorage.js';
 
 export const FileController = {
-  // Serve file from GridFS
+  // Serve file from GridFS or Appwrite
   async serveFile(req, res) {
     try {
       const { filename } = req.params;
       
-      // Get file info first
+      // Try Appwrite first if configured
+      if (appwriteStorage.isAvailable() && req.query.source === 'appwrite') {
+        try {
+          const fileInfo = await appwriteStorage.getFileInfo(filename);
+          // Redirect to Appwrite's file URL
+          return res.redirect(fileInfo.url);
+        } catch (error) {
+          console.log('File not in Appwrite, trying GridFS...');
+        }
+      }
+      
+      // Fall back to GridFS
       const fileInfo = await GridFSUtils.getFileInfo(filename);
       if (!fileInfo) {
         return res.status(404).json({ error: 'File not found' });
@@ -37,16 +49,33 @@ export const FileController = {
     }
   },
 
-  // Upload file to GridFS
+  // Upload file to Appwrite Storage or GridFS
   async uploadFile(req, res) {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      const { buffer, originalname, mimetype } = req.file;
+      const { buffer, originalname, mimetype, path: filePath } = req.file;
       
-      // Add user info to metadata
+      // Try Appwrite Storage first if configured
+      if (appwriteStorage.isAvailable()) {
+        try {
+          const result = await appwriteStorage.uploadFile(req.file);
+          
+          return res.json({
+            message: 'File uploaded successfully to Appwrite',
+            storage: 'appwrite',
+            fileUrl: result.url,
+            url: result.url,
+            file: result
+          });
+        } catch (error) {
+          console.error('Appwrite upload failed, falling back to GridFS:', error.message);
+        }
+      }
+      
+      // Fall back to GridFS
       const metadata = {
         uploadedBy: req.user?.userId,
         uploadedByName: req.user?.name || 'Anonymous',
@@ -60,9 +89,10 @@ export const FileController = {
       const fileUrl = GridFSUtils.generateFileUrl(result.filename, req);
       
       res.json({
-        message: 'File uploaded successfully',
-        fileUrl: fileUrl, // Add this for frontend compatibility
-        url: fileUrl, // Keep this for backwards compatibility
+        message: 'File uploaded successfully to GridFS',
+        storage: 'gridfs',
+        fileUrl: fileUrl,
+        url: fileUrl,
         file: {
           ...result,
           url: fileUrl
