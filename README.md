@@ -1,18 +1,13 @@
-# 🚀 Professional Portfolio Website# 🚀 Professional Portfolio Website
+# 🚀 Professional Portfolio Website
 
+A comprehensive full-stack portfolio application built with React.js and Node.js, featuring a powerful admin panel, dynamic content management, and professional portfolio showcase.
 
+> **✨ NEW:** This project now supports **Appwrite** as an optional cloud storage and BaaS solution! See [APPWRITE_MIGRATION.md](./APPWRITE_MIGRATION.md) for details.
 
-A comprehensive full-stack portfolio application built with React.js and Node.js, featuring a powerful admin panel, dynamic content management, and professional portfolio showcase.A comprehensive full-stack portfolio application built with React.js and Node.js, featuring a powerful admin panel, dynamic content management, and professional portfolio showcase.
+## 📋 Table of Contents
 
-
-
-## 📋 Table of Contents## 📋 Table of Contents
-
-
-
-- [Features](#-features)- [Features](#-features)
-
-- [Tech Stack](#-tech-stack)- [Tech Stack](#-tech-stack)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
 
 - [Quick Start](#-quick-start)- [Quick Start](#-quick-start)
 
