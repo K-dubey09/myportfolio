@@ -1,4 +1,4 @@
-import { ID, InputFile } from 'node-appwrite';
+import { ID } from 'node-appwrite';
 import appwriteService from '../config/appwrite.js';
 import { createReadStream } from 'fs';
 import { promises as fs } from 'fs';
@@ -34,20 +34,11 @@ class AppwriteStorage {
       const storage = appwriteService.getStorage();
       const id = fileId || ID.unique();
 
-      // Read file as buffer
-      const fileBuffer = await fs.readFile(file.path);
-      
-      // Create InputFile from buffer
-      const inputFile = InputFile.fromBuffer(
-        fileBuffer,
-        file.originalname
-      );
-
-      // Upload to Appwrite Storage
+      // Upload file using file path (Appwrite SDK handles the file reading)
       const result = await storage.createFile(
         this.bucketId,
         id,
-        inputFile
+        file.path
       );
 
       // Generate file URL

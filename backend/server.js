@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import database from './config/database.js';
 import appwriteService from './config/appwrite.js';
+import appwriteStorage from './utils/appwriteStorage.js';
 import { upload, GridFSUtils, initializeGridFS } from './utils/fileUpload.js';
 import { ProfileController } from './controllers/profileController.js';
 import createCRUDController from './controllers/crudController.js';
@@ -72,11 +73,42 @@ app.use(cookieParser());
 
 // Add health check and test routes
 app.get('/api/health', (req, res) => {
+  const appwriteConfigured = appwriteService.isInitialized();
+  const appwriteStorageConfigured = appwriteStorage.isAvailable();
+  
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    database: 'connected'
+    database: 'connected',
+    storage: {
+      gridfs: true,
+      appwrite: appwriteConfigured,
+      appwriteStorage: appwriteStorageConfigured,
+      primary: appwriteStorageConfigured ? 'appwrite' : 'gridfs'
+    }
+  });
+});
+
+// Storage status endpoint
+app.get('/api/storage/status', (req, res) => {
+  const appwriteConfigured = appwriteService.isInitialized();
+  const appwriteStorageConfigured = appwriteStorage.isAvailable();
+  
+  res.json({
+    gridfs: {
+      available: true,
+      status: 'ready'
+    },
+    appwrite: {
+      available: appwriteConfigured,
+      storageAvailable: appwriteStorageConfigured,
+      endpoint: process.env.APPWRITE_ENDPOINT || 'not configured',
+      projectId: process.env.APPWRITE_PROJECT_ID || 'not configured',
+      bucketId: process.env.APPWRITE_BUCKET_ID || 'not configured',
+      status: appwriteConfigured ? 'ready' : 'not configured'
+    },
+    primary: appwriteStorageConfigured ? 'appwrite' : 'gridfs'
   });
 });
 
