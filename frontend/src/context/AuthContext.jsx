@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { account } from '../lib/appwrite';
 
 const AuthContext = createContext();
 
@@ -50,26 +49,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // First try to verify Appwrite session
-      try {
-        const appwriteUser = await account.get();
-        if (appwriteUser) {
-          const userData = {
-            id: appwriteUser.$id,
-            email: appwriteUser.email,
-            name: appwriteUser.name,
-            role: 'admin'
-          };
-          setUser(userData);
-          setIsAuthenticated(true);
-          setLoading(false);
-          return;
-        }
-      } catch {
-        console.log('No active Appwrite session, checking backend...');
-      }
-
-      // Fallback to backend verification
+      // Verify token with backend
       const response = await fetch(`${API_BASE}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -151,67 +131,35 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (identifier, password) => {
     try {
-      // Use Appwrite authentication
-      const email = identifier.includes('@') ? identifier : 'kushagradubey5002@gmail.com';
-      
-      // Create email session with Appwrite
-      const session = await account.createEmailPasswordSession(email, password);
-      
-      if (session) {
-        // Get user data from Appwrite
-        const appwriteUser = await account.get();
-        
-        // Set user data
-        const userData = {
-          id: appwriteUser.$id,
-          email: appwriteUser.email,
-          name: appwriteUser.name,
-          role: 'admin' // Since you're logging in as admin
-        };
-        
-        // Store session info
-        localStorage.setItem('authToken', session.$id);
-        setToken(session.$id);
-        setUser(userData);
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ identifier, password })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        return { success: false, error: errorData.error || 'Login failed' };
+      }
+
+      const data = await response.json();
+
+      if (data.accessToken && data.user) {
+        localStorage.setItem('authToken', data.accessToken);
+        setToken(data.accessToken);
+        setUser(data.user);
         setIsAuthenticated(true);
-        
-        return { success: true, user: userData };
+        return { success: true, user: data.user };
+      } else {
+        return { success: false, error: data.error || 'Invalid response' };
       }
     } catch (error) {
-      console.error('Appwrite login failed:', error);
-      
-      // Fallback to backend authentication if Appwrite fails
-      try {
-        const response = await fetch(`${API_BASE}/auth/login`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ identifier, password })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-          return { success: false, error: errorData.error || 'Login failed' };
-        }
-
-        const data = await response.json();
-
-        if (data.accessToken && data.user) {
-          localStorage.setItem('authToken', data.accessToken);
-          setToken(data.accessToken);
-          setUser(data.user);
-          setIsAuthenticated(true);
-          return { success: true, user: data.user };
-        } else {
-          return { success: false, error: data.error || 'Invalid response' };
-        }
-      } catch (backendError) {
-        console.error('Backend login also failed:', backendError);
-        return { success: false, error: 'Network error - check if backend is running' };
-      }
+      console.error('Login failed:', error);
+      return { success: false, error: 'Network error - check if backend is running' };
     }
   };
 
@@ -297,15 +245,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      // Delete Appwrite session if exists
-      await account.deleteSession('current').catch(() => {
-        // Ignore if no session exists
-      });
-    } catch (error) {
-      console.error('Appwrite logout error:', error);
-    }
-    
     localStorage.removeItem('authToken');
     setToken(null);
     setUser(null);
