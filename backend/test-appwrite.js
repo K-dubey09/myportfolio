@@ -28,21 +28,29 @@ console.log('   Initialization:', initialized ? '✅ Success' : '⚠️  Skipped
 
 // Test 3: Check services
 console.log('\n3. Service Availability:');
-try {
-  if (initialized) {
+if (initialized) {
+  try {
     const databases = appwriteService.getDatabases();
-    console.log('   Databases:', databases ? '✅ Available' : '❌ Not available');
-    
-    const storage = appwriteService.getStorage();
-    console.log('   Storage:', storage ? '✅ Available' : '❌ Not available');
-    
-    const users = appwriteService.getUsers();
-    console.log('   Users:', users ? '✅ Available' : '❌ Not available');
-  } else {
-    console.log('   Services: ⚠️  Not available (Appwrite not configured)');
+    console.log('   Databases: ✅ Available');
+  } catch (error) {
+    console.log('   Databases: ❌ Error -', error.message);
   }
-} catch (error) {
-  console.log('   Error:', error.message);
+  
+  try {
+    const storage = appwriteService.getStorage();
+    console.log('   Storage: ✅ Available');
+  } catch (error) {
+    console.log('   Storage: ❌ Error -', error.message);
+  }
+  
+  try {
+    const users = appwriteService.getUsers();
+    console.log('   Users: ✅ Available');
+  } catch (error) {
+    console.log('   Users: ❌ Error -', error.message);
+  }
+} else {
+  console.log('   Services: ⚠️  Not available (Appwrite not configured)');
 }
 
 // Test 4: Storage availability
