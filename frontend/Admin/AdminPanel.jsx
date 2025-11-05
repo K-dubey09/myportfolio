@@ -2169,6 +2169,14 @@ const AdminPanel = () => {
         <h2>Skills Management</h2>
         <div className="header-actions">
           {renderControls(['Technical', 'Soft Skills', 'Languages', 'Tools'])}
+          <button 
+            onClick={() => handleResetFeatured('skills')}
+            className="reset-featured-btn"
+            style={{marginLeft: '10px', padding: '8px 16px', fontSize: '14px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'}}
+            title="Remove featured status from all skills"
+          >
+            Reset All Featured
+          </button>
         </div>
       </div>
       
@@ -2262,6 +2270,22 @@ const AdminPanel = () => {
                   >
                     🗑️ Delete
                   </button>
+                  <button 
+                    onClick={() => handleToggleFeatured('skills', skill.id, skill.featured)}
+                    className={skill.featured ? "unfeature-btn" : "feature-btn"}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      backgroundColor: skill.featured ? '#718096' : '#f6ad55',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                    title={skill.featured ? "Remove from featured" : "Mark as featured"}
+                  >
+                    {skill.featured ? "✖ Unfeature" : "⭐ Feature"}
+                  </button>
                 </div>
               </div>
             ))}
@@ -2278,6 +2302,14 @@ const AdminPanel = () => {
         <h2>Projects Management</h2>
         <div className="header-actions">
           {renderControls(['Web Development', 'Mobile App', 'AI/ML', 'E-commerce'])}
+          <button 
+            onClick={() => handleResetFeatured('projects')}
+            className="reset-featured-btn"
+            style={{marginLeft: '10px', padding: '8px 16px', fontSize: '14px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'}}
+            title="Remove featured status from all projects"
+          >
+            Reset All Featured
+          </button>
         </div>
       </div>
       
@@ -2430,6 +2462,22 @@ const AdminPanel = () => {
               <button onClick={() => projectHandlers.delete(project.id)} className="delete-btn">
                 Delete
               </button>
+              <button 
+                onClick={() => handleToggleFeatured('projects', project.id, project.featured)}
+                className={project.featured ? "unfeature-btn" : "feature-btn"}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  backgroundColor: project.featured ? '#718096' : '#f6ad55',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+                title={project.featured ? "Remove from featured" : "Mark as featured"}
+              >
+                {project.featured ? "✖ Unfeature" : "⭐ Feature"}
+              </button>
             </div>
           </div>
         ))}
@@ -2444,6 +2492,14 @@ const AdminPanel = () => {
         <h2>Experience Management</h2>
         <div className="header-actions">
           {renderControls(['Full-time', 'Part-time', 'Freelance', 'Internship'])}
+          <button 
+            onClick={() => handleResetFeatured('experiences')}
+            className="reset-featured-btn"
+            style={{marginLeft: '10px', padding: '8px 16px', fontSize: '14px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'}}
+            title="Remove featured status from all experiences"
+          >
+            Reset All Featured
+          </button>
         </div>
       </div>
       
@@ -2711,6 +2767,14 @@ const AdminPanel = () => {
         <h2>Blog Management</h2>
         <div className="header-actions">
           {renderControls(['Technology', 'Tutorial', 'Personal', 'Business'])}
+          <button 
+            onClick={() => handleResetFeatured('blogs')}
+            className="reset-featured-btn"
+            style={{marginLeft: '10px', padding: '8px 16px', fontSize: '14px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'}}
+            title="Remove featured status from all blogs"
+          >
+            Reset All Featured
+          </button>
         </div>
       </div>
       
@@ -2949,6 +3013,22 @@ const AdminPanel = () => {
               </button>
               <button onClick={() => blogHandlers.delete(blog.id)} className="delete-btn">
                 Delete
+              </button>
+              <button 
+                onClick={() => handleToggleFeatured('blogs', blog.id, blog.featured)}
+                className={blog.featured ? "unfeature-btn" : "feature-btn"}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  backgroundColor: blog.featured ? '#718096' : '#f6ad55',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+                title={blog.featured ? "Remove from featured" : "Mark as featured"}
+              >
+                {blog.featured ? "✖ Unfeature" : "⭐ Feature"}
               </button>
             </div>
           </div>
