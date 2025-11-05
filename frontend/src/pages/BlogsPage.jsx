@@ -223,6 +223,88 @@ const BlogsPage = () => {
               </div>
               <h2>{selectedBlog.title}</h2>
               <div className="blog-content" dangerouslySetInnerHTML={{ __html: selectedBlog.content }} />
+              
+              {/* Document Attachments */}
+              {selectedBlog.documents && selectedBlog.documents.length > 0 && (
+                <div className="blog-attachments" style={{
+                  marginTop: '24px',
+                  padding: '16px',
+                  background: '#f8f9fa',
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    marginBottom: '12px',
+                    color: '#333',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    📎 Attachments
+                  </h3>
+                  <ul style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    margin: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    {selectedBlog.documents.map((doc, index) => (
+                      <li key={index} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px',
+                        background: 'white',
+                        borderRadius: '6px',
+                        border: '1px solid #e0e0e0'
+                      }}>
+                        <div style={{flex: 1, minWidth: 0}}>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#333',
+                            marginBottom: '4px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            📄 {doc.name}
+                          </div>
+                          {doc.size && (
+                            <div style={{fontSize: '12px', color: '#666'}}>
+                              {(doc.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          )}
+                        </div>
+                        <a 
+                          href={doc.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          download
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '14px',
+                            background: '#4caf50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            textDecoration: 'none',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Download
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {selectedBlog.tags && selectedBlog.tags.length > 0 && (
                 <div className="blog-tags">
                   {selectedBlog.tags.map((tag, index) => (

@@ -462,7 +462,8 @@ const AdminPanel = () => {
     featured: false,
     status: 'draft',
     coverImage: '',
-    media: []
+    media: [],
+    documents: []
   });
 
   const [vlogForm, setVlogForm] = useState({
@@ -503,6 +504,10 @@ const AdminPanel = () => {
   const [blogFileUrls, setBlogFileUrls] = useState([]);
   const [blogUploadProgress, setBlogUploadProgress] = useState([]);
   const [blogBatchFiles, setBlogBatchFiles] = useState([]); // { id, name, file, progress, status, url, xhr }
+
+  // Document upload tracking for blogs
+  const [blogDocumentsUploading, setBlogDocumentsUploading] = useState(false);
+  const [blogDocumentUrls, setBlogDocumentUrls] = useState([]);
 
   const [vlogFilesUploading, setVlogFilesUploading] = useState(false);
   const [vlogFileUrls, setVlogFileUrls] = useState([]);
@@ -1009,14 +1014,19 @@ const AdminPanel = () => {
 
       setIsSubmitting(true);
       try {
-        const payload = { ...blogForm, media: hasUploadedMedia ? blogFileUrls : (blogForm.media || []) };
+        const payload = { 
+          ...blogForm, 
+          media: hasUploadedMedia ? blogFileUrls : (blogForm.media || []),
+          documents: blogDocumentUrls || []
+        };
         const url = editingId ? `${API_BASE}/api/admin/blogs/${editingId}` : `${API_BASE}/api/admin/blogs`;
         const method = editingId ? 'PUT' : 'POST';
         const success = await handleApiCall(url, method, payload);
 
         if (success) {
-          setBlogForm({ title: '', excerpt: '', content: '', tags: '', publishedDate: '', readTime: '', featured: false, status: 'draft', coverImage: '', media: [] });
+          setBlogForm({ title: '', excerpt: '', content: '', tags: '', publishedDate: '', readTime: '', featured: false, status: 'draft', coverImage: '', media: [], documents: [] });
           setBlogFileUrls([]);
+          setBlogDocumentUrls([]);
           setEditingId(null);
           setEditingType(null);
         }
@@ -1337,6 +1347,81 @@ const AdminPanel = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Document upload handler for blogs (PDF, Word, Excel, PPT)
+  const handleDocumentUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    // Validate file types
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+
+    const invalidFiles = files.filter(f => !allowedTypes.includes(f.type));
+    if (invalidFiles.length > 0) {
+      showMessage('Only PDF, Word, Excel, and PowerPoint documents are allowed', 'error');
+      return;
+    }
+
+    if (files.length > 5) {
+      showMessage('Maximum 5 documents allowed per blog', 'error');
+      return;
+    }
+
+    try {
+      setBlogDocumentsUploading(true);
+      const uploadedDocs = [];
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('documents', file);
+
+        const response = await fetch(`${API_BASE}/api/upload/documents`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.urls && result.urls.length > 0) {
+            uploadedDocs.push({
+              name: file.name,
+              url: result.urls[0],
+              size: file.size,
+              type: file.type
+            });
+          }
+        } else {
+          showMessage(`Failed to upload ${file.name}`, 'error');
+        }
+      }
+
+      if (uploadedDocs.length > 0) {
+        setBlogDocumentUrls(prev => [...(prev || []), ...uploadedDocs]);
+        showMessage(`${uploadedDocs.length} document(s) uploaded successfully!`, 'success');
+      }
+    } catch (error) {
+      console.error('Document upload error:', error);
+      showMessage('Error uploading documents: ' + error.message, 'error');
+    } finally {
+      setBlogDocumentsUploading(false);
+    }
+  };
+
+  // Remove document from list
+  const handleRemoveDocument = (index) => {
+    setBlogDocumentUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   // Upload multiple files (sequentially) and collect URLs
@@ -2949,6 +3034,94 @@ const AdminPanel = () => {
                     </div>
                   );
                 })()
+              )}
+            </div>
+
+            {/* Document Attachments Section */}
+            <div style={{marginTop: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '8px'}}>
+              <label style={{fontSize: '14px', fontWeight: '600', color: '#333', display: 'block', marginBottom: '10px'}}>
+                📎 Document Attachments (Optional)
+              </label>
+              <p style={{fontSize: '12px', color: '#666', marginBottom: '10px'}}>
+                Upload PDF, Word, Excel, or PowerPoint files (max 5 documents, 10MB each)
+              </p>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                multiple
+                onChange={handleDocumentUpload}
+                className="form-input"
+                disabled={blogDocumentsUploading || isSubmitting}
+                style={{marginBottom: '10px'}}
+              />
+              
+              {blogDocumentsUploading && (
+                <div style={{padding: '10px', background: '#e3f2fd', borderRadius: '6px', marginBottom: '10px'}}>
+                  <span style={{fontSize: '13px', color: '#1976d2'}}>⏳ Uploading documents...</span>
+                </div>
+              )}
+
+              {blogDocumentUrls && blogDocumentUrls.length > 0 && (
+                <div style={{marginTop: '10px'}}>
+                  <strong style={{fontSize: '13px', display: 'block', marginBottom: '8px'}}>Uploaded Documents:</strong>
+                  <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+                    {blogDocumentUrls.map((doc, index) => (
+                      <li key={index} style={{
+                        padding: '10px',
+                        background: 'white',
+                        borderRadius: '6px',
+                        marginBottom: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        border: '1px solid #e0e0e0'
+                      }}>
+                        <div style={{flex: 1, minWidth: 0}}>
+                          <div style={{fontSize: '13px', fontWeight: '500', color: '#333', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                            📄 {doc.name}
+                          </div>
+                          <div style={{fontSize: '11px', color: '#666'}}>
+                            {(doc.size / 1024 / 1024).toFixed(2)} MB
+                          </div>
+                        </div>
+                        <div style={{display: 'flex', gap: '8px'}}>
+                          <a 
+                            href={doc.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: '4px 12px',
+                              fontSize: '12px',
+                              background: '#4caf50',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              textDecoration: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            View
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDocument(index)}
+                            style={{
+                              padding: '4px 12px',
+                              fontSize: '12px',
+                              background: '#f44336',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>
