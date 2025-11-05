@@ -22,18 +22,23 @@ class FirebaseConfig {
       const defaultPath = join(__dirname, '..', 'firebase-service-account.json');
       serviceAccount = JSON.parse(readFileSync(defaultPath, 'utf8'));
 
+      const envBucket = process.env.FIREBASE_STORAGE_BUCKET || process.env.STORAGE_BUCKET;
+      const bucketToUse = envBucket || `${serviceAccount.project_id}.appspot.com`;
+
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        storageBucket: 'my-portfolio-7ceb6.appspot.com'
+        storageBucket: bucketToUse
       });
 
       this.db = admin.firestore();
       this.auth = admin.auth();
       this.storage = admin.storage();
+  this.projectId = serviceAccount.project_id;
+  this.storageBucketName = bucketToUse;
       this.initialized = true;
 
       console.log('Firebase Admin SDK initialized');
-      console.log('Project ID: my-portfolio-7ceb6');
+      console.log('Project ID:', this.projectId);
       return this;
     } catch (error) {
       console.error('Firebase initialization error:', error);
@@ -44,6 +49,9 @@ class FirebaseConfig {
   getFirestore() { return this.db; }
   getAuth() { return this.auth; }
   getStorage() { return this.storage; }
+
+  getProjectId() { return this.projectId; }
+  getStorageBucketName() { return this.storageBucketName; }
 
   get collections() {
     const db = this.getFirestore();

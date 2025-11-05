@@ -3,8 +3,7 @@ import { useAuth } from '../src/context/AuthContext';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
-  const { getIdToken, logout } = useAuth();
-  const [token, setToken] = useState(null);
+  const { token, logout } = useAuth();
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [activeSubTab, setActiveSubTab] = useState('contactInfo');
@@ -82,15 +81,6 @@ const AdminPanel = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [activeTab]);
-
-  // Fetch Firebase ID token
-  useEffect(() => {
-    const fetchToken = async () => {
-      const idToken = await getIdToken();
-      setToken(idToken);
-    };
-    fetchToken();
-  }, [getIdToken]);
 
   // Load access keys and conversions when admin opens panel or navigates to that tab
   // NOTE: moved the viewer-editor load effect below where the fetch helpers are declared
@@ -241,12 +231,12 @@ const AdminPanel = () => {
     } catch (e) { console.error('fetchAchievements error', e); }
   }, [token, apiFetch]);
 
-  // Load data when admin opens panel or navigates to that tab
+  // Load access keys and conversions when admin opens panel or navigates to that tab
   useEffect(() => {
     if (activeTab === 'viewer-editor') {
       fetchAccessKeys();
-      fetchAdminRequests();
       fetchConversions();
+      fetchAdminRequests();
     }
     if (activeTab === 'achievements') {
       fetchAchievements();
@@ -254,7 +244,7 @@ const AdminPanel = () => {
     if (activeTab === 'users') {
       fetchUsers();
     }
-  }, [activeTab, fetchAccessKeys, fetchAdminRequests, fetchConversions, fetchAchievements, fetchUsers]);
+  }, [activeTab, fetchAccessKeys, fetchConversions, fetchAdminRequests, fetchAchievements, fetchUsers]);
 
   const handleGenerateKey = async () => {
     try {
@@ -281,7 +271,6 @@ const AdminPanel = () => {
         return;
       }
       setAccessKeys(prev => prev.filter(k => k.id !== id));
-      showMessage('Key deleted', 'success');
     } catch (e) { console.error(e); }
   };
 
@@ -393,7 +382,7 @@ const AdminPanel = () => {
 
   const [skillForm, setSkillForm] = useState({
     name: '',
-    level: 'beginner',
+    level: 'Beginner',
     category: 'Technical'
   });
 
@@ -438,8 +427,7 @@ const AdminPanel = () => {
     readTime: '',
     featured: false,
     status: 'draft',
-    coverImage: '',
-    media: []
+    coverImage: ''
   });
 
   const [vlogForm, setVlogForm] = useState({
@@ -458,7 +446,6 @@ const AdminPanel = () => {
     title: '',
     description: '',
     imageUrl: '',
-    imageUrls: [],
     category: 'Travel',
     location: '',
     date: '',
@@ -469,27 +456,11 @@ const AdminPanel = () => {
     name: '',
     position: '',
     company: '',
-    message: '',
+    content: '',
     rating: 5,
     featured: false,
     imageUrl: ''
   });
-
-  // Multiple-file upload tracking for blog, vlog and gallery
-  const [blogFilesUploading, setBlogFilesUploading] = useState(false);
-  const [blogFileUrls, setBlogFileUrls] = useState([]);
-  const [blogUploadProgress, setBlogUploadProgress] = useState([]);
-  const [blogBatchFiles, setBlogBatchFiles] = useState([]); // { id, name, file, progress, status, url, xhr }
-
-  const [vlogFilesUploading, setVlogFilesUploading] = useState(false);
-  const [vlogFileUrls, setVlogFileUrls] = useState([]);
-  const [vlogUploadProgress, setVlogUploadProgress] = useState([]);
-  const [vlogBatchFiles, setVlogBatchFiles] = useState([]);
-
-  const [galleryFilesUploading, setGalleryFilesUploading] = useState(false);
-  const [galleryImageUrls, setGalleryImageUrls] = useState([]);
-  const [galleryUploadProgress, setGalleryUploadProgress] = useState([]);
-  const [galleryBatchFiles, setGalleryBatchFiles] = useState([]);
 
   // Achievements form state
   const [achievementForm, setAchievementForm] = useState({
@@ -592,19 +563,6 @@ const AdminPanel = () => {
   // Fetch portfolio data
   const fetchData = useCallback(async () => {
     try {
-      // Wait for token if not available yet
-      let authToken = token;
-      if (!authToken) {
-        authToken = await getIdToken();
-        setToken(authToken);
-      }
-
-      if (!authToken) {
-        console.error('No authentication token available');
-        setIsLoading(false);
-        return;
-      }
-
       // Fetch all collections individually
       const endpoints = [
         'profile', 'skills', 'projects', 'experiences', 'education',
@@ -612,7 +570,7 @@ const AdminPanel = () => {
         'achievements', 'contact-info', 'contacts'
       ];
 
-      const headers = { 'Authorization': `Bearer ${authToken}` };
+      const headers = { 'Authorization': `Bearer ${token}` };
       const fetchPromises = endpoints.map(endpoint =>
         apiFetch(`/api/admin/${endpoint}`, { headers })
           .then(({ res, json }) => {
@@ -670,7 +628,7 @@ const AdminPanel = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, apiFetch, getIdToken]);
+  }, [token, apiFetch]);
 
   useEffect(() => {
     if (token) {
@@ -690,24 +648,10 @@ const AdminPanel = () => {
   const handleApiCall = async (url, method = 'GET', body = null) => {
     setIsSubmitting(true);
     try {
-      // Wait for token if not available yet
-      let authToken = token;
-      if (!authToken) {
-        console.log('Token not available, fetching...');
-        authToken = await getIdToken();
-        setToken(authToken);
-      }
-
-      if (!authToken) {
-        console.error('Failed to get authentication token');
-        showMessage('Authentication token not available. Please login again.', 'error');
-        return false;
-      }
-
       const options = {
         method,
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       };
@@ -724,30 +668,20 @@ const AdminPanel = () => {
       }
 
       const fullUrl = url.startsWith('http') ? url.replace('http://localhost:5000', API_BASE) : url.replace(API_BASE, API_BASE);
-      console.log('API Call:', { method, url: fullUrl, body });
-      
       const response = await fetch(fullUrl, options);
       const result = await response.json();
-
-      console.log('API Response:', { status: response.status, result });
 
       if (response.ok && result.success) {
         showMessage(result.message || 'Operation successful', 'success');
         await fetchData();
         return true;
       } else {
-        console.error('API call failed:', result);
-        if (result.errors && Array.isArray(result.errors)) {
-          console.error('Validation errors:', result.errors);
-          showMessage(`${result.error || 'Validation failed'}: ${result.errors.join(', ')}`, 'error');
-        } else {
-          showMessage(result.error || result.message || 'Operation failed', 'error');
-        }
+        showMessage(result.error || result.message || 'Operation failed', 'error');
         return false;
       }
     } catch (error) {
       console.error('API call error:', error);
-      showMessage('Network error occurred: ' + error.message, 'error');
+      showMessage('Network error occurred', 'error');
       return false;
     } finally {
       setIsSubmitting(false);
@@ -761,107 +695,32 @@ const AdminPanel = () => {
     formData.append('category', contentType);
 
     try {
-      // Wait for token if not available yet
-      let authToken = token;
-      if (!authToken) {
-        authToken = await getIdToken();
-        setToken(authToken);
-      }
-
-      if (!authToken) {
-        showMessage('Authentication token not available. Please login again.', 'error');
-        return null;
-      }
-
       const { res: response, json } = await apiFetch('/api/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
 
-      console.log('Upload response:', { status: response.status, json });
-
       const result = json || {};
-      if (response.ok && result.success) {
-        // Backend returns: { success: true, data: { url, fileName, ... } }
-        const uploadedUrl = result.data?.url || result.data?.publicUrl || result.fileUrl;
-        console.log('Upload successful, URL:', uploadedUrl);
-        return uploadedUrl;
+      if (response.ok) {
+        return result.fileUrl;
       } else {
-        console.error('Upload failed:', result);
-        showMessage(result.error || result.message || 'Upload failed', 'error');
+        showMessage(result.error || 'Upload failed', 'error');
         return null;
       }
     } catch (error) {
       console.error('Upload error:', error);
-      showMessage('Upload failed: ' + error.message, 'error');
+      showMessage('Upload failed', 'error');
       return null;
     }
   };
 
-  // Profile handlers - Always update existing profile (singleton pattern)
+  // Profile handlers
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      // First, get the current profile to get its ID
-      const { res: getRes, json: getJson } = await apiFetch('/api/admin/profile', { 
-        headers: { 'Authorization': `Bearer ${token}` } 
-      });
-      
-      if (!getRes.ok) {
-        showMessage('Failed to fetch profile', 'error');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      const currentProfile = getJson.data;
-      
-      // ALWAYS update existing profile - never create new ones
-      if (!currentProfile || !currentProfile.id) {
-        // If no profile exists, create initial one using POST
-        const { res, json } = await apiFetch('/api/admin/profile', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(profileForm)
-        });
-        
-        if (res.ok && json.success) {
-          showMessage('Profile created successfully', 'success');
-          await fetchData();
-        } else {
-          showMessage(json.error || 'Failed to create profile', 'error');
-        }
-      } else {
-        // Update the existing single profile record
-        const { res, json } = await apiFetch(`/api/admin/profile/${currentProfile.id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(profileForm)
-        });
-        
-        if (res.ok && json.success) {
-          showMessage('Profile updated successfully', 'success');
-          await fetchData(); // Refresh all data to reflect changes
-        } else {
-          showMessage(json.error || json.message || 'Failed to update profile', 'error');
-        }
-      }
-    } catch (error) {
-      console.error('Profile update error:', error);
-      showMessage('Network error occurred', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await handleApiCall(`${API_BASE}/api/admin/profile`, 'PUT', profileForm);
   };
 
   const handleProfilePictureUpload = async (e) => {
@@ -961,138 +820,31 @@ const AdminPanel = () => {
     'education'
   );
 
-  const blogHandlers = {
-    ...createHandlers(
-      blogForm,
-      setBlogForm,
-      { title: '', excerpt: '', content: '', tags: '', publishedDate: '', readTime: '', featured: false, status: 'draft', coverImage: '', media: [] },
-      'blogs'
-    ),
-    submit: async (e) => {
-      e.preventDefault();
+  const blogHandlers = createHandlers(
+    blogForm,
+    setBlogForm,
+    { title: '', excerpt: '', content: '', tags: '', publishedDate: '', readTime: '', featured: false, status: 'draft', coverImage: '' },
+    'blogs'
+  );
 
-      if (blogFilesUploading) {
-        showMessage('Please wait for blog files to finish uploading', 'error');
-        return;
-      }
+  const vlogHandlers = createHandlers(
+    vlogForm,
+    setVlogForm,
+    { title: '', description: '', videoUrl: '', thumbnailUrl: '', duration: '', publishedDate: '', tags: '', featured: false, platform: 'YouTube' },
+    'vlogs'
+  );
 
-      // Require at least one uploaded media OR cover image URL
-      const hasUploadedMedia = Array.isArray(blogFileUrls) && blogFileUrls.length > 0;
-      const hasCover = blogForm.coverImage && typeof blogForm.coverImage === 'string' && blogForm.coverImage.startsWith('http');
-      if (!hasUploadedMedia && !hasCover) {
-        showMessage('Please upload at least one media file or add a cover image before creating the blog post', 'error');
-        return;
-      }
-
-      setIsSubmitting(true);
-      try {
-        const payload = { ...blogForm, media: hasUploadedMedia ? blogFileUrls : (blogForm.media || []) };
-        const url = editingId ? `${API_BASE}/api/admin/blogs/${editingId}` : `${API_BASE}/api/admin/blogs`;
-        const method = editingId ? 'PUT' : 'POST';
-        const success = await handleApiCall(url, method, payload);
-
-        if (success) {
-          setBlogForm({ title: '', excerpt: '', content: '', tags: '', publishedDate: '', readTime: '', featured: false, status: 'draft', coverImage: '', media: [] });
-          setBlogFileUrls([]);
-          setEditingId(null);
-          setEditingType(null);
-        }
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const vlogHandlers = {
-    ...createHandlers(
-      vlogForm,
-      setVlogForm,
-      { title: '', description: '', videoUrl: '', thumbnailUrl: '', duration: '', publishedDate: '', tags: '', featured: false, platform: 'YouTube', videos: [] },
-      'vlogs'
-    ),
-    submit: async (e) => {
-      e.preventDefault();
-
-      if (vlogFilesUploading) {
-        showMessage('Please wait for vlog files to finish uploading', 'error');
-        return;
-      }
-
-      const hasUploadedVideos = Array.isArray(vlogFileUrls) && vlogFileUrls.length > 0;
-      const hasVideoUrl = vlogForm.videoUrl && typeof vlogForm.videoUrl === 'string' && vlogForm.videoUrl.startsWith('http');
-      if (!hasUploadedVideos && !hasVideoUrl) {
-        showMessage('Please upload at least one video file or provide a video URL before adding the vlog', 'error');
-        return;
-      }
-
-      setIsSubmitting(true);
-      try {
-        const payload = { ...vlogForm, videos: hasUploadedVideos ? vlogFileUrls : (vlogForm.videos || []) };
-        const url = editingId ? `${API_BASE}/api/admin/vlogs/${editingId}` : `${API_BASE}/api/admin/vlogs`;
-        const method = editingId ? 'PUT' : 'POST';
-        const success = await handleApiCall(url, method, payload);
-
-        if (success) {
-          setVlogForm({ title: '', description: '', videoUrl: '', thumbnailUrl: '', duration: '', publishedDate: '', tags: '', featured: false, platform: 'YouTube', videos: [] });
-          setVlogFileUrls([]);
-          setEditingId(null);
-          setEditingType(null);
-        }
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-
-  const galleryHandlers = {
-    ...createHandlers(
-      galleryForm,
-      setGalleryForm,
-      { title: '', description: '', imageUrl: '', imageUrls: [], category: 'Travel', location: '', date: '', tags: '' },
-      'gallery'
-    ),
-    submit: async (e) => {
-      e.preventDefault();
-      // Accept either one-or-more uploaded image URLs OR a single imageUrl field
-      if (galleryFilesUploading) {
-        showMessage('Please wait for gallery uploads to finish', 'error');
-        return;
-      }
-
-      const hasUploaded = Array.isArray(galleryImageUrls) && galleryImageUrls.length > 0;
-      const hasSingle = galleryForm.imageUrl && typeof galleryForm.imageUrl === 'string' && galleryForm.imageUrl.startsWith('http');
-      if (!hasUploaded && !hasSingle) {
-        showMessage('Please upload at least one image or provide an image URL before adding to gallery', 'error');
-        return;
-      }
-
-      setIsSubmitting(true);
-      const payload = { ...galleryForm, imageUrls: hasUploaded ? galleryImageUrls : (galleryForm.imageUrls || (galleryForm.imageUrl ? [galleryForm.imageUrl] : [])) };
-      const url = editingId ? `${API_BASE}/api/admin/gallery/${editingId}` : `${API_BASE}/api/admin/gallery`;
-      const method = editingId ? 'PUT' : 'POST';
-      const success = await handleApiCall(url, method, payload);
-      
-      if (success) {
-        setGalleryForm({ title: '', description: '', imageUrl: '', imageUrls: [], category: 'Travel', location: '', date: '', tags: '' });
-        setGalleryImageUrls([]);
-        setEditingId(null);
-        setEditingType(null);
-        showMessage(`Gallery item ${editingId ? 'updated' : 'created'} successfully!`, 'success');
-        
-        setTimeout(() => {
-          const formElement = document.querySelector('.admin-form');
-          if (formElement) {
-            formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
-      }
-    }
-  };
+  const galleryHandlers = createHandlers(
+    galleryForm,
+    setGalleryForm,
+    { title: '', description: '', imageUrl: '', category: 'Travel', location: '', date: '', tags: '' },
+    'gallery'
+  );
 
   const testimonialHandlers = createHandlers(
     testimonialForm,
     setTestimonialForm,
-    { name: '', position: '', company: '', message: '', rating: 5, featured: false, imageUrl: '' },
+    { name: '', position: '', company: '', content: '', rating: 5, featured: false, imageUrl: '' },
     'testimonials'
   );
 
@@ -1233,207 +985,18 @@ const AdminPanel = () => {
 
     try {
       setIsSubmitting(true);
-      console.log('Starting image upload:', { fileName: file.name, size: file.size, type: file.type, contentType });
-      
       const imageUrl = await handleFileUpload(file, contentType);
       
       if (imageUrl) {
-        console.log('Image uploaded successfully, setting URL:', imageUrl);
         setFormFunction(prev => ({ ...prev, [fieldName]: imageUrl }));
         showMessage('Image uploaded successfully!', 'success');
-      } else {
-        console.error('Image upload returned null URL');
-        showMessage('Error: Upload failed to return URL', 'error');
       }
     } catch (error) {
       console.error('Image upload error:', error);
-      showMessage('Error uploading image: ' + error.message, 'error');
+      showMessage('Error uploading image', 'error');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Upload multiple files (sequentially) and collect URLs
-  const handleMultipleFileUpload = async (event, contentType, setUrls, setUploading) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-
-    // declare progress setter outside try so finally can clear it
-    let setProgressSetter = null;
-    try {
-      setUploading(true);
-      const uploaded = [];
-      // initialize progress array for this batch
-      if (setUploading === setBlogFilesUploading) setProgressSetter = setBlogUploadProgress;
-      else if (setUploading === setVlogFilesUploading) setProgressSetter = setVlogUploadProgress;
-      else if (setUploading === setGalleryFilesUploading) setProgressSetter = setGalleryUploadProgress;
-
-      if (setProgressSetter) setProgressSetter(Array(files.length).fill(0));
-
-      // create batch entries so UI can show per-file progress and allow cancel/remove
-      const batchEntries = files.map((f, i) => ({ id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}_${i}`, name: f.name, file: f, progress: 0, status: 'queued', url: null, xhr: null }));
-      if (setUploading === setBlogFilesUploading) setBlogBatchFiles(batchEntries);
-      else if (setUploading === setVlogFilesUploading) setVlogBatchFiles(batchEntries);
-      else if (setUploading === setGalleryFilesUploading) setGalleryBatchFiles(batchEntries);
-
-      for (let idx = 0; idx < files.length; idx++) {
-        const file = files[idx];
-        const entryId = batchEntries[idx].id;
-
-        // mark uploading
-        if (setUploading === setBlogFilesUploading) setBlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'uploading' } : p));
-        else if (setUploading === setVlogFilesUploading) setVlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'uploading' } : p));
-        else if (setUploading === setGalleryFilesUploading) setGalleryBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'uploading' } : p));
-
-        // upload with progress callback and registerXhr to store xhr on the batch entry for cancellation
-        const url = await uploadFileWithProgress(file, contentType, (percent) => {
-          // update both progress array and batch entry
-          if (setProgressSetter) setProgressSetter(prev => {
-            const next = Array.isArray(prev) ? [...prev] : Array(files.length).fill(0);
-            next[idx] = percent;
-            return next;
-          });
-
-          if (setUploading === setBlogFilesUploading) setBlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, progress: percent } : p));
-          else if (setUploading === setVlogFilesUploading) setVlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, progress: percent } : p));
-          else if (setUploading === setGalleryFilesUploading) setGalleryBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, progress: percent } : p));
-        }, (xhr) => {
-          // register xhr so we can abort later
-          if (setUploading === setBlogFilesUploading) setBlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, xhr } : p));
-          else if (setUploading === setVlogFilesUploading) setVlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, xhr } : p));
-          else if (setUploading === setGalleryFilesUploading) setGalleryBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, xhr } : p));
-        });
-
-        if (url) {
-          uploaded.push(url);
-          // mark uploaded in batch
-          if (setUploading === setBlogFilesUploading) setBlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'uploaded', url } : p));
-          else if (setUploading === setVlogFilesUploading) setVlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'uploaded', url } : p));
-          else if (setUploading === setGalleryFilesUploading) setGalleryBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'uploaded', url } : p));
-        } else {
-          // mark failed
-          if (setUploading === setBlogFilesUploading) setBlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'failed' } : p));
-          else if (setUploading === setVlogFilesUploading) setVlogBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'failed' } : p));
-          else if (setUploading === setGalleryFilesUploading) setGalleryBatchFiles(prev => prev.map(p => p.id === entryId ? { ...p, status: 'failed' } : p));
-          showMessage(`Failed to upload ${file.name}`, 'error');
-        }
-      }
-
-      if (uploaded.length) {
-        setUrls(prev => [ ...(prev || []), ...uploaded ]);
-        showMessage(`${uploaded.length} file(s) uploaded`, 'success');
-      }
-    } catch (err) {
-      console.error('Multiple upload error', err);
-      showMessage('Error uploading files', 'error');
-    } finally {
-      setUploading(false);
-      // clear progress indicators after finishing
-      if (setProgressSetter) setProgressSetter([]);
-    }
-  };
-
-  // Remove / cancel a file from the current batch (before submit)
-  const handleRemoveBatchFile = (section, id) => {
-    try {
-      if (section === 'blog') {
-        const entry = blogBatchFiles.find(b => b.id === id);
-        if (!entry) return;
-        if (entry.xhr && entry.status === 'uploading') {
-          try { entry.xhr.abort(); } catch (e) { console.error('abort error', e); }
-        }
-        setBlogBatchFiles(prev => prev.filter(p => p.id !== id));
-        if (entry.status === 'uploaded' && entry.url) {
-          setBlogFileUrls(prev => (Array.isArray(prev) ? prev.filter(u => u !== entry.url) : []));
-        }
-      } else if (section === 'vlog') {
-        const entry = vlogBatchFiles.find(b => b.id === id);
-        if (!entry) return;
-        if (entry.xhr && entry.status === 'uploading') {
-          try { entry.xhr.abort(); } catch (e) { console.error('abort error', e); }
-        }
-        setVlogBatchFiles(prev => prev.filter(p => p.id !== id));
-        if (entry.status === 'uploaded' && entry.url) {
-          setVlogFileUrls(prev => (Array.isArray(prev) ? prev.filter(u => u !== entry.url) : []));
-        }
-      } else if (section === 'gallery') {
-        const entry = galleryBatchFiles.find(b => b.id === id);
-        if (!entry) return;
-        if (entry.xhr && entry.status === 'uploading') {
-          try { entry.xhr.abort(); } catch (e) { console.error('abort error', e); }
-        }
-        setGalleryBatchFiles(prev => prev.filter(p => p.id !== id));
-        if (entry.status === 'uploaded' && entry.url) {
-          setGalleryImageUrls(prev => (Array.isArray(prev) ? prev.filter(u => u !== entry.url) : []));
-        }
-      }
-    } catch (err) { console.error('handleRemoveBatchFile error', err); }
-  };
-
-  // Upload a single file using XHR to obtain progress events
-  const uploadFileWithProgress = (file, contentType, onProgress, registerXhr) => {
-    return new Promise((resolve) => {
-      (async () => {
-        try {
-          let authToken = token;
-          if (!authToken) {
-            authToken = await getIdToken();
-            setToken(authToken);
-          }
-
-          const xhr = new XMLHttpRequest();
-          const fd = new FormData();
-          fd.append('file', file);
-          fd.append('category', contentType);
-
-          xhr.open('POST', `${API_BASE}/api/upload`);
-          if (authToken) xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
-
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              const percent = Math.round((e.loaded / e.total) * 100);
-              if (onProgress) {
-                try {
-                  onProgress(percent);
-                } catch (err) {
-                  console.error('onProgress callback error', err);
-                }
-              }
-            }
-          };
-
-          // allow caller to store xhr for possible abort/cancel
-          try {
-            if (registerXhr && typeof registerXhr === 'function') registerXhr(xhr);
-          } catch (err) { console.error('registerXhr error', err); }
-
-          xhr.onload = () => {
-            try {
-              const res = JSON.parse(xhr.responseText || '{}');
-              if (xhr.status >= 200 && xhr.status < 300 && res && res.success) {
-                const url = res.data?.url || res.data?.publicUrl || res.fileUrl;
-                resolve(url || null);
-              } else {
-                console.error('Upload failed', res);
-                resolve(null);
-              }
-            } catch (err) {
-              console.error('Upload parse error', err);
-              resolve(null);
-            }
-          };
-
-          xhr.onerror = () => {
-            console.error('Upload network error');
-            resolve(null);
-          };
-          xhr.send(fd);
-        } catch (err) {
-          console.error('uploadFileWithProgress error', err);
-          resolve(null);
-        }
-      })();
-    });
   };
 
   // Helper function to update contact status
@@ -2105,10 +1668,10 @@ const AdminPanel = () => {
             onChange={(e) => setSkillForm({ ...skillForm, level: e.target.value })}
             className="form-input"
           >
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-            <option value="expert">Expert</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+            <option value="Expert">Expert</option>
           </select>
         </div>
 
@@ -2469,7 +2032,7 @@ const AdminPanel = () => {
 
       <div className="items-list">
         {filterItems(data?.experiences || [], ['company', 'position']).map((experience) => (
-          <div key={experience.id} className="item-card">
+          <div key={experience.experience.id} className="item-card">
             <div className="item-header">
               <h3>{experience.position}</h3>
               <span className="company-name">{experience.company}</span>
@@ -2483,7 +2046,7 @@ const AdminPanel = () => {
               <button onClick={() => experienceHandlers.edit(experience)} className="edit-btn">
                 Edit
               </button>
-              <button onClick={() => experienceHandlers.delete(experience.id)} className="delete-btn">
+              <button onClick={() => experienceHandlers.delete(experience.experience.id)} className="delete-btn">
                 Delete
               </button>
             </div>
@@ -2594,7 +2157,7 @@ const AdminPanel = () => {
 
       <div className="items-list">
         {filterItems(data?.education || [], ['institution', 'degree', 'field']).map((education) => (
-          <div key={education.id} className="item-card">
+          <div key={education.education.id} className="item-card">
             <div className="item-header">
               <h3>{education.degree}</h3>
               <span className="institution-name">{education.institution}</span>
@@ -2608,7 +2171,7 @@ const AdminPanel = () => {
               <button onClick={() => educationHandlers.edit(education)} className="edit-btn">
                 Edit
               </button>
-              <button onClick={() => educationHandlers.delete(education.id)} className="delete-btn">
+              <button onClick={() => educationHandlers.delete(education.education.id)} className="delete-btn">
                 Delete
               </button>
             </div>
@@ -2735,72 +2298,6 @@ const AdminPanel = () => {
                 />
               </div>
             )}
-
-            {/* Multiple media files for blog (images/videos/audio) */}
-            <div style={{marginTop: '10px'}}>
-              <label style={{fontSize: '14px', color: '#666'}}>Upload Media Files (images / videos / audio) — multiple allowed</label>
-              <input
-                type="file"
-                accept="image/*,video/*,audio/*"
-                multiple
-                onChange={(e) => handleMultipleFileUpload(e, 'blog', setBlogFileUrls, setBlogFilesUploading)}
-                className="form-input"
-                disabled={blogFilesUploading || isSubmitting}
-              />
-              {Array.isArray(blogFileUrls) && blogFileUrls.length > 0 && (
-                <div style={{marginTop: '8px'}}>
-                  <strong>Uploaded files:</strong>
-                  <ul>
-                    {blogFileUrls.map((u, i) => (
-                      <li key={`blog-file-${i}`} style={{fontSize: '13px'}}>
-                        <a href={u} target="_blank" rel="noreferrer">{u}</a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {Array.isArray(blogBatchFiles) && blogBatchFiles.length > 0 && (
-                <div style={{marginTop: '8px'}}>
-                  <strong>Files in queue:</strong>
-                  <ul>
-                    {blogBatchFiles.map((f) => (
-                      <li key={`blog-batch-${f.id}`} style={{fontSize: '13px', marginBottom: '8px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px'}}>
-                          <div style={{flex: 1, minWidth: 0}}>
-                            <div style={{fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{f.name}</div>
-                            <div style={{background: '#eef2ff', height: '6px', borderRadius: '4px', overflow: 'hidden', marginTop: '6px'}}>
-                              <div style={{width: `${f.progress || 0}%`, height: '100%', background: '#3b82f6'}} />
-                            </div>
-                          </div>
-                          <div style={{marginLeft: '8px', textAlign: 'right'}}>
-                            <div style={{fontSize: '12px', color: '#666'}}>{f.status}{f.progress !== undefined ? ` • ${f.progress}%` : ''}</div>
-                            <div style={{marginTop: '6px'}}>
-                              <button type="button" className="cancel-btn" onClick={() => handleRemoveBatchFile('blog', f.id)} style={{fontSize: '12px'}}>
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {(blogFilesUploading || (Array.isArray(blogUploadProgress) && blogUploadProgress.length > 0)) && (
-                (() => {
-                  const percent = Array.isArray(blogUploadProgress) && blogUploadProgress.length ? Math.round(blogUploadProgress.reduce((a,b) => a + b, 0) / blogUploadProgress.length) : 0;
-                  return (
-                    <div style={{marginTop: '8px'}}>
-                      <label style={{fontSize: '13px', color: '#666'}}>Upload Progress: {percent}%</label>
-                      <div style={{background: '#e6edf3', height: '8px', borderRadius: '4px', overflow: 'hidden', marginTop: '6px'}}>
-                        <div style={{width: `${percent}%`, height: '100%', background: '#3b82f6'}} />
-                      </div>
-                    </div>
-                  );
-                })()
-              )}
-            </div>
           </div>
           <div className="form-group">
             <label>Status</label>
@@ -2827,11 +2324,7 @@ const AdminPanel = () => {
         </div>
 
         <div className="form-actions">
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={isSubmitting || blogFilesUploading || (!((Array.isArray(blogFileUrls) && blogFileUrls.length > 0) || (Array.isArray(blogForm.media) && blogForm.media.length > 0) || (blogForm.coverImage && typeof blogForm.coverImage === 'string' && blogForm.coverImage.startsWith('http'))))}
-          >
+          <button type="submit" className="submit-btn">
             {editingId ? 'Update Blog' : 'Add Blog'}
           </button>
           {editingId && (
@@ -2844,7 +2337,7 @@ const AdminPanel = () => {
 
       <div className="items-list">
         {filterItems(data?.blogs || [], ['title', 'tags']).map((blog) => (
-          <div key={blog.id} className="item-card">
+          <div key={blog.blog.id} className="item-card">
             <div className="item-header">
               <h3>{blog.title}</h3>
               <div className="badges">
@@ -2861,7 +2354,7 @@ const AdminPanel = () => {
               <button onClick={() => blogHandlers.edit(blog)} className="edit-btn">
                 Edit
               </button>
-              <button onClick={() => blogHandlers.delete(blog.id)} className="delete-btn">
+              <button onClick={() => blogHandlers.delete(blog.blog.id)} className="delete-btn">
                 Delete
               </button>
             </div>
@@ -2965,69 +2458,6 @@ const AdminPanel = () => {
                 />
               </div>
             )}
-
-            {/* Multiple video files for vlog (allow uploading several files) */}
-            <div style={{marginTop: '10px'}}>
-              <label style={{fontSize: '14px', color: '#666'}}>Upload Video Files (multiple allowed)</label>
-              <input
-                type="file"
-                accept="video/*,audio/*"
-                multiple
-                onChange={(e) => handleMultipleFileUpload(e, 'vlog', setVlogFileUrls, setVlogFilesUploading)}
-                className="form-input"
-                disabled={vlogFilesUploading || isSubmitting}
-              />
-              {Array.isArray(vlogFileUrls) && vlogFileUrls.length > 0 && (
-                <div style={{marginTop: '8px'}}>
-                  <strong>Uploaded videos:</strong>
-                  <ul>
-                    {vlogFileUrls.map((u,i) => (
-                      <li key={`vlog-file-${i}`} style={{fontSize: '13px'}}><a href={u} target="_blank" rel="noreferrer">{u}</a></li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {Array.isArray(vlogBatchFiles) && vlogBatchFiles.length > 0 && (
-                <div style={{marginTop: '8px'}}>
-                  <strong>Files in queue:</strong>
-                  <ul>
-                    {vlogBatchFiles.map((f) => (
-                      <li key={`vlog-batch-${f.id}`} style={{fontSize: '13px', marginBottom: '8px'}}>
-                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px'}}>
-                          <div style={{flex: 1, minWidth: 0}}>
-                            <div style={{fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{f.name}</div>
-                            <div style={{background: '#ecfdf5', height: '6px', borderRadius: '4px', overflow: 'hidden', marginTop: '6px'}}>
-                              <div style={{width: `${f.progress || 0}%`, height: '100%', background: '#10b981'}} />
-                            </div>
-                          </div>
-                          <div style={{marginLeft: '8px', textAlign: 'right'}}>
-                            <div style={{fontSize: '12px', color: '#666'}}>{f.status}{f.progress !== undefined ? ` • ${f.progress}%` : ''}</div>
-                            <div style={{marginTop: '6px'}}>
-                              <button type="button" className="cancel-btn" onClick={() => handleRemoveBatchFile('vlog', f.id)} style={{fontSize: '12px'}}>
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {(vlogFilesUploading || (Array.isArray(vlogUploadProgress) && vlogUploadProgress.length > 0)) && (
-                (() => {
-                  const percent = Array.isArray(vlogUploadProgress) && vlogUploadProgress.length ? Math.round(vlogUploadProgress.reduce((a,b) => a + b, 0) / vlogUploadProgress.length) : 0;
-                  return (
-                    <div style={{marginTop: '8px'}}>
-                      <label style={{fontSize: '13px', color: '#666'}}>Upload Progress: {percent}%</label>
-                      <div style={{background: '#e6edf3', height: '8px', borderRadius: '4px', overflow: 'hidden', marginTop: '6px'}}>
-                        <div style={{width: `${percent}%`, height: '100%', background: '#10b981'}} />
-                      </div>
-                    </div>
-                  );
-                })()
-              )}
-            </div>
           </div>
         </div>
 
@@ -3091,11 +2521,7 @@ const AdminPanel = () => {
         </div>
 
         <div className="form-actions">
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={isSubmitting || vlogFilesUploading || (!((Array.isArray(vlogFileUrls) && vlogFileUrls.length > 0) || (Array.isArray(vlogForm.videos) && vlogForm.videos.length > 0) || (vlogForm.videoUrl && typeof vlogForm.videoUrl === 'string' && vlogForm.videoUrl.startsWith('http'))))}
-          >
+          <button type="submit" className="submit-btn">
             {editingId ? 'Update Vlog' : 'Add Vlog'}
           </button>
           {editingId && (
@@ -3108,7 +2534,7 @@ const AdminPanel = () => {
 
       <div className="items-list">
         {filterItems(data?.vlogs || [], ['title', 'tags']).map((vlog) => (
-          <div key={vlog.id} className="item-card">
+          <div key={vlog.vlog.id} className="item-card">
             <div className="item-header">
               <h3>{vlog.title}</h3>
               <div className="badges">
@@ -3126,7 +2552,7 @@ const AdminPanel = () => {
               <button onClick={() => vlogHandlers.edit(vlog)} className="edit-btn">
                 Edit
               </button>
-              <button onClick={() => vlogHandlers.delete(vlog.id)} className="delete-btn">
+              <button onClick={() => vlogHandlers.delete(vlog.vlog.id)} className="delete-btn">
                 Delete
               </button>
             </div>
@@ -3170,68 +2596,22 @@ const AdminPanel = () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Image Upload (multiple)</label>
+            <label>Image Upload</label>
             <input
               type="file"
               accept="image/*"
-              multiple
-              onChange={(e) => handleMultipleFileUpload(e, 'gallery', setGalleryImageUrls, setGalleryFilesUploading)}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  handleImageUpload(e, 'gallery', 'imageUrl', setGalleryForm);
+                }
+              }}
               className="form-input"
-              disabled={galleryFilesUploading || isSubmitting}
+              disabled={isSubmitting}
             />
-            {Array.isArray(galleryImageUrls) && galleryImageUrls.length > 0 && (
-              <div style={{marginTop: '8px'}}>
-                <strong>Uploaded images:</strong>
-                <ul>
-                  {galleryImageUrls.map((u,i) => (
-                    <li key={`gallery-file-${i}`} style={{fontSize: '13px'}}><a href={u} target="_blank" rel="noreferrer">{u}</a></li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {Array.isArray(galleryBatchFiles) && galleryBatchFiles.length > 0 && (
-              <div style={{marginTop: '8px'}}>
-                <strong>Files in queue:</strong>
-                <ul>
-                  {galleryBatchFiles.map((f) => (
-                    <li key={`gallery-batch-${f.id}`} style={{fontSize: '13px', marginBottom: '8px'}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px'}}>
-                        <div style={{flex: 1, minWidth: 0}}>
-                          <div style={{fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{f.name}</div>
-                          <div style={{background: '#fff7ed', height: '6px', borderRadius: '4px', overflow: 'hidden', marginTop: '6px'}}>
-                            <div style={{width: `${f.progress || 0}%`, height: '100%', background: '#f97316'}} />
-                          </div>
-                        </div>
-                        <div style={{marginLeft: '8px', textAlign: 'right'}}>
-                          <div style={{fontSize: '12px', color: '#666'}}>{f.status}{f.progress !== undefined ? ` • ${f.progress}%` : ''}</div>
-                          <div style={{marginTop: '6px'}}>
-                            <button type="button" className="cancel-btn" onClick={() => handleRemoveBatchFile('gallery', f.id)} style={{fontSize: '12px'}}>
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {(galleryFilesUploading || (Array.isArray(galleryUploadProgress) && galleryUploadProgress.length > 0)) && (
-              (() => {
-                const percent = Array.isArray(galleryUploadProgress) && galleryUploadProgress.length ? Math.round(galleryUploadProgress.reduce((a,b) => a + b, 0) / galleryUploadProgress.length) : 0;
-                return (
-                  <div style={{marginTop: '8px'}}>
-                    <label style={{fontSize: '13px', color: '#666'}}>Upload Progress: {percent}%</label>
-                    <div style={{background: '#e6edf3', height: '8px', borderRadius: '4px', overflow: 'hidden', marginTop: '6px'}}>
-                      <div style={{width: `${percent}%`, height: '100%', background: '#f97316'}} />
-                    </div>
-                  </div>
-                );
-              })()
-            )}
           </div>
           <div className="form-group">
-            <label>Image URL (Alternative - single)</label>
+            <label>Image URL (Alternative)</label>
             <input
               type="url"
               value={typeof galleryForm.imageUrl === 'string' && galleryForm.imageUrl.startsWith('http') ? galleryForm.imageUrl : ''}
@@ -3305,11 +2685,7 @@ const AdminPanel = () => {
         </div>
 
         <div className="form-actions">
-          <button
-            type="submit"
-            className="submit-btn"
-            disabled={isSubmitting || galleryFilesUploading || (!((Array.isArray(galleryImageUrls) && galleryImageUrls.length > 0) || (Array.isArray(galleryForm.imageUrls) && galleryForm.imageUrls.length > 0) || (galleryForm.imageUrl && typeof galleryForm.imageUrl === 'string' && galleryForm.imageUrl.startsWith('http'))))}
-          >
+          <button type="submit" className="submit-btn">
             {editingId ? 'Update Image' : 'Add Image'}
           </button>
           {editingId && (
@@ -3322,7 +2698,7 @@ const AdminPanel = () => {
 
       <div className="items-list gallery-grid">
         {filterItems(data?.gallery || [], ['title', 'tags', 'location']).map((image) => (
-          <div key={image.id} className="gallery-item">
+          <div key={image.image.id} className="gallery-item">
             <div className="gallery-image">
               <img src={image.imageUrl} alt={image.title} />
             </div>
@@ -3338,7 +2714,7 @@ const AdminPanel = () => {
                 <button onClick={() => galleryHandlers.edit(image)} className="edit-btn">
                   Edit
                 </button>
-                <button onClick={() => galleryHandlers.delete(image.id)} className="delete-btn">
+                <button onClick={() => galleryHandlers.delete(image.image.id)} className="delete-btn">
                   Delete
                 </button>
               </div>
@@ -3442,7 +2818,7 @@ const AdminPanel = () => {
 
       <div className="items-list">
         {filterItems(data?.services || [], ['title', 'description']).map((service) => (
-          <div key={service.id} className="item-card service-card">
+          <div key={service.service.id} className="item-card service-card">
             <div className="item-header">
               <div className="service-icon">{service.icon}</div>
               <div>
@@ -3459,7 +2835,7 @@ const AdminPanel = () => {
               <button onClick={() => serviceHandlers.edit(service)} className="edit-btn">
                 Edit
               </button>
-              <button onClick={() => serviceHandlers.delete(service.id)} className="delete-btn">
+              <button onClick={() => serviceHandlers.delete(service.service.id)} className="delete-btn">
                 Delete
               </button>
             </div>
@@ -3473,202 +2849,135 @@ const AdminPanel = () => {
   const renderViewerEditorTab = () => (
     <div className="tab-content">
       <div className="tab-header">
-        <h2>Viewer → Editor Management</h2>
-        <p>Generate one-time access keys for users to upgrade from viewer to editor role, manage access requests, and track role conversions.</p>
+        <h2>Viewer → Editor</h2>
+        <p>Manage one-time secret keys and handle user requests to gain editor access.</p>
       </div>
 
-      {/* Sub-tabs for Access Keys, Requests, Conversions */}
-      <div className="sub-tabs" style={{marginBottom: '20px'}}>
-        <button 
-          className={activeSubTab === 'accessKeys' ? 'sub-tab active' : 'sub-tab'}
-          onClick={() => setActiveSubTab('accessKeys')}
-        >
-          🔑 Access Keys
-        </button>
-        <button 
-          className={activeSubTab === 'adminRequests' ? 'sub-tab active' : 'sub-tab'}
-          onClick={() => setActiveSubTab('adminRequests')}
-        >
-          📥 Admin Requests
-        </button>
-        <button 
-          className={activeSubTab === 'conversions' ? 'sub-tab active' : 'sub-tab'}
-          onClick={() => setActiveSubTab('conversions')}
-        >
-          📊 Conversions
-        </button>
+      <div className="ve-subnav" style={{display: 'flex', gap: '8px', marginBottom: '12px'}}>
+  <button className={(viewerEditorSubTab === 'manage-keys' ? 'nav-subitem active' : 'nav-subitem') + (veAnimate ? ' animate-in' : '')} onClick={() => setViewerEditorSubTab('manage-keys')}>Manage Keys</button>
+  <button className={(viewerEditorSubTab === 'requests' ? 'nav-subitem active' : 'nav-subitem') + (veAnimate ? ' animate-in' : '')} onClick={() => setViewerEditorSubTab('requests')}>Handle Requests</button>
       </div>
 
-      {/* Access Keys Section */}
-      {activeSubTab === 'accessKeys' && (
+      {viewerEditorSubTab === 'manage-keys' && (
         <div>
-          <div className="form-section" style={{marginBottom: '24px'}}>
-            <h3>Generate New Access Key</h3>
-            <p>Create a one-time use key that allows a viewer to upgrade to editor role.</p>
-            <div className="form-group">
-              <label>Notes (Optional)</label>
-              <input
-                type="text"
-                value={genNotes}
-                onChange={(e) => setGenNotes(e.target.value)}
-                className="form-input"
-                placeholder="e.g., For John Doe - expires in 7 days"
-              />
-            </div>
-            <button onClick={handleGenerateKey} className="submit-btn">
-              🔑 Generate Access Key
-            </button>
-          </div>
-
-          <div className="items-list">
-            <h3>Active Access Keys</h3>
-            {accessKeys.length === 0 ? (
-              <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>
-                No access keys generated yet. Create one above to allow users to upgrade to editor role.
+          <div className="admin-form">
+            <div className="form-row">
+              <div className="form-group" style={{flex: 1}}>
+                <label>Notes for key (optional)</label>
+                <input value={genNotes} onChange={(e) => setGenNotes(e.target.value)} className="form-input" placeholder="Purpose or user hint" />
               </div>
-            ) : (
-              accessKeys.map((keyObj) => (
-                <div key={keyObj.id} className="item-card">
-                  <div className="item-header">
-                    <h4>Access Key</h4>
-                    <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                      <span className={keyObj.used ? 'status-badge used' : 'status-badge active'}>
-                        {keyObj.used ? 'Used' : 'Active'}
-                      </span>
-                      {keyObj.expiresAt && new Date(keyObj.expiresAt) < new Date() && (
-                        <span className="status-badge expired">Expired</span>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{
-                    backgroundColor: '#f7fafc',
-                    padding: '12px',
-                    borderRadius: '6px',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    wordBreak: 'break-all',
-                    marginBottom: '12px'
-                  }}>
-                    {keyObj.key}
-                  </div>
-                  {keyObj.notes && <p style={{color: '#666', marginBottom: '8px'}}>Notes: {keyObj.notes}</p>}
-                  <div className="item-meta">
-                    <span>Created: {new Date(keyObj.createdAt).toLocaleString()}</span>
-                    {keyObj.expiresAt && <span>Expires: {new Date(keyObj.expiresAt).toLocaleString()}</span>}
-                    {keyObj.usedBy && <span>Used by: {keyObj.usedBy}</span>}
-                  </div>
-                  <div className="item-actions">
-                    <button onClick={() => handleCopy(keyObj.key)} className="edit-btn">
-                      📋 Copy Key
-                    </button>
-                    {!keyObj.used && (
-                      <button onClick={() => handleDeleteKey(keyObj.id)} className="delete-btn">
-                        🗑️ Revoke Key
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+              <div className="form-group" style={{width: '220px', alignSelf: 'end'}}>
+                <button type="button" onClick={handleGenerateKey} className="submit-btn" style={{width: '100%'}}>Generate Key</button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Admin Requests Section */}
-      {activeSubTab === 'adminRequests' && (
-        <div className="items-list">
-          <h3>Pending Admin Access Requests</h3>
-          <p style={{marginBottom: '20px', color: '#666'}}>
-            Users can request admin or editor access. Approve or reject requests below.
-          </p>
-          {adminRequests.length === 0 ? (
-            <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>
-              No pending access requests at the moment.
-            </div>
-          ) : (
-            adminRequests
-              .filter(req => req.status === 'pending')
-              .map((request) => (
-                <div key={request.id} className="item-card">
-                  <div className="item-header">
-                    <div>
-                      <h4>{request.userName || request.userEmail}</h4>
-                      <p style={{color: '#666', fontSize: '14px'}}>{request.userEmail}</p>
-                    </div>
-                    <span className="status-badge pending">{request.status}</span>
-                  </div>
-                  <div style={{marginBottom: '12px'}}>
-                    <strong>Requested Role:</strong> {request.requestedRole}
-                  </div>
-                  {request.reason && (
-                    <div style={{
-                      backgroundColor: '#f7fafc',
-                      padding: '12px',
-                      borderRadius: '6px',
-                      marginBottom: '12px'
-                    }}>
-                      <strong>Reason:</strong>
-                      <p style={{margin: '4px 0 0 0'}}>{request.reason}</p>
-                    </div>
-                  )}
-                  <div className="item-meta">
-                    <span>Requested: {new Date(request.createdAt).toLocaleString()}</span>
-                  </div>
-                  <div className="item-actions">
-                    <button onClick={() => handleApproveRequest(request.id)} className="submit-btn">
-                      ✅ Approve Request
-                    </button>
-                    <button onClick={() => handleRejectRequest(request.id)} className="delete-btn">
-                      ❌ Reject Request
-                    </button>
-                  </div>
-                </div>
-              ))
-          )}
-        </div>
-      )}
-
-      {/* Conversions Section */}
-      {activeSubTab === 'conversions' && (
-        <div className="items-list">
-          <h3>Role Conversion History</h3>
-          <p style={{marginBottom: '20px', color: '#666'}}>
-            Track all viewer → editor role upgrades. You can revert users back to viewer role if needed.
-          </p>
-          {conversions.length === 0 ? (
-            <div style={{textAlign: 'center', padding: '40px', color: '#718096'}}>
-              No role conversions recorded yet.
-            </div>
-          ) : (
-            conversions.map((conversion) => (
-              <div key={conversion.id} className="item-card">
-                <div className="item-header">
-                  <div>
-                    <h4>{conversion.userName || 'User'}</h4>
-                    <p style={{color: '#666', fontSize: '14px'}}>{conversion.userEmail}</p>
-                  </div>
-                  <span className="status-badge success">
-                    {conversion.fromRole} → {conversion.toRole}
-                  </span>
-                </div>
-                <div className="item-meta">
-                  <span>Converted: {new Date(conversion.convertedAt).toLocaleString()}</span>
-                  {conversion.method && <span>Method: {conversion.method}</span>}
-                  {conversion.accessKeyUsed && <span>Access Key Used</span>}
-                </div>
-                {conversion.toRole === 'editor' && (
-                  <div className="item-actions">
-                    <button 
-                      onClick={() => handleRevertUser(conversion.userId)} 
-                      className="cancel-btn"
-                    >
-                      ↩️ Revert to Viewer
-                    </button>
-                  </div>
+          <h3 style={{marginTop: '1.5rem'}}>Active Keys</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Notes</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accessKeys.length === 0 && (
+                  <tr><td colSpan={4} style={{textAlign: 'center', padding: '12px'}}>No active keys</td></tr>
                 )}
-              </div>
-            ))
-          )}
+                {accessKeys.map(k => (
+                  <tr key={k._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                    <td style={{padding: '8px', fontFamily: 'monospace'}}>{k.key}</td>
+                    <td style={{padding: '8px'}}>{k.notes}</td>
+                    <td style={{padding: '8px'}}>{new Date(k.createdAt).toLocaleString()}</td>
+                    <td style={{padding: '8px'}}>
+                      <button onClick={() => handleCopy(k.key)} className="submit-btn" style={{marginRight: '8px'}}>Copy</button>
+                      <button onClick={() => handleDeleteKey(k._id)} className="cancel-btn">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style={{marginTop: '1.5rem'}}>Conversion History</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Key</th>
+                  <th>When</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {conversions.length === 0 && (
+                  <tr><td colSpan={7} style={{textAlign: 'center', padding: '12px'}}>No conversions yet</td></tr>
+                )}
+                {conversions.map(c => (
+                  <tr key={c._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                    <td style={{padding: '8px'}}>{c.user?.name || '—'}</td>
+                    <td style={{padding: '8px'}}>{c.user?.email || '—'}</td>
+                    <td style={{padding: '8px'}}>{c.fromRole}</td>
+                    <td style={{padding: '8px'}}>{c.toRole}</td>
+                    <td style={{padding: '8px', fontFamily: 'monospace'}}>{c.keyUsed}</td>
+                    <td style={{padding: '8px'}}>{new Date(c.usedAt).toLocaleString()}</td>
+                    <td style={{padding: '8px'}}>
+                      <button onClick={() => handleRevertUser(c.user?._id)} className="cancel-btn">Revert to Viewer</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {viewerEditorSubTab === 'requests' && (
+        <div>
+          <h3 style={{marginTop: '0.5rem'}}>Admin Requests</h3>
+          <div style={{overflowX: 'auto'}}>
+            <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Requested At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminRequests.length === 0 && (
+                  <tr><td colSpan={6} style={{textAlign: 'center', padding: '12px'}}>No admin requests</td></tr>
+                )}
+                {adminRequests.map(r => (
+                  <tr key={r._id} style={{borderTop: '1px solid #e6e6e6'}}>
+                    <td style={{padding: '8px'}}>{r.user?.name || '—'}</td>
+                    <td style={{padding: '8px'}}>{r.user?.email || '—'}</td>
+                    <td style={{padding: '8px'}}>{r.message || '—'}</td>
+                    <td style={{padding: '8px'}}>{r.status}</td>
+                    <td style={{padding: '8px'}}>{new Date(r.createdAt).toLocaleString()}</td>
+                    <td style={{padding: '8px'}}>
+                      {r.status === 'pending' && (
+                        <>
+                          <button onClick={() => handleApproveRequest(r._id)} className="submit-btn" style={{marginRight: '8px'}}>Approve</button>
+                          <button onClick={() => handleRejectRequest(r._id)} className="cancel-btn">Reject</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -3749,10 +3058,10 @@ const AdminPanel = () => {
         </div>
 
         <div className="form-group">
-          <label>Testimonial Message</label>
+          <label>Testimonial Content</label>
           <textarea
-            value={testimonialForm.message}
-            onChange={(e) => setTestimonialForm({ ...testimonialForm, message: e.target.value })}
+            value={testimonialForm.content}
+            onChange={(e) => setTestimonialForm({ ...testimonialForm, content: e.target.value })}
             className="form-input"
             rows="4"
             required
@@ -3839,7 +3148,7 @@ const AdminPanel = () => {
                   <div className="item-card">No testimonials found.</div>
                 )}
                 {filterItems(adminTestimonials || [], ['name', 'company', 'content']).map((testimonial) => (
-                  <div key={testimonial.id} className="item-card testimonial-card">
+                  <div key={testimonial.testimonial.id} className="item-card testimonial-card">
                     <div className="testimonial-header">
                       <div className="testimonial-avatar">
                         {testimonial.imageUrl ? (
@@ -3855,12 +3164,12 @@ const AdminPanel = () => {
                       </div>
                       {testimonial.featured && <span className="featured-badge">Featured</span>}
                     </div>
-                    <p className="testimonial-content">"{testimonial.message}"</p>
+                    <p className="testimonial-content">"{testimonial.content}"</p>
                     <div className="item-actions">
                       <button onClick={() => { testimonialHandlers.edit(testimonial); setActiveTestimonialsSubTab('add'); }} className="edit-btn">Edit</button>
-                      <button onClick={() => testimonialHandlers.delete(testimonial.id)} className="delete-btn">Delete</button>
-                      <button onClick={() => toggleTestimonialFlag(testimonial.id, { featured: !testimonial.featured })} className="submit-btn" style={{ marginLeft: '8px' }}>{testimonial.featured ? 'Unfeature' : 'Feature'}</button>
-                      <button onClick={() => toggleTestimonialFlag(testimonial.id, { approved: !testimonial.approved })} className="submit-btn" style={{ marginLeft: '8px' }}>{testimonial.approved ? 'Unapprove' : 'Approve'}</button>
+                      <button onClick={() => testimonialHandlers.delete(testimonial.testimonial.id)} className="delete-btn">Delete</button>
+                      <button onClick={() => toggleTestimonialFlag(testimonial.testimonial.id, { featured: !testimonial.featured })} className="submit-btn" style={{ marginLeft: '8px' }}>{testimonial.featured ? 'Unfeature' : 'Feature'}</button>
+                      <button onClick={() => toggleTestimonialFlag(testimonial.testimonial.id, { approved: !testimonial.approved })} className="submit-btn" style={{ marginLeft: '8px' }}>{testimonial.approved ? 'Unapprove' : 'Approve'}</button>
                     </div>
                   </div>
                 ))}
@@ -3909,7 +3218,7 @@ const AdminPanel = () => {
         unit: achievement.unit || '',
         verificationUrl: achievement.verificationUrl || ''
       });
-      setAchievementEditingId(achievement.id);
+      setAchievementEditingId(achievement.achievement.id);
       setEditingType('achievements');
     },
     delete: async (id) => {
@@ -3986,7 +3295,7 @@ const AdminPanel = () => {
 
       <div className="items-list">
         {(achievementsList || data?.achievements || []).map(a => (
-          <div key={a.id} className="item-card achievement-card">
+          <div key={a.a.id} className="item-card achievement-card">
             <div className="achievement-header">
               <h3>{a.title}</h3>
               <div className="achievement-meta">{a.category} {a.date && <span> • {new Date(a.date).toLocaleDateString()}</span>}</div>
@@ -3994,7 +3303,7 @@ const AdminPanel = () => {
             <p>{a.description}</p>
             <div className="item-actions">
               <button onClick={() => achievementHandlers.edit(a)} className="edit-btn">Edit</button>
-              <button onClick={() => achievementHandlers.delete(a.id)} className="delete-btn">Delete</button>
+              <button onClick={() => achievementHandlers.delete(a.a.id)} className="delete-btn">Delete</button>
             </div>
           </div>
         ))}
@@ -4128,7 +3437,7 @@ const AdminPanel = () => {
             return (
               <>
                 {paged.map((user) => {
-                  const uid = user.id;
+                  const uid = user.user.id;
                   const localRole = editedRoles[uid] !== undefined ? editedRoles[uid] : (user.role || 'viewer');
                   const isProtected = ['admin', 'root admin'].includes((user.role || '').toLowerCase());
                   return (
@@ -4688,7 +3997,7 @@ const AdminPanel = () => {
         <div className="items-list">
           {filterItems(data?.contacts || [], ['name', 'email', 'subject', 'message']).length > 0 ? (
             filterItems(data?.contacts || [], ['name', 'email', 'subject', 'message']).map((contact) => (
-              <div key={contact.id} className={`item-card contact-card ${contact.status}`}>
+              <div key={contact.contact.id} className={`item-card contact-card ${contact.status}`}>
                 <div className="contact-header">
                   <div className="contact-info">
                     <h3>{contact.name}</h3>
@@ -4725,7 +4034,7 @@ const AdminPanel = () => {
                   <button 
                     onClick={() => {
                       setContactForm(contact);
-                      setEditingId(contact.id);
+                      setEditingId(contact.contact.id);
                       setEditingType('contacts');
                     }} 
                     className="edit-btn"
@@ -4734,7 +4043,7 @@ const AdminPanel = () => {
                   </button>
                   <select
                     value={contact.status || 'unread'}
-                    onChange={(e) => updateContactStatus(contact.id, e.target.value)}
+                    onChange={(e) => updateContactStatus(contact.contact.id, e.target.value)}
                     className="status-select"
                     style={{marginLeft: '10px', padding: '5px'}}
                   >
@@ -4743,7 +4052,7 @@ const AdminPanel = () => {
                     <option value="replied">Replied</option>
                     <option value="archived">Archived</option>
                   </select>
-                  <button onClick={() => contactHandlers.delete(contact.id)} className="delete-btn">
+                  <button onClick={() => contactHandlers.delete(contact.contact.id)} className="delete-btn">
                     🗑️ Delete
                   </button>
                 </div>
@@ -5054,5 +4363,3 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
-
-

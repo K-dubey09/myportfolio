@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for Portfolio Project
+// Allows unlimited file uploads for authenticated users (admin/editor)
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow unlimited uploads for authenticated users in the uploads folder
+    match /uploads/{allPaths=**} {
+      // Read access: Public (files are made public after upload)
+      allow read: if true;
+      
+      // Write access: Only authenticated users
+      allow write: if request.auth != null;
+      
+      // No size limit - Firebase Storage handles large files with resumable uploads
+      // Validation: Ensure files are uploaded by authenticated users only
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+    
+    // Default deny for all other paths
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}

@@ -3,7 +3,100 @@ import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-const storage = firebaseConfig.getStorage();
+// Get storage lazily to ensure Firebase is initialized
+const getStorage = () => {
+  const storage = firebaseConfig.getStorage();
+  if (!storage) {
+    throw new Error('Firebase Storage not initialized');
+  }
+  return storage;
+};
+
+// Try to resolve a usable bucket. We attempt the default bucket first, then
+// list available buckets (if permissions allow) and try names derived from
+// the project ID. This makes the upload code resilient when the bucket name
+// differs (e.g., shown in Firebase console without the .appspot.com suffix).
+const findUsableBucket = async () => {
+  const storage = getStorage();
+
+  // 0) Try explicit env var bucket if provided
+  const envBucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.STORAGE_BUCKET || (firebaseConfig.getStorageBucketName && firebaseConfig.getStorageBucketName());
+  if (envBucketName) {
+    try {
+      const b = storage.bucket(envBucketName);
+      const [exists] = await b.exists();
+      if (exists) {
+        console.log('Using storage bucket from env/config:', envBucketName);
+        return b;
+      }
+      console.warn(`Env-configured bucket '${envBucketName}' not found`);
+    } catch (err) {
+      console.warn('Env-configured bucket check failed:', err.message || err);
+    }
+  }
+
+  // 1) Try default bucket (no name passed)
+  try {
+    const defaultBucket = storage.bucket();
+    const [exists] = await defaultBucket.exists();
+    if (exists) {
+      console.log('Using default storage bucket:', defaultBucket.name);
+      return defaultBucket;
+    }
+  } catch (err) {
+    console.warn('Default bucket check failed:', err.message || err);
+  }
+
+  // 2) Try listing buckets and find one that matches projectId patterns
+  try {
+    const [buckets] = await storage.getBuckets();
+    const projectId = firebaseConfig.getProjectId && firebaseConfig.getProjectId();
+    if (buckets && buckets.length) {
+      // Prefer exact match or common variants
+      for (const b of buckets) {
+        if (projectId && (b.name === projectId || b.name === `${projectId}.appspot.com` || b.name.startsWith(projectId))) {
+          console.log('Found usable bucket via list:', b.name);
+          return storage.bucket(b.name);
+        }
+      }
+      // Fallback: return first bucket that contains projectId
+      if (projectId) {
+        for (const b of buckets) {
+          if (b.name.includes(projectId)) {
+            console.log('Found fallback bucket via list:', b.name);
+            return storage.bucket(b.name);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Listing buckets failed (may lack permission):', err.message || err);
+  }
+
+  // 3) Try explicit common bucket names derived from projectId
+  try {
+    const projectId = firebaseConfig.getProjectId && firebaseConfig.getProjectId();
+    if (projectId) {
+      const candidates = [projectId, `${projectId}.appspot.com`];
+      for (const name of candidates) {
+        try {
+          const b = storage.bucket(name);
+          const [exists] = await b.exists();
+          if (exists) {
+            console.log('Found usable bucket by candidate name:', name);
+            return b;
+          }
+        } catch (e) {
+          // ignore and try next
+        }
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  throw new Error('No usable storage bucket found');
+};
 
 /**
  * Upload Controller
@@ -91,8 +184,8 @@ export const uploadFile = async (req, res) => {
     const fileName = `${uuidv4()}${fileExtension}`;
     const filePath = `uploads/${fileName}`;
 
-    // Upload to Firebase Storage
-    const bucket = storage.bucket();
+    // Upload to Firebase Storage - resolve a usable bucket first
+    const bucket = await findUsableBucket();
     const fileUpload = bucket.file(filePath);
 
     await fileUpload.save(file.buffer, {
@@ -157,12 +250,14 @@ export const uploadMultipleFiles = async (req, res) => {
       });
     }
 
-    const uploadPromises = req.files.map(async (file) => {
+  const bucket = await findUsableBucket();
+
+  const uploadPromises = req.files.map(async (file) => {
       const fileExtension = path.extname(file.originalname);
       const fileName = `${uuidv4()}${fileExtension}`;
       const filePath = `uploads/${fileName}`;
 
-      const bucket = storage.bucket();
+      // bucket resolved outside map
       const fileUpload = bucket.file(filePath);
 
       await fileUpload.save(file.buffer, {
@@ -236,7 +331,7 @@ export const deleteFile = async (req, res) => {
     const fileData = fileDoc.data();
 
     // Delete from Firebase Storage
-    const bucket = storage.bucket();
+    const bucket = await findUsableBucket();
     await bucket.file(fileData.filePath).delete();
 
     // Delete metadata from Firestore

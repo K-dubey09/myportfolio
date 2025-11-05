@@ -12,11 +12,13 @@
   "dependencies": {
     "firebase": "^12.5.0",
     "framer-motion": "^12.23.22",
+    "hooks": "^0.3.2",
     "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
-    "react-router-dom": "^7.9.3"
+    "react-router-dom": "^7.9.3",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
