@@ -3628,6 +3628,22 @@ const AdminPanel = () => {
               <button onClick={() => serviceHandlers.delete(service.id)} className="delete-btn">
                 Delete
               </button>
+              <button 
+                onClick={() => handleToggleFeatured('services', service.id, service.featured)}
+                className={service.featured ? "unfeature-btn" : "feature-btn"}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  backgroundColor: service.featured ? '#718096' : '#f6ad55',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+                title={service.featured ? "Remove from featured" : "Mark as featured"}
+              >
+                {service.featured ? "✖ Unfeature" : "⭐ Feature"}
+              </button>
             </div>
           </div>
         ))}
@@ -3845,6 +3861,14 @@ const AdminPanel = () => {
     <div className="tab-content">
       <div className="tab-header">
         <h2>Testimonials Management</h2>
+        <button 
+          onClick={() => handleResetFeatured('testimonials')}
+          className="reset-featured-btn"
+          style={{marginLeft: '10px', padding: '8px 16px', fontSize: '14px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'}}
+          title="Remove featured status from all testimonials"
+        >
+          Reset All Featured
+        </button>
         <div className="sub-tabs" style={{ marginTop: '0.5rem' }}>
           <button 
             className={activeTestimonialsSubTab === 'add' ? 'sub-tab active' : 'sub-tab'}
@@ -4097,7 +4121,17 @@ const AdminPanel = () => {
     <div className="tab-content">
       <div className="tab-header">
         <h2>Achievements Management</h2>
-        <p>Manage achievements shown on the portfolio home and dedicated page.</p>
+        <div className="header-actions">
+          <p>Manage achievements shown on the portfolio home and dedicated page.</p>
+          <button 
+            onClick={() => handleResetFeatured('achievements')}
+            className="reset-featured-btn"
+            style={{marginLeft: '10px', padding: '8px 16px', fontSize: '14px', backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'}}
+            title="Remove featured status from all achievements"
+          >
+            Reset All Featured
+          </button>
+        </div>
       </div>
 
       <form onSubmit={achievementHandlers.submit} className="admin-form">
@@ -4161,6 +4195,22 @@ const AdminPanel = () => {
             <div className="item-actions">
               <button onClick={() => achievementHandlers.edit(a)} className="edit-btn">Edit</button>
               <button onClick={() => achievementHandlers.delete(a.id)} className="delete-btn">Delete</button>
+              <button 
+                onClick={() => handleToggleFeatured('achievements', a.id, a.featured)}
+                className={a.featured ? "unfeature-btn" : "feature-btn"}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  backgroundColor: a.featured ? '#718096' : '#f6ad55',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+                title={a.featured ? "Remove from featured" : "Mark as featured"}
+              >
+                {a.featured ? "✖ Unfeature" : "⭐ Feature"}
+              </button>
             </div>
           </div>
         ))}
