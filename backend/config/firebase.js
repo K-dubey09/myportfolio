@@ -72,7 +72,8 @@ class FirebaseConfig {
       achievements: db.collection('achievements'),
       accessKeys: db.collection('accessKeys'),
       adminRequests: db.collection('adminRequests'),
-      conversionLogs: db.collection('conversionLogs')
+      conversionLogs: db.collection('conversionLogs'),
+      userActivityLogs: db.collection('userActivityLogs')
     };
   }
 }

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 
 const API_BASE_URL = 'http://localhost:5000'
 
 const PortfolioSite = () => {
   const { theme, isAnimated } = useTheme()
+  const { user } = useAuth()
   
   // State for each section's data
   const [profile, setProfile] = useState(null)
@@ -13,6 +15,8 @@ const PortfolioSite = () => {
   const [experience, setExperience] = useState([])
   const [education, setEducation] = useState([])
   const [blogs, setBlogs] = useState([])
+  const [vlogs, setVlogs] = useState([])
+  const [gallery, setGallery] = useState([])
   const [contactInfo, setContactInfo] = useState(null)
   const [testimonialsPreview, setTestimonialsPreview] = useState([])
   const [achievementsPreview, setAchievementsPreview] = useState([])
@@ -34,36 +38,52 @@ const PortfolioSite = () => {
       try {
         setLoading(true)
         
-        // Fetch all data in parallel
-        const [profileRes, servicesRes, projectsRes, experienceRes, educationRes, blogsRes, contactInfoRes] = await Promise.all([
+        // Fetch all data in parallel - using featured endpoints for home page
+        const [profileRes, servicesRes, projectsRes, experienceRes, educationRes, blogsRes, vlogsRes, galleryRes, contactInfoRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/profile`),
-          fetch(`${API_BASE_URL}/api/services`),
-          fetch(`${API_BASE_URL}/api/projects`),
-          fetch(`${API_BASE_URL}/api/experiences`),
-          fetch(`${API_BASE_URL}/api/education`),
-          fetch(`${API_BASE_URL}/api/blogs`),
+          fetch(`${API_BASE_URL}/api/services/featured?limit=3`),
+          fetch(`${API_BASE_URL}/api/projects/featured?limit=3`),
+          fetch(`${API_BASE_URL}/api/experiences/featured?limit=2`),
+          fetch(`${API_BASE_URL}/api/education/featured?limit=2`),
+          fetch(`${API_BASE_URL}/api/blogs/featured?limit=3`),
+          fetch(`${API_BASE_URL}/api/vlogs/featured?limit=3`),
+          fetch(`${API_BASE_URL}/api/gallery/featured?limit=3`),
           fetch(`${API_BASE_URL}/api/contact-info`)
         ])
 
-        const [profileData, servicesData, projectsData, experienceData, educationData, blogsData, contactInfoData] = await Promise.all([
+        const [profileJson, servicesJson, projectsJson, experienceJson, educationJson, blogsJson, vlogsJson, galleryJson, contactInfoJson] = await Promise.all([
           profileRes.json(),
           servicesRes.json(),
           projectsRes.json(),
           experienceRes.json(),
           educationRes.json(),
           blogsRes.json(),
+          vlogsRes.json(),
+          galleryRes.json(),
           contactInfoRes.json()
         ])
 
-        // Set data, limiting to 2-3 items per section
-        setProfile(profileData)
-        setServices(Array.isArray(servicesData) ? servicesData.slice(0, 3) : (servicesData.services?.slice(0, 3) || []))
-        setProjects(Array.isArray(projectsData) ? projectsData.slice(0, 3) : (projectsData.projects?.slice(0, 3) || []))
-        setExperience(Array.isArray(experienceData) ? experienceData.slice(0, 2) : (experienceData.experience?.slice(0, 2) || []))
-        setEducation(Array.isArray(educationData) ? educationData.slice(0, 2) : (educationData.education?.slice(0, 2) || []))
-        setBlogs(Array.isArray(blogsData) ? blogsData.slice(0, 3) : (blogsData.blogs?.slice(0, 3) || []))
+        // Extract data from backend response format { success, count, data: [] }
+        const servicesData = Array.isArray(servicesJson) ? servicesJson : (servicesJson.data || servicesJson.services || [])
+        const projectsData = Array.isArray(projectsJson) ? projectsJson : (projectsJson.data || projectsJson.projects || [])
+        const experienceData = Array.isArray(experienceJson) ? experienceJson : (experienceJson.data || experienceJson.experience || [])
+        const educationData = Array.isArray(educationJson) ? educationJson : (educationJson.data || educationJson.education || [])
+        const blogsData = Array.isArray(blogsJson) ? blogsJson : (blogsJson.data || blogsJson.blogs || [])
+        const vlogsData = Array.isArray(vlogsJson) ? vlogsJson : (vlogsJson.data || vlogsJson.vlogs || [])
+        const galleryData = Array.isArray(galleryJson) ? galleryJson : (galleryJson.data || galleryJson.gallery || [])
+
+        // Set data - featured endpoints already return limited items
+        setProfile(profileJson.data || profileJson)
+        setServices(servicesData)
+        setProjects(projectsData)
+        setExperience(experienceData)
+        setEducation(educationData)
+        setBlogs(blogsData)
+        setVlogs(vlogsData)
+        setGallery(galleryData)
         
         // Handle contact info - could be array or single object
+        const contactInfoData = contactInfoJson.data || contactInfoJson
         if (Array.isArray(contactInfoData) && contactInfoData.length > 0) {
           setContactInfo(contactInfoData[0])
         } else if (contactInfoData && !Array.isArray(contactInfoData)) {
@@ -71,14 +91,14 @@ const PortfolioSite = () => {
         } else {
           setContactInfo(null)
         }
-        // (testimonials will be fetched separately below)
-        // Fetch achievements preview separately as well
+        
+        // Fetch achievements preview - using featured endpoint
         try {
-          const aRes = await fetch(`${API_BASE_URL}/api/achievements`)
+          const aRes = await fetch(`${API_BASE_URL}/api/achievements/featured?limit=3`)
           if (aRes.ok) {
             const aJson = await aRes.json()
-            const items = Array.isArray(aJson) ? aJson : (aJson.achievements || aJson.data || [])
-            setAchievementsPreview(items.slice(0, 3))
+            const items = Array.isArray(aJson) ? aJson : (aJson.data || aJson.achievements || [])
+            setAchievementsPreview(items)
           }
         } catch (err) {
           console.warn('Could not fetch achievements preview', err)
@@ -89,13 +109,16 @@ const PortfolioSite = () => {
         console.log('Experience data:', experienceData)
         console.log('Education data:', educationData)
         console.log('Blogs data:', blogsData)
+        console.log('Vlogs data:', vlogsData)
+        console.log('Gallery data:', galleryData)
         console.log('Contact info data:', contactInfoData)
-        // Fetch testimonials separately to avoid complicated ordering assumptions
+        // Fetch testimonials - using featured endpoint
         try {
-          const tRes = await fetch(`${API_BASE_URL}/api/testimonials`)
+          const tRes = await fetch(`${API_BASE_URL}/api/testimonials/featured?limit=3`)
           if (tRes.ok) {
             const tJson = await tRes.json()
-            setTestimonialsPreview(Array.isArray(tJson) ? tJson.slice(0, 3) : (tJson.testimonials?.slice(0, 3) || []))
+            const testimonialsData = Array.isArray(tJson) ? tJson : (tJson.data || tJson.testimonials || [])
+            setTestimonialsPreview(testimonialsData)
           }
         } catch (err) {
           console.warn('Could not fetch testimonials preview', err)
@@ -470,8 +493,84 @@ const PortfolioSite = () => {
         </div>
       </section>
 
+      {/* Vlogs Section - Only visible to admin and editor */}
+      {user && (user.role === 'admin' || user.role === 'editor') && (
+        <section id="vlogs" className="section vlogs-section">
+          <div className="container">
+            <div className="section-header">
+              <h2>Vlogs</h2>
+              <a href="/vlogs" className="view-all-link">View All</a>
+            </div>
+            <div className="vlogs-grid">
+              {vlogs && vlogs.length > 0 ? (
+                vlogs.map((vlog, index) => (
+                  <div key={vlog._id || vlog.id || index} className="vlog-card">
+                    {vlog.thumbnailUrl && (
+                      <div className="vlog-thumbnail">
+                        <img src={vlog.thumbnailUrl} alt={vlog.title} className="vlog-image" />
+                        {vlog.duration && <span className="vlog-duration">{vlog.duration}</span>}
+                      </div>
+                    )}
+                    <div className="vlog-content">
+                      <h3>{vlog.title}</h3>
+                      <p>{vlog.description}</p>
+                      <div className="vlog-meta">
+                        {vlog.platform && <span className="vlog-platform">{vlog.platform}</span>}
+                        {vlog.publishedDate && (
+                          <span className="vlog-date">
+                            {new Date(vlog.publishedDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      {vlog.videoUrl && (
+                        <a href={vlog.videoUrl} target="_blank" rel="noopener noreferrer" className="vlog-link">
+                          Watch Video →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No vlogs available yet.</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Gallery Section */}
+      <section id="gallery" className="section gallery-section">
+        <div className="container">
+          <div className="section-header">
+            <h2>Gallery</h2>
+            {user && (user.role === 'admin' || user.role === 'editor') && (
+              <a href="/gallery" className="view-all-link">View All</a>
+            )}
+          </div>
+          <div className="gallery-grid">
+            {gallery && gallery.length > 0 ? (
+              gallery.map((item, index) => (
+                <div key={item._id || item.id || index} className="gallery-item">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.title} className="gallery-image" />
+                  ) : item.imageUrls && item.imageUrls.length > 0 ? (
+                    <img src={item.imageUrls[0]} alt={item.title} className="gallery-image" />
+                  ) : null}
+                  <div className="gallery-overlay">
+                    <h3>{item.title}</h3>
+                    {item.category && <span className="gallery-category">{item.category}</span>}
+                    {item.location && <span className="gallery-location">{item.location}</span>}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No gallery items available yet.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
-      {/* Testimonials Section - placed after Blogs and before Contact */}
       <section id="testimonials" className={`section testimonials-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
           <div className="section-header">

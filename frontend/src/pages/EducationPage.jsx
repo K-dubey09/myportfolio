@@ -24,8 +24,8 @@ const EducationPage = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        const educationArray = Array.isArray(data) ? data : (data.education || []);
+        const json = await response.json();
+        const educationArray = Array.isArray(json) ? json : (json.data || json.education || []);
         setEducation(educationArray);
         console.log('Education loaded:', educationArray);
       } else {

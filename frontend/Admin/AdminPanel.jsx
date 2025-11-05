@@ -100,10 +100,16 @@ const AdminPanel = () => {
       const { res, json, text } = await apiFetch('/api/admin/access-keys', { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) {
         console.error('fetchAccessKeys non-ok:', res.status, text || json);
+        setAccessKeys([]);
         return;
       }
-      if (json && json.success) setAccessKeys(json.data || []);
-    } catch (e) { console.error(e); }
+      // Handle backend response format { success, count, data: [] }
+      const data = json.success ? (json.data || []) : (Array.isArray(json) ? json : []);
+      setAccessKeys(data);
+    } catch (e) { 
+      console.error('fetchAccessKeys error:', e); 
+      setAccessKeys([]);
+    }
   }, [token, apiFetch]);
 
   const fetchAdminRequests = useCallback(async () => {
@@ -111,10 +117,16 @@ const AdminPanel = () => {
       const { res, json, text } = await apiFetch('/api/admin/requests', { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) {
         console.error('fetchAdminRequests non-ok:', res.status, text || json);
+        setAdminRequests([]);
         return;
       }
-      if (json && json.success) setAdminRequests(json.data || []);
-    } catch (e) { console.error(e); }
+      // Handle backend response format { success, count, data: [] }
+      const data = json.success ? (json.data || []) : (Array.isArray(json) ? json : []);
+      setAdminRequests(data);
+    } catch (e) { 
+      console.error('fetchAdminRequests error:', e); 
+      setAdminRequests([]);
+    }
   }, [token, apiFetch]);
 
   const fetchConversions = useCallback(async () => {
@@ -122,10 +134,16 @@ const AdminPanel = () => {
       const { res, json, text } = await apiFetch('/api/admin/conversions', { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) {
         console.error('fetchConversions non-ok:', res.status, text || json);
+        setConversions([]);
         return;
       }
-      if (json && json.success) setConversions(json.data || []);
-    } catch (e) { console.error(e); }
+      // Handle backend response format { success, count, data: [] }
+      const data = json.success ? (json.data || []) : (Array.isArray(json) ? json : []);
+      setConversions(data);
+    } catch (e) { 
+      console.error('fetchConversions error:', e); 
+      setConversions([]);
+    }
   }, [token, apiFetch]);
 
   // Fetch users (admin)
@@ -138,10 +156,15 @@ const AdminPanel = () => {
         setUsersList([]);
         return;
       }
-      if (Array.isArray(json)) setUsersList(json);
-      else setUsersList(json.data || json.users || []);
-    } catch (e) { console.error('fetchUsers error', e); setUsersList([]); }
-    finally { setUsersLoading(false); }
+      // Handle backend response format { success, count, data: [] }
+      const data = Array.isArray(json) ? json : (json.data || json.users || []);
+      setUsersList(data);
+    } catch (e) { 
+      console.error('fetchUsers error', e); 
+      setUsersList([]); 
+    } finally { 
+      setUsersLoading(false); 
+    }
   }, [token, apiFetch]);
 
   // Helper: apply filter, sort and pagination locally
@@ -1225,6 +1248,69 @@ const AdminPanel = () => {
     { title: '', description: '', icon: '', price: '', duration: '', featured: false },
     'services'
   );
+
+  // ==================== FEATURED CONTENT HANDLERS ====================
+  const handleToggleFeatured = async (collection, itemId, currentFeaturedStatus) => {
+    try {
+      const endpoint = currentFeaturedStatus ? 'unfeature' : 'feature';
+      const url = `${API_BASE}/api/admin/${collection}/${itemId}/${endpoint}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        showMessage(`Item ${currentFeaturedStatus ? 'unfeatured' : 'featured'} successfully!`, 'success');
+        await fetchData(); // Reload data
+        return true;
+      } else {
+        const error = await response.json();
+        showMessage(error.message || 'Failed to toggle featured status', 'error');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error toggling featured status:', error);
+      showMessage('Error: ' + error.message, 'error');
+      return false;
+    }
+  };
+
+  const handleResetFeatured = async (collection) => {
+    if (!confirm(`Are you sure you want to unfeature ALL items in ${collection}? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const url = `${API_BASE}/api/admin/${collection}/reset-featured`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showMessage(result.message || 'All featured items reset successfully!', 'success');
+        await fetchData(); // Reload data
+        return true;
+      } else {
+        const error = await response.json();
+        showMessage(error.message || 'Failed to reset featured items', 'error');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error resetting featured items:', error);
+      showMessage('Error: ' + error.message, 'error');
+      return false;
+    }
+  };
 
   // Enhanced image upload handler with both file upload and URL options
   const handleImageUpload = async (event, contentType, fieldName, setFormFunction) => {

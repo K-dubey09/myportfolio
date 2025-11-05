@@ -25,8 +25,10 @@ const TestimonialsPage = () => {
         throw new Error(`Failed to fetch testimonials: ${response.status}`)
       }
       
-      const data = await response.json()
-      setTestimonials(data || [])
+      const json = await response.json()
+      // Handle both direct array and wrapped response formats
+      const data = Array.isArray(json) ? json : (json.data || json.testimonials || [])
+      setTestimonials(data)
     } catch (error) {
       console.error('Error fetching testimonials:', error)
       const errorMessage = error.message || 'Failed to load testimonials'

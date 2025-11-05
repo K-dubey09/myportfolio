@@ -16,8 +16,9 @@ const CertificationsPage = () => {
       const response = await fetch('http://localhost:5000/api/certifications', {
         headers: user ? { Authorization: `Bearer ${user.token}` } : {}
       });
-      const data = await response.json();
-      setCertifications(data.certifications || []);
+      const json = await response.json();
+      const data = Array.isArray(json) ? json : (json.data || json.certifications || []);
+      setCertifications(data);
     } catch (error) {
       console.error('Error fetching certifications:', error);
     } finally {

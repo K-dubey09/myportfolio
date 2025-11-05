@@ -23,9 +23,9 @@ const ServicesPage = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        // Handle both array response and object with services property
-        const servicesArray = Array.isArray(data) ? data : (data.services || []);
+        const json = await response.json();
+        // Handle both array response and object with services/data property
+        const servicesArray = Array.isArray(json) ? json : (json.data || json.services || []);
         setServices(servicesArray);
         console.log('Services loaded:', servicesArray);
       } else {

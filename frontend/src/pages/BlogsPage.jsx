@@ -25,8 +25,10 @@ const BlogsPage = () => {
         throw new Error(`Failed to fetch blogs: ${response.status}`)
       }
       
-      const data = await response.json()
-      setBlogs(data || [])
+      const json = await response.json()
+      // Handle both direct array and wrapped response formats
+      const data = Array.isArray(json) ? json : (json.data || json.blogs || [])
+      setBlogs(data)
     } catch (error) {
       console.error('Error fetching blogs:', error)
       const errorMessage = error.message || 'Failed to load blogs'

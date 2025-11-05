@@ -25,8 +25,8 @@ const SkillsPage = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        const skillsArray = Array.isArray(data) ? data : (data.skills || []);
+        const json = await response.json();
+        const skillsArray = Array.isArray(json) ? json : (json.data || json.skills || []);
         setSkills(skillsArray);
         console.log('Skills loaded:', skillsArray);
       } else {

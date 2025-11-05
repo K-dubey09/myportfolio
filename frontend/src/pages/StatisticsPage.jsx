@@ -16,8 +16,9 @@ const StatisticsPage = () => {
       setLoading(true)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
       const response = await fetch('http://localhost:5000/api/statistics', { headers })
-      const data = await response.json()
-      setStatistics(data.statistics || data || [])
+      const json = await response.json()
+      const data = Array.isArray(json) ? json : (json.data || json.statistics || [])
+      setStatistics(data)
     } catch (error) {
       console.error('Error fetching statistics:', error)
       toast.error('Failed to load statistics')

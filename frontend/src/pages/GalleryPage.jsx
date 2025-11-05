@@ -25,8 +25,8 @@ const GalleryPage = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        const galleryArray = Array.isArray(data) ? data : (data.gallery || []);
+        const json = await response.json();
+        const galleryArray = Array.isArray(json) ? json : (json.data || json.gallery || []);
         setGallery(galleryArray);
         console.log('Gallery loaded:', galleryArray);
       } else {

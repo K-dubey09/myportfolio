@@ -20,7 +20,7 @@ const AchievementsPage = () => {
       });
       const json = await response.json();
       if (Array.isArray(json)) setAchievements(json);
-      else setAchievements(json.achievements || json.data || []);
+      else setAchievements(json.data || json.achievements || []);
     } catch (error) {
       console.error('Error fetching achievements:', error);
     } finally {
@@ -42,9 +42,9 @@ const AchievementsPage = () => {
   });
 
   const categories = ['all', ...new Set(achievements.map(achievement => achievement.category).filter(Boolean))];
-  const years = ['all', ...new Set(achievements.map(achievement => 
+  const years = ['all', ...Array.from(new Set(achievements.map(achievement => 
     achievement.date ? new Date(achievement.date).getFullYear().toString() : ''
-  ).filter(Boolean)).sort((a, b) => b - a)];
+  ).filter(Boolean))).sort((a, b) => b - a)];
 
   if (loading) {
     return (

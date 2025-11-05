@@ -29,7 +29,7 @@ const LoginRoute = () => {
   return <Login onClose={() => navigate('/')} />
 }
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles = null }) => {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
 
@@ -48,8 +48,43 @@ const ProtectedRoute = ({ children }) => {
     )
   }
 
+  // Require authentication
   if (!user) {
     return <Login onClose={() => navigate('/')} />
+  }
+
+  // Check role-based access if roles are specified
+  // Admin always has access to everything
+  if (allowedRoles && allowedRoles.length > 0 && user.role !== 'admin') {
+    if (!allowedRoles.includes(user.role)) {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          fontSize: '1.2rem',
+          color: '#666',
+          textAlign: 'center',
+          padding: '20px'
+        }}>
+          <h2>Access Denied</h2>
+          <p>You don't have permission to access this page.</p>
+          <button onClick={() => navigate('/')} style={{
+            marginTop: '20px',
+            padding: '10px 20px',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}>
+            Go Home
+          </button>
+        </div>
+      )
+    }
   }
 
   return children
@@ -133,62 +168,62 @@ function App() {
             <Route path="/register" element={<RegistrationPage />} />
             <Route path="/admin" element={<AdminRoute />} />
             <Route path="/projects" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <ProjectsPage />
               </ProtectedRoute>
             } />
             <Route path="/blogs" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <BlogsPage />
               </ProtectedRoute>
             } />
             <Route path="/testimonials" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <TestimonialsPage />
               </ProtectedRoute>
             } />
             <Route path="/experience" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <ExperiencePage />
               </ProtectedRoute>
             } />
             <Route path="/education" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <EducationPage />
               </ProtectedRoute>
             } />
             <Route path="/skills" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <SkillsPage />
               </ProtectedRoute>
             } />
             <Route path="/gallery" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor']}>
                 <GalleryPage />
               </ProtectedRoute>
             } />
             <Route path="/vlogs" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <VlogsPage />
               </ProtectedRoute>
             } />
             <Route path="/services" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <ServicesPage />
               </ProtectedRoute>
             } />
             <Route path="/achievements" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <AchievementsPage />
               </ProtectedRoute>
             } />
             <Route path="/certifications" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
                 <CertificationsPage />
               </ProtectedRoute>
             } />
             <Route path="/statistics" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'user']}>
                 <StatisticsPage />
               </ProtectedRoute>
             } />

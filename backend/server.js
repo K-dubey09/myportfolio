@@ -163,6 +163,9 @@ app.delete('/api/admin/conversions/:id', authenticateToken, requireAdmin, Conver
 // ==================== UPLOAD ROUTES ====================
 app.post('/api/upload', authenticateToken, upload.single('file'), UploadController.uploadFile);
 app.post('/api/upload/multiple', authenticateToken, upload.array('files', 10), UploadController.uploadMultipleFiles);
+app.post('/api/upload/folder', authenticateToken, upload.single('file'), UploadController.uploadToFolder);
+app.post('/api/upload/document', authenticateToken, upload.single('document'), UploadController.uploadDocument);
+app.post('/api/upload/documents', authenticateToken, upload.array('documents', 5), UploadController.uploadMultipleDocuments);
 app.get('/api/upload/:id', authenticateToken, UploadController.getFile);
 app.get('/api/uploads', authenticateToken, UploadController.listUploads);
 app.delete('/api/upload/:id', authenticateToken, requireAdmin, UploadController.deleteFile);
@@ -345,6 +348,60 @@ app.get('/api/admin/contact-info', authenticateToken, ContactInfoController.getA
 app.post('/api/admin/contact-info', authenticateToken, requirePermission('canEditProfile'), ContactInfoController.create);
 app.put('/api/admin/contact-info/:id', authenticateToken, requirePermission('canEditProfile'), ContactInfoController.update);
 app.delete('/api/admin/contact-info/:id', authenticateToken, requireAdmin, ContactInfoController.delete);
+
+// ==================== FEATURED CONTENT ROUTES ====================
+// Public featured content endpoints
+app.get('/api/skills/featured', SkillsController.getFeatured);
+app.get('/api/projects/featured', ProjectsController.getFeatured);
+app.get('/api/experiences/featured', ExperiencesController.getFeatured);
+app.get('/api/education/featured', EducationController.getFeatured);
+app.get('/api/blogs/featured', BlogsController.getFeatured);
+app.get('/api/vlogs/featured', VlogsController.getFeatured);
+app.get('/api/gallery/featured', GalleryController.getFeatured);
+app.get('/api/testimonials/featured', TestimonialsController.getFeatured);
+app.get('/api/services/featured', ServicesController.getFeatured);
+app.get('/api/achievements/featured', AchievementsController.getFeatured);
+
+// Admin featured management endpoints
+app.post('/api/admin/skills/:id/feature', authenticateToken, requireAdmin, SkillsController.feature);
+app.post('/api/admin/skills/:id/unfeature', authenticateToken, requireAdmin, SkillsController.unfeature);
+app.post('/api/admin/skills/reset-featured', authenticateToken, requireAdmin, SkillsController.resetFeatured);
+
+app.post('/api/admin/projects/:id/feature', authenticateToken, requireAdmin, ProjectsController.feature);
+app.post('/api/admin/projects/:id/unfeature', authenticateToken, requireAdmin, ProjectsController.unfeature);
+app.post('/api/admin/projects/reset-featured', authenticateToken, requireAdmin, ProjectsController.resetFeatured);
+
+app.post('/api/admin/experiences/:id/feature', authenticateToken, requireAdmin, ExperiencesController.feature);
+app.post('/api/admin/experiences/:id/unfeature', authenticateToken, requireAdmin, ExperiencesController.unfeature);
+app.post('/api/admin/experiences/reset-featured', authenticateToken, requireAdmin, ExperiencesController.resetFeatured);
+
+app.post('/api/admin/education/:id/feature', authenticateToken, requireAdmin, EducationController.feature);
+app.post('/api/admin/education/:id/unfeature', authenticateToken, requireAdmin, EducationController.unfeature);
+app.post('/api/admin/education/reset-featured', authenticateToken, requireAdmin, EducationController.resetFeatured);
+
+app.post('/api/admin/blogs/:id/feature', authenticateToken, requireAdmin, BlogsController.feature);
+app.post('/api/admin/blogs/:id/unfeature', authenticateToken, requireAdmin, BlogsController.unfeature);
+app.post('/api/admin/blogs/reset-featured', authenticateToken, requireAdmin, BlogsController.resetFeatured);
+
+app.post('/api/admin/vlogs/:id/feature', authenticateToken, requireAdmin, VlogsController.feature);
+app.post('/api/admin/vlogs/:id/unfeature', authenticateToken, requireAdmin, VlogsController.unfeature);
+app.post('/api/admin/vlogs/reset-featured', authenticateToken, requireAdmin, VlogsController.resetFeatured);
+
+app.post('/api/admin/gallery/:id/feature', authenticateToken, requireAdmin, GalleryController.feature);
+app.post('/api/admin/gallery/:id/unfeature', authenticateToken, requireAdmin, GalleryController.unfeature);
+app.post('/api/admin/gallery/reset-featured', authenticateToken, requireAdmin, GalleryController.resetFeatured);
+
+app.post('/api/admin/testimonials/:id/feature', authenticateToken, requireAdmin, TestimonialsController.feature);
+app.post('/api/admin/testimonials/:id/unfeature', authenticateToken, requireAdmin, TestimonialsController.unfeature);
+app.post('/api/admin/testimonials/reset-featured', authenticateToken, requireAdmin, TestimonialsController.resetFeatured);
+
+app.post('/api/admin/services/:id/feature', authenticateToken, requireAdmin, ServicesController.feature);
+app.post('/api/admin/services/:id/unfeature', authenticateToken, requireAdmin, ServicesController.unfeature);
+app.post('/api/admin/services/reset-featured', authenticateToken, requireAdmin, ServicesController.resetFeatured);
+
+app.post('/api/admin/achievements/:id/feature', authenticateToken, requireAdmin, AchievementsController.feature);
+app.post('/api/admin/achievements/:id/unfeature', authenticateToken, requireAdmin, AchievementsController.unfeature);
+app.post('/api/admin/achievements/reset-featured', authenticateToken, requireAdmin, AchievementsController.resetFeatured);
 
 // ==================== PORTFOLIO DATA AGGREGATION ROUTE ====================
 // Get all portfolio data in one request (useful for initial page load)

@@ -63,6 +63,11 @@ export const requirePermission = (...requiredPermissions) => {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
+    // Admin role has unrestricted access to all permissions
+    if (req.user.role === 'admin') {
+      return next();
+    }
+
     const userPermissions = req.user.permissions || {};
     const hasPermission = requiredPermissions.every(perm => userPermissions[perm] === true);
 

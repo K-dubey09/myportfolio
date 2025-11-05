@@ -236,21 +236,124 @@ ContactsController.markAsRead = async (req, res) => {
   }
 };
 
-// Contact Info Controller (singleton - only one contact info)
+// Contact Info Controller (singleton - only one contact info with fixed ID 'primary')
 export const ContactInfoController = {
   ...createFirestoreController(contactInfoCRUD, validateContactInfo, []),
   
   getAll: async (req, res) => {
     try {
-      const items = await contactInfoCRUD.getAll({ limit: 1 });
+      const primaryDoc = await contactInfoCRUD.getById('primary');
       res.json({
         success: true,
-        data: items[0] || null
+        data: primaryDoc || null
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to fetch contact info',
+        message: error.message
+      });
+    }
+  },
+  
+  // Get the single contact info (for public API)
+  getById: async (req, res) => {
+    try {
+      const primaryDoc = await contactInfoCRUD.getById('primary');
+      if (!primaryDoc) {
+        return res.status(404).json({
+          success: false,
+          error: 'Contact info not found'
+        });
+      }
+      res.json({
+        success: true,
+        data: primaryDoc
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch contact info',
+        message: error.message
+      });
+    }
+  },
+  
+  // Create or update contact info (enforces single document with ID 'primary')
+  create: async (req, res) => {
+    try {
+      // Always use 'primary' as the document ID
+      const existingDoc = await contactInfoCRUD.getById('primary');
+      
+      if (existingDoc) {
+        // Update existing document
+        const updated = await contactInfoCRUD.update('primary', req.body);
+        return res.json({
+          success: true,
+          message: 'Contact info updated (only one record allowed)',
+          action: 'updated',
+          data: updated
+        });
+      } else {
+        // Create new document with fixed ID 'primary'
+        const created = await contactInfoCRUD.create(req.body, 'primary');
+        return res.status(201).json({
+          success: true,
+          message: 'Contact info created',
+          action: 'created',
+          data: created
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create/update contact info',
+        message: error.message
+      });
+    }
+  },
+  
+  // Update contact info (always updates the 'primary' document)
+  update: async (req, res) => {
+    try {
+      const updated = await contactInfoCRUD.update('primary', req.body);
+      res.json({
+        success: true,
+        message: 'Contact info updated',
+        data: updated
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update contact info',
+        message: error.message
+      });
+    }
+  },
+  
+  // Delete contact info (resets to default values instead of deleting)
+  delete: async (req, res) => {
+    try {
+      // Reset to default values
+      const defaultContactInfo = {
+        email: '',
+        phone: '',
+        address: '',
+        socialLinks: {},
+        availability: true,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      const updated = await contactInfoCRUD.update('primary', defaultContactInfo);
+      res.json({
+        success: true,
+        message: 'Contact info reset to defaults',
+        data: updated
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to reset contact info',
         message: error.message
       });
     }
@@ -263,3 +366,126 @@ export const AchievementsController = createFirestoreController(
   validateAchievement,
   ['title']
 );
+
+// ==================== FEATURED CONTENT HELPERS ====================
+// Helper function to create featured methods for a controller
+const addFeaturedMethods = (controller, crud) => {
+  // Feature an item
+  controller.feature = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updated = await crud.update(id, {
+        featured: true,
+        featuredAt: new Date().toISOString()
+      });
+      res.json({
+        success: true,
+        message: 'Item featured successfully',
+        data: updated
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to feature item',
+        message: error.message
+      });
+    }
+  };
+  
+  // Unfeature an item
+  controller.unfeature = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updated = await crud.update(id, {
+        featured: false,
+        featuredAt: null
+      });
+      res.json({
+        success: true,
+        message: 'Item unfeatured successfully',
+        data: updated
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to unfeature item',
+        message: error.message
+      });
+    }
+  };
+  
+  // Reset all featured items in this collection
+  controller.resetFeatured = async (req, res) => {
+    try {
+      const featuredItems = await crud.getAll({
+        where: [['featured', '==', true]]
+      });
+      
+      // Update all featured items to unfeatured
+      const updates = featuredItems.map(item => 
+        crud.update(item.id, { featured: false, featuredAt: null })
+      );
+      await Promise.all(updates);
+      
+      res.json({
+        success: true,
+        message: `Reset ${featuredItems.length} featured items`,
+        count: featuredItems.length
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to reset featured items',
+        message: error.message
+      });
+    }
+  };
+  
+  // Get only featured items
+  controller.getFeatured = async (req, res) => {
+    try {
+      const { limit = 3 } = req.query;
+      const featured = await crud.getAll({
+        where: [['featured', '==', true]],
+        limit: parseInt(limit),
+        orderBy: [['featuredAt', 'desc']]
+      });
+      
+      // If no featured items, fallback to most recent
+      let items = featured;
+      if (featured.length === 0) {
+        items = await crud.getAll({
+          limit: parseInt(limit),
+          orderBy: [['createdAt', 'desc']]
+        });
+      }
+      
+      res.json({
+        success: true,
+        count: items.length,
+        featured: featured.length > 0,
+        data: items
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch featured items',
+        message: error.message
+      });
+    }
+  };
+  
+  return controller;
+};
+
+// Add featured methods to all content controllers
+addFeaturedMethods(SkillsController, skillsCRUD);
+addFeaturedMethods(ProjectsController, projectsCRUD);
+addFeaturedMethods(ExperiencesController, experiencesCRUD);
+addFeaturedMethods(EducationController, educationCRUD);
+addFeaturedMethods(BlogsController, blogsCRUD);
+addFeaturedMethods(VlogsController, vlogsCRUD);
+addFeaturedMethods(GalleryController, galleryCRUD);
+addFeaturedMethods(TestimonialsController, testimonialsCRUD);
+addFeaturedMethods(ServicesController, servicesCRUD);
+addFeaturedMethods(AchievementsController, achievementsCRUD);

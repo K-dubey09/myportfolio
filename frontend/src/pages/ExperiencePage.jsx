@@ -25,8 +25,10 @@ const ExperiencePage = () => {
         throw new Error(`Failed to fetch experiences: ${response.status}`);
       }
       
-      const data = await response.json();
-      setExperiences(data || []);
+      const json = await response.json();
+      // Handle both direct array and wrapped response formats
+      const data = Array.isArray(json) ? json : (json.data || json.experiences || []);
+      setExperiences(data);
     } catch (error) {
       console.error('Failed to fetch experiences:', error);
       const errorMessage = error.message || 'Failed to load experiences';

@@ -25,8 +25,8 @@ const VlogsPage = () => {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        const vlogsArray = Array.isArray(data) ? data : (data.vlogs || []);
+        const json = await response.json();
+        const vlogsArray = Array.isArray(json) ? json : (json.data || json.vlogs || []);
         setVlogs(vlogsArray);
         console.log('Vlogs loaded:', vlogsArray);
       } else {

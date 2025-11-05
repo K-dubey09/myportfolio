@@ -412,12 +412,249 @@ export const listUploads = async (req, res) => {
   }
 };
 
+// ==================== ORGANIZED FOLDER UPLOADS ====================
+import { getStorageFolder, getStoragePath, isDocumentAllowed, isImageAllowed, isVideoAllowed } from '../utils/storage.js';
+
+// Upload file to organized folder structure
+export const uploadToFolder = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
+      });
+    }
+
+    const file = req.file;
+    const folder = getStorageFolder(file.mimetype, file.originalname);
+    const storagePath = getStoragePath(folder, file.originalname);
+
+    // Upload to Firebase Storage
+    const bucket = await findUsableBucket();
+    const fileUpload = bucket.file(storagePath);
+
+    await fileUpload.save(file.buffer, {
+      metadata: {
+        contentType: file.mimetype,
+        metadata: {
+          originalName: file.originalname,
+          folder: folder,
+          uploadedBy: req.user?.userId || 'anonymous',
+          uploadedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    // Make file publicly accessible
+    await fileUpload.makePublic();
+
+    // Get public URL
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+
+    // Store file metadata in Firestore
+    const db = firebaseConfig.getFirestore();
+    const fileDoc = await db.collection('uploads').add({
+      fileName: path.basename(storagePath),
+      originalName: file.originalname,
+      filePath: storagePath,
+      folder: folder,
+      publicUrl,
+      mimeType: file.mimetype,
+      size: file.size,
+      uploadedBy: req.user?.userId || 'anonymous',
+      uploadedAt: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      data: {
+        id: fileDoc.id,
+        url: publicUrl,
+        folder: folder,
+        fileName: path.basename(storagePath),
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size
+      },
+      message: `File uploaded to ${folder}/ successfully`
+    });
+  } catch (error) {
+    console.error('Error uploading file to folder:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload file',
+      message: error.message
+    });
+  }
+};
+
+// Upload document (PDF, Word, Excel, etc.) - specifically for blogs
+export const uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No document uploaded'
+      });
+    }
+
+    const file = req.file;
+    
+    // Validate document type
+    if (!isDocumentAllowed(file.mimetype, file.originalname)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid document type. Only PDF, Word, Excel, PowerPoint, and text files are allowed.'
+      });
+    }
+
+    const storagePath = getStoragePath('documents', file.originalname);
+
+    // Upload to Firebase Storage
+    const bucket = await findUsableBucket();
+    const fileUpload = bucket.file(storagePath);
+
+    await fileUpload.save(file.buffer, {
+      metadata: {
+        contentType: file.mimetype,
+        metadata: {
+          originalName: file.originalname,
+          folder: 'documents',
+          uploadedBy: req.user?.userId || 'anonymous',
+          uploadedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    // Make file publicly accessible
+    await fileUpload.makePublic();
+
+    // Get public URL
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+
+    // Store file metadata in Firestore
+    const db = firebaseConfig.getFirestore();
+    const fileDoc = await db.collection('uploads').add({
+      fileName: path.basename(storagePath),
+      originalName: file.originalname,
+      filePath: storagePath,
+      folder: 'documents',
+      publicUrl,
+      mimeType: file.mimetype,
+      size: file.size,
+      uploadedBy: req.user?.userId || 'anonymous',
+      uploadedAt: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      data: {
+        id: fileDoc.id,
+        url: publicUrl,
+        fileName: path.basename(storagePath),
+        originalName: file.originalname,
+        fileType: path.extname(file.originalname).replace('.', '').toUpperCase(),
+        mimeType: file.mimetype,
+        size: file.size
+      },
+      message: 'Document uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload document',
+      message: error.message
+    });
+  }
+};
+
+// Upload multiple documents
+export const uploadMultipleDocuments = async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No documents uploaded'
+      });
+    }
+
+    const uploadedFiles = [];
+    const bucket = await findUsableBucket();
+    const db = firebaseConfig.getFirestore();
+
+    for (const file of req.files) {
+      // Validate document type
+      if (!isDocumentAllowed(file.mimetype, file.originalname)) {
+        console.warn(`Skipping invalid document: ${file.originalname}`);
+        continue;
+      }
+
+      const storagePath = getStoragePath('documents', file.originalname);
+      const fileUpload = bucket.file(storagePath);
+
+      await fileUpload.save(file.buffer, {
+        metadata: {
+          contentType: file.mimetype,
+          metadata: {
+            originalName: file.originalname,
+            folder: 'documents',
+            uploadedBy: req.user?.userId || 'anonymous',
+            uploadedAt: new Date().toISOString()
+          }
+        }
+      });
+
+      await fileUpload.makePublic();
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
+
+      const fileDoc = await db.collection('uploads').add({
+        fileName: path.basename(storagePath),
+        originalName: file.originalname,
+        filePath: storagePath,
+        folder: 'documents',
+        publicUrl,
+        mimeType: file.mimetype,
+        size: file.size,
+        uploadedBy: req.user?.userId || 'anonymous',
+        uploadedAt: new Date().toISOString()
+      });
+
+      uploadedFiles.push({
+        id: fileDoc.id,
+        url: publicUrl,
+        fileName: path.basename(storagePath),
+        originalName: file.originalname,
+        fileType: path.extname(file.originalname).replace('.', '').toUpperCase(),
+        size: file.size
+      });
+    }
+
+    res.json({
+      success: true,
+      data: uploadedFiles,
+      count: uploadedFiles.length,
+      message: `${uploadedFiles.length} documents uploaded successfully`
+    });
+  } catch (error) {
+    console.error('Error uploading documents:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload documents',
+      message: error.message
+    });
+  }
+};
+
 export const UploadController = {
   uploadFile,
   uploadMultipleFiles,
   deleteFile,
   getFile,
-  listUploads
+  listUploads,
+  uploadToFolder,
+  uploadDocument,
+  uploadMultipleDocuments
 };
 
 export { upload };
