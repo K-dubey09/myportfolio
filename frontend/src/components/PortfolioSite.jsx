@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 
-const API_BASE_URL = 'http://localhost:5000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
 const PortfolioSite = () => {
   const { theme, isAnimated } = useTheme()
@@ -32,7 +32,7 @@ const PortfolioSite = () => {
   const [contactStatus, setContactStatus] = useState({ type: '', message: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Fetch data from MongoDB
+  // Fetch data from Firebase via backend API
   useEffect(() => {
     const fetchData = async () => {
       try {

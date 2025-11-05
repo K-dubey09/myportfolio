@@ -445,18 +445,23 @@ const addFeaturedMethods = (controller, crud) => {
   controller.getFeatured = async (req, res) => {
     try {
       const { limit = 3 } = req.query;
-      const featured = await crud.getAll({
-        where: [['featured', '==', true]],
-        limit: parseInt(limit),
-        orderBy: [['featuredAt', 'desc']]
-      });
+      
+      // Try to get featured items first
+      let featured = [];
+      try {
+        featured = await crud.getAll({
+          where: [['featured', '==', true]],
+          limit: parseInt(limit)
+        });
+      } catch (err) {
+        console.log('No featured items found, will fallback to recent');
+      }
       
       // If no featured items, fallback to most recent
       let items = featured;
       if (featured.length === 0) {
         items = await crud.getAll({
-          limit: parseInt(limit),
-          orderBy: [['createdAt', 'desc']]
+          limit: parseInt(limit)
         });
       }
       

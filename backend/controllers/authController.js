@@ -9,11 +9,24 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'Email, password, and name are required' });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
     const existingUser = await UserHelpers.getUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Create user with default viewer role (role is NOT taken from request body)
+    // First user will automatically become admin, all others get viewer role
     const newUser = await UserHelpers.createUser({ email, password, name });
 
     const customToken = await firebaseConfig.getAuth().createCustomToken(newUser.uid, {

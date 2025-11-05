@@ -199,8 +199,9 @@ app.put('/api/admin/profile/:id', authenticateToken, requirePermission('canEditP
 
 // ==================== SKILLS ROUTES ====================
 app.get('/api/skills', SkillsController.getAll);
-app.get('/api/skills/:id', SkillsController.getById);
+app.get('/api/skills/featured', SkillsController.getFeatured);
 app.get('/api/skills/search', SkillsController.search);
+app.get('/api/skills/:id', SkillsController.getById);
 app.post('/api/skills', authenticateToken, requirePermission('canCreatePosts'), SkillsController.create);
 app.put('/api/skills/:id', authenticateToken, requirePermission('canEditPosts'), SkillsController.update);
 app.delete('/api/skills/:id', authenticateToken, requirePermission('canDeletePosts'), SkillsController.delete);
@@ -215,8 +216,9 @@ app.post('/api/admin/skills/batch', authenticateToken, requirePermission('canCre
 
 // ==================== PROJECTS ROUTES ====================
 app.get('/api/projects', ProjectsController.getAll);
-app.get('/api/projects/:id', ProjectsController.getById);
+app.get('/api/projects/featured', ProjectsController.getFeatured);
 app.get('/api/projects/search', ProjectsController.search);
+app.get('/api/projects/:id', ProjectsController.getById);
 
 // Admin projects routes
 app.get('/api/admin/projects', authenticateToken, ProjectsController.getAll);
@@ -228,6 +230,7 @@ app.post('/api/admin/projects/batch', authenticateToken, requirePermission('canC
 
 // ==================== EXPERIENCES ROUTES ====================
 app.get('/api/experiences', ExperiencesController.getAll);
+app.get('/api/experiences/featured', ExperiencesController.getFeatured);
 app.get('/api/experiences/:id', ExperiencesController.getById);
 
 // Admin experiences routes
@@ -240,6 +243,7 @@ app.post('/api/admin/experiences/batch', authenticateToken, requirePermission('c
 
 // ==================== EDUCATION ROUTES ====================
 app.get('/api/education', EducationController.getAll);
+app.get('/api/education/featured', EducationController.getFeatured);
 app.get('/api/education/:id', EducationController.getById);
 
 // Admin education routes
@@ -252,8 +256,9 @@ app.post('/api/admin/education/batch', authenticateToken, requirePermission('can
 
 // ==================== BLOGS ROUTES ====================
 app.get('/api/blogs', BlogsController.getAll);
-app.get('/api/blogs/:id', BlogsController.getById);
+app.get('/api/blogs/featured', BlogsController.getFeatured);
 app.get('/api/blogs/search', BlogsController.search);
+app.get('/api/blogs/:id', BlogsController.getById);
 
 // Admin blogs routes
 app.get('/api/admin/blogs', authenticateToken, BlogsController.getAll);
@@ -265,8 +270,9 @@ app.post('/api/admin/blogs/batch', authenticateToken, requirePermission('canCrea
 
 // ==================== VLOGS ROUTES ====================
 app.get('/api/vlogs', VlogsController.getAll);
-app.get('/api/vlogs/:id', VlogsController.getById);
+app.get('/api/vlogs/featured', VlogsController.getFeatured);
 app.get('/api/vlogs/search', VlogsController.search);
+app.get('/api/vlogs/:id', VlogsController.getById);
 
 // Admin vlogs routes
 app.get('/api/admin/vlogs', authenticateToken, VlogsController.getAll);
@@ -278,8 +284,9 @@ app.post('/api/admin/vlogs/batch', authenticateToken, requirePermission('canCrea
 
 // ==================== GALLERY ROUTES ====================
 app.get('/api/gallery', GalleryController.getAll);
-app.get('/api/gallery/:id', GalleryController.getById);
+app.get('/api/gallery/featured', GalleryController.getFeatured);
 app.get('/api/gallery/search', GalleryController.search);
+app.get('/api/gallery/:id', GalleryController.getById);
 
 // Admin gallery routes
 app.get('/api/admin/gallery', authenticateToken, GalleryController.getAll);
@@ -291,6 +298,7 @@ app.post('/api/admin/gallery/batch', authenticateToken, requirePermission('canCr
 
 // ==================== TESTIMONIALS ROUTES ====================
 app.get('/api/testimonials', TestimonialsController.getAll);
+app.get('/api/testimonials/featured', TestimonialsController.getFeatured);
 app.get('/api/testimonials/:id', TestimonialsController.getById);
 
 // Admin testimonials routes
@@ -303,8 +311,9 @@ app.post('/api/admin/testimonials/batch', authenticateToken, requirePermission('
 
 // ==================== ACHIEVEMENTS ROUTES ====================
 app.get('/api/achievements', AchievementsController.getAll);
-app.get('/api/achievements/:id', AchievementsController.getById);
+app.get('/api/achievements/featured', AchievementsController.getFeatured);
 app.get('/api/achievements/search', AchievementsController.search);
+app.get('/api/achievements/:id', AchievementsController.getById);
 
 // Admin achievements routes
 app.get('/api/admin/achievements', authenticateToken, AchievementsController.getAll);
@@ -316,8 +325,9 @@ app.post('/api/admin/achievements/batch', authenticateToken, requirePermission('
 
 // ==================== SERVICES ROUTES ====================
 app.get('/api/services', ServicesController.getAll);
-app.get('/api/services/:id', ServicesController.getById);
+app.get('/api/services/featured', ServicesController.getFeatured);
 app.get('/api/services/search', ServicesController.search);
+app.get('/api/services/:id', ServicesController.getById);
 
 // Admin services routes
 app.get('/api/admin/services', authenticateToken, ServicesController.getAll);
@@ -360,7 +370,6 @@ app.get('/api/vlogs/featured', VlogsController.getFeatured);
 app.get('/api/gallery/featured', GalleryController.getFeatured);
 app.get('/api/testimonials/featured', TestimonialsController.getFeatured);
 app.get('/api/services/featured', ServicesController.getFeatured);
-app.get('/api/achievements/featured', AchievementsController.getFeatured);
 
 // Admin featured management endpoints
 app.post('/api/admin/skills/:id/feature', authenticateToken, requireAdmin, SkillsController.feature);
