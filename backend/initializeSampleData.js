@@ -1,8 +1,62 @@
-const admin = require('firebase-admin');
-const firebaseConfig = require('./config/firebase');
+import admin from 'firebase-admin';
+import firebaseConfig from './config/firebase.js';
 
 // Sample data for testing
 const sampleData = {
+  users: [
+    {
+      email: "kushagradubey5002@gmail.com",
+      password: "Dubey@5002",
+      username: "admin",
+      role: "admin",
+      permissions: {
+        canCreatePosts: true,
+        canEditPosts: true,
+        canDeletePosts: true,
+        canManageUsers: true,
+        canEditProfile: true,
+        canUploadFiles: true,
+        canViewAnalytics: true
+      },
+      isVerified: true,
+      isActive: true
+    },
+    {
+      email: "editor@portfolio.com",
+      password: "Editor123!@#",
+      username: "editor",
+      role: "editor",
+      permissions: {
+        canCreatePosts: true,
+        canEditPosts: true,
+        canDeletePosts: false,
+        canManageUsers: false,
+        canEditProfile: true,
+        canUploadFiles: true,
+        canViewAnalytics: false
+      },
+      isVerified: true,
+      isActive: true
+    },
+    {
+      email: "viewer@portfolio.com",
+      password: "Viewer123!@#",
+      username: "viewer",
+      role: "viewer",
+      permissions: {
+        canCreatePosts: false,
+        canEditPosts: false,
+        canDeletePosts: false,
+        canManageUsers: false,
+        canEditProfile: false,
+        canUploadFiles: false,
+        canViewAnalytics: false
+      },
+      isVerified: true,
+      isActive: true
+    }
+  ],
+
   profile: {
     name: "John Doe",
     title: "Full Stack Developer",
@@ -286,13 +340,59 @@ async function initializeSampleData() {
   try {
     console.log('🔥 Starting Firebase sample data initialization...\n');
 
+    // Initialize Firebase first
+    await firebaseConfig.initialize();
+    
     const db = firebaseConfig.getFirestore();
+    const auth = firebaseConfig.getAuth();
     const collections = firebaseConfig.collections;
 
     // Add timestamps to all data
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
-    // 1. Create Profile
+    // 1. Create Users with Firebase Authentication
+    console.log('👥 Creating users...');
+    const bcrypt = (await import('bcrypt')).default;
+    
+    for (const userData of sampleData.users) {
+      try {
+        // Create Firebase Auth user
+        const userRecord = await auth.createUser({
+          email: userData.email,
+          password: userData.password,
+          emailVerified: userData.isVerified,
+          disabled: !userData.isActive,
+          displayName: userData.username
+        });
+
+        // Hash password for Firestore
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+        // Store user data in Firestore
+        await collections.users.doc(userRecord.uid).set({
+          email: userData.email,
+          password: hashedPassword,
+          username: userData.username,
+          role: userData.role,
+          permissions: userData.permissions,
+          isVerified: userData.isVerified,
+          isActive: userData.isActive,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        });
+
+        console.log(`   ✓ Created user: ${userData.email} (${userData.role})`);
+      } catch (error) {
+        if (error.code === 'auth/email-already-exists') {
+          console.log(`   ⚠ User ${userData.email} already exists, skipping...`);
+        } else {
+          console.error(`   ✗ Error creating user ${userData.email}:`, error.message);
+        }
+      }
+    }
+    console.log(`✅ ${sampleData.users.length} users processed\n`);
+
+    // 2. Create Profile
     console.log('📝 Creating profile...');
     await collections.profiles.add({
       ...sampleData.profile,
@@ -301,7 +401,7 @@ async function initializeSampleData() {
     });
     console.log('✅ Profile created\n');
 
-    // 2. Create Skills
+    // 3. Create Skills
     console.log('🛠️ Creating skills...');
     for (const skill of sampleData.skills) {
       await collections.skills.add({
@@ -312,7 +412,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.skills.length} skills created\n`);
 
-    // 3. Create Projects
+    // 4. Create Projects
     console.log('🚀 Creating projects...');
     for (const project of sampleData.projects) {
       await collections.projects.add({
@@ -323,7 +423,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.projects.length} projects created\n`);
 
-    // 4. Create Experiences
+    // 5. Create Experiences
     console.log('💼 Creating experiences...');
     for (const experience of sampleData.experiences) {
       await collections.experiences.add({
@@ -334,7 +434,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.experiences.length} experiences created\n`);
 
-    // 5. Create Education
+    // 6. Create Education
     console.log('🎓 Creating education...');
     for (const education of sampleData.education) {
       await collections.education.add({
@@ -345,7 +445,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.education.length} education entries created\n`);
 
-    // 6. Create Blogs
+    // 7. Create Blogs
     console.log('📰 Creating blogs...');
     for (const blog of sampleData.blogs) {
       await collections.blogs.add({
@@ -356,7 +456,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.blogs.length} blogs created\n`);
 
-    // 7. Create Vlogs
+    // 8. Create Vlogs
     console.log('🎥 Creating vlogs...');
     for (const vlog of sampleData.vlogs) {
       await collections.vlogs.add({
@@ -367,7 +467,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.vlogs.length} vlogs created\n`);
 
-    // 8. Create Gallery
+    // 9. Create Gallery
     console.log('🖼️ Creating gallery items...');
     for (const item of sampleData.gallery) {
       await collections.gallery.add({
@@ -378,7 +478,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.gallery.length} gallery items created\n`);
 
-    // 9. Create Testimonials
+    // 10. Create Testimonials
     console.log('💬 Creating testimonials...');
     for (const testimonial of sampleData.testimonials) {
       await collections.testimonials.add({
@@ -389,7 +489,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.testimonials.length} testimonials created\n`);
 
-    // 10. Create Services
+    // 11. Create Services
     console.log('⚙️ Creating services...');
     for (const service of sampleData.services) {
       await collections.services.add({
@@ -400,7 +500,7 @@ async function initializeSampleData() {
     }
     console.log(`✅ ${sampleData.services.length} services created\n`);
 
-    // 11. Create Contact Info
+    // 12. Create Contact Info
     console.log('📞 Creating contact info...');
     await collections.contactInfo.add({
       ...sampleData.contactInfo,
@@ -409,7 +509,7 @@ async function initializeSampleData() {
     });
     console.log('✅ Contact info created\n');
 
-    // 12. Create Achievements
+    // 13. Create Achievements
     console.log('🏆 Creating achievements...');
     for (const achievement of sampleData.achievements) {
       await collections.achievements.add({
@@ -422,6 +522,7 @@ async function initializeSampleData() {
 
     console.log('🎉 Sample data initialization complete!\n');
     console.log('📊 Summary:');
+    console.log(`   - ${sampleData.users.length} users (admin, editor, viewer)`);
     console.log(`   - 1 profile`);
     console.log(`   - ${sampleData.skills.length} skills`);
     console.log(`   - ${sampleData.projects.length} projects`);
@@ -435,6 +536,10 @@ async function initializeSampleData() {
     console.log(`   - 1 contact info`);
     console.log(`   - ${sampleData.achievements.length} achievements`);
     console.log('\n✨ Your portfolio is ready to go!');
+    console.log('\n🔑 Test User Credentials:');
+    console.log('   Admin:  admin@portfolio.com / Admin123!@#');
+    console.log('   Editor: editor@portfolio.com / Editor123!@#');
+    console.log('   Viewer: viewer@portfolio.com / Viewer123!@#');
     
     process.exit(0);
   } catch (error) {

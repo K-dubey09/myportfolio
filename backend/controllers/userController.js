@@ -1,20 +1,32 @@
-import User from '../models/User.js';
-import Counter from '../models/Counter.js';
+import firebaseConfig from '../config/firebase.js';
+
+const db = firebaseConfig.getFirestore();
 
 export const UserController = {
   // Get all users (admin only)
   async getAllUsers(req, res) {
     try {
-      const users = await User.find({}, '-password')
-        .sort({ createdAt: -1 });
+      const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
+      const users = usersSnapshot.docs.map(doc => {
+        const { password, ...userData } = doc.data();
+        return {
+          id: doc.id,
+          ...userData
+        };
+      });
 
       res.json({
-        users,
+        success: true,
+        data: users,
+        users, // For backward compatibility
         total: users.length
       });
     } catch (error) {
       console.error('Get users error:', error);
-      res.status(500).json({ error: 'Failed to fetch users' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch users' 
+      });
     }
   },
 
@@ -22,16 +34,29 @@ export const UserController = {
   async getUserById(req, res) {
     try {
       const { id } = req.params;
-      const user = await User.findById(id, '-password');
+      const userDoc = await db.collection('users').doc(id).get();
 
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+      if (!userDoc.exists) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'User not found' 
+        });
       }
 
-      res.json(user);
+      const { password, ...userData } = userDoc.data();
+      res.json({
+        success: true,
+        data: {
+          id: userDoc.id,
+          ...userData
+        }
+      });
     } catch (error) {
       console.error('Get user error:', error);
-      res.status(500).json({ error: 'Failed to fetch user' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch user' 
+      });
     }
   },
 
@@ -41,38 +66,89 @@ export const UserController = {
       const { id } = req.params;
       const { role, isActive, permissions } = req.body;
 
-      const user = await User.findById(id);
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+      const userDoc = await db.collection('users').doc(id).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'User not found' 
+        });
       }
 
-      // Protect admin/root admin accounts from being modified through this endpoint
+      const user = userDoc.data();
+
+      // Protect admin/root admin accounts from being modified
       const protectedRoles = ['admin', 'root admin'];
       if (protectedRoles.includes((user.role || '').toLowerCase())) {
-        return res.status(403).json({ error: 'Action not allowed on admin/root admin users' });
+        return res.status(403).json({ 
+          success: false,
+          error: 'Action not allowed on admin/root admin users' 
+        });
       }
 
       // Prevent admin from changing their own role
-      if (user._id.toString() === req.user.userId && role && role !== 'admin') {
-        return res.status(400).json({ error: 'Cannot change your own admin role' });
+      if (id === req.user.userId && role && role !== 'admin') {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Cannot change your own admin role' 
+        });
       }
 
-      // Update fields
-      if (role) user.role = role;
-      if (typeof isActive === 'boolean') user.isActive = isActive;
-      if (permissions) {
-        user.permissions = { ...user.permissions, ...permissions };
+      // Build update object
+      const updates = {
+        updatedAt: new Date()
+      };
+      
+      if (role) {
+        updates.role = role;
+        // Update permissions based on role
+        if (role === 'admin') {
+          updates.permissions = {
+            canCreatePosts: true,
+            canEditPosts: true,
+            canDeletePosts: true,
+            canManageUsers: true,
+            canEditProfile: true,
+            canUploadFiles: true,
+            canViewAnalytics: true
+          };
+        } else if (role === 'editor') {
+          updates.permissions = {
+            canCreatePosts: true,
+            canEditPosts: true,
+            canDeletePosts: false,
+            canManageUsers: false,
+            canEditProfile: true,
+            canUploadFiles: true,
+            canViewAnalytics: false
+          };
+        } else {
+          updates.permissions = {
+            canCreatePosts: false,
+            canEditPosts: false,
+            canDeletePosts: false,
+            canManageUsers: false,
+            canEditProfile: false,
+            canUploadFiles: false,
+            canViewAnalytics: false
+          };
+        }
       }
+      
+      if (typeof isActive === 'boolean') updates.isActive = isActive;
+      if (permissions) updates.permissions = { ...user.permissions, ...permissions };
 
-      await user.save();
+      await db.collection('users').doc(id).update(updates);
 
       res.json({
-        message: 'User updated successfully',
-        user: await User.findById(id, '-password')
+        success: true,
+        message: 'User updated successfully'
       });
     } catch (error) {
       console.error('Update user error:', error);
-      res.status(500).json({ error: 'Failed to update user' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to update user' 
+      });
     }
   },
 
@@ -83,41 +159,86 @@ export const UserController = {
 
       // Prevent admin from deleting themselves
       if (id === req.user.userId) {
-        return res.status(400).json({ error: 'Cannot delete your own account' });
+        return res.status(400).json({ 
+          success: false,
+          error: 'Cannot delete your own account' 
+        });
       }
 
-      const user = await User.findById(id);
-      if (!user) return res.status(404).json({ error: 'User not found' });
+      const userDoc = await db.collection('users').doc(id).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'User not found' 
+        });
+      }
+
+      const user = userDoc.data();
 
       // Protect admin/root admin accounts from deletion
       const protectedRoles = ['admin', 'root admin'];
       if (protectedRoles.includes((user.role || '').toLowerCase())) {
-        return res.status(403).json({ error: 'Action not allowed on admin/root admin users' });
+        return res.status(403).json({ 
+          success: false,
+          error: 'Action not allowed on admin/root admin users' 
+        });
       }
 
-      await User.findByIdAndDelete(id);
+      await db.collection('users').doc(id).delete();
 
-      res.json({ message: 'User deleted successfully' });
+      res.json({ 
+        success: true,
+        message: 'User deleted successfully' 
+      });
     } catch (error) {
       console.error('Delete user error:', error);
-      res.status(500).json({ error: 'Failed to delete user' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to delete user' 
+      });
     }
   },
 
   // Get user statistics (admin only)
   async getUserStats(req, res) {
     try {
-      const totalUsers = await User.countDocuments();
-      const activeUsers = await User.countDocuments({ isActive: true });
-      const adminUsers = await User.countDocuments({ role: 'admin' });
-      const editorUsers = await User.countDocuments({ role: 'editor' });
-      const viewerUsers = await User.countDocuments({ role: 'viewer' });
+      const usersSnapshot = await db.collection('users').get();
+      const users = usersSnapshot.docs.map(doc => doc.data());
 
-      const recentUsers = await User.find({}, 'name email role createdAt')
-        .sort({ createdAt: -1 })
-        .limit(5);
+      const totalUsers = users.length;
+      const activeUsers = users.filter(u => u.isActive).length;
+      const adminUsers = users.filter(u => u.role === 'admin').length;
+      const editorUsers = users.filter(u => u.role === 'editor').length;
+      const viewerUsers = users.filter(u => u.role === 'viewer').length;
+
+      const recentUsersSnapshot = await db.collection('users')
+        .orderBy('createdAt', 'desc')
+        .limit(5)
+        .get();
+      
+      const recentUsers = recentUsersSnapshot.docs.map(doc => {
+        const { password, ...userData } = doc.data();
+        return {
+          id: doc.id,
+          ...userData
+        };
+      });
 
       res.json({
+        success: true,
+        data: {
+          statistics: {
+            total: totalUsers,
+            active: activeUsers,
+            inactive: totalUsers - activeUsers,
+            roles: {
+              admin: adminUsers,
+              editor: editorUsers,
+              viewer: viewerUsers
+            }
+          },
+          recentUsers
+        },
         statistics: {
           total: totalUsers,
           active: activeUsers,
@@ -132,64 +253,93 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Get user stats error:', error);
-      res.status(500).json({ error: 'Failed to fetch user statistics' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch user statistics' 
+      });
     }
-  }
-  ,
+  },
 
-  // Assign or generate a unique userNumber for a user (admin only)
+  // Assign or generate a unique userId for a user (admin only)
   async assignUserNumber(req, res) {
     try {
       const { id } = req.params;
-      const { userNumber } = req.body || {};
+      const { userId: providedUserId } = req.body || {};
 
-      const user = await User.findById(id);
-      if (!user) return res.status(404).json({ error: 'User not found' });
-
-      // Do not allow assigning/altering userNumber for protected roles
-      const protectedRoles = ['admin', 'root admin'];
-      if (protectedRoles.includes((user.role || '').toLowerCase())) {
-        return res.status(403).json({ error: 'Action not allowed on admin/root admin users' });
+      const userDoc = await db.collection('users').doc(id).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'User not found' 
+        });
       }
 
-      // If a userNumber was provided, validate it (alphanumeric, 4-32 chars)
-      if (userNumber) {
-        const candidate = String(userNumber).trim();
+      const user = userDoc.data();
+
+      // Do not allow assigning/altering userId for protected roles
+      const protectedRoles = ['admin', 'root admin'];
+      if (protectedRoles.includes((user.role || '').toLowerCase())) {
+        return res.status(403).json({ 
+          success: false,
+          error: 'Action not allowed on admin/root admin users' 
+        });
+      }
+
+      // If a userId was provided, validate it
+      if (providedUserId) {
+        const candidate = String(providedUserId).trim();
         if (!/^[A-Za-z0-9_-]{4,32}$/.test(candidate)) {
-          return res.status(400).json({ error: 'Invalid userNumber format. Allowed: letters, numbers, _ and -, length 4-32.' });
+          return res.status(400).json({ 
+            success: false,
+            error: 'Invalid userId format. Allowed: letters, numbers, _ and -, length 4-32.' 
+          });
         }
 
         // Check uniqueness
-        const existing = await User.findOne({ userNumber: candidate });
-        if (existing && existing._id.toString() !== id) {
-          return res.status(409).json({ error: 'userNumber already in use' });
+        const existingSnapshot = await db.collection('users')
+          .where('userId', '==', candidate)
+          .limit(1)
+          .get();
+        
+        if (!existingSnapshot.empty && existingSnapshot.docs[0].id !== id) {
+          return res.status(409).json({ 
+            success: false,
+            error: 'userId already in use' 
+          });
         }
 
-        user.userNumber = candidate;
-        await user.save();
-        return res.json({ message: 'userNumber assigned', user: user.toJSON() });
+        await db.collection('users').doc(id).update({
+          userId: candidate,
+          updatedAt: new Date()
+        });
+        
+        return res.json({ 
+          success: true,
+          message: 'userId assigned',
+          data: { userId: candidate }
+        });
       }
 
-      // Otherwise generate a sequential number using Counter
-      const counter = await Counter.findOneAndUpdate({ name: 'userNumber' }, { $inc: { seq: 1 } }, { new: true, upsert: true });
-      const next = counter.seq;
-      // Create a formatted userNumber, e.g. U000123
-      const formatted = `U${String(next).padStart(6, '0')}`;
+      // Generate a unique userId
+      const timestamp = Date.now();
+      const formatted = `USER${timestamp}`;
 
-      // Ensure uniqueness just in case
-      const exists = await User.findOne({ userNumber: formatted });
-      if (exists) {
-        // extremely unlikely, but handle by appending timestamp
-        user.userNumber = `${formatted}-${Date.now().toString().slice(-4)}`;
-      } else {
-        user.userNumber = formatted;
-      }
-
-      await user.save();
-      return res.json({ message: 'userNumber generated', user: user.toJSON() });
+      await db.collection('users').doc(id).update({
+        userId: formatted,
+        updatedAt: new Date()
+      });
+      
+      return res.json({ 
+        success: true,
+        message: 'userId generated',
+        data: { userId: formatted }
+      });
     } catch (error) {
       console.error('assignUserNumber error:', error);
-      res.status(500).json({ error: 'Failed to assign userNumber' });
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to assign userId' 
+      });
     }
   }
 };

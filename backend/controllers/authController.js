@@ -55,7 +55,13 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: 'Account is inactive' });
     }
 
-    const isPasswordValid = await UserHelpers.comparePassword(password, user.passwordHash);
+    // Support both 'password' and 'passwordHash' field names for backward compatibility
+    const hashedPassword = user.passwordHash || user.password;
+    if (!hashedPassword) {
+      return res.status(500).json({ message: 'User password not found in database' });
+    }
+
+    const isPasswordValid = await UserHelpers.comparePassword(password, hashedPassword);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

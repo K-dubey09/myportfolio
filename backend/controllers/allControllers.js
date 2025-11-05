@@ -30,9 +30,9 @@ import {
   validateAchievement
 } from '../utils/validation.js';
 
-// Profile Controller (only one profile allowed)
+// Profile Controller (only one profile allowed - SINGLETON pattern)
 export const ProfileController = {
-  ...createFirestoreController(profileCRUD, validateProfile, ['email']),
+  ...createFirestoreController(profileCRUD, validateProfile, []),
   
   // Override getAll to return single profile
   getAll: async (req, res) => {
@@ -46,6 +46,59 @@ export const ProfileController = {
       res.status(500).json({
         success: false,
         error: 'Failed to fetch profile',
+        message: error.message
+      });
+    }
+  },
+  
+  // Override create to ensure only one profile exists
+  create: async (req, res) => {
+    try {
+      // Check if profile already exists
+      const existingProfiles = await profileCRUD.getAll({ limit: 1 });
+      
+      if (existingProfiles.length > 0) {
+        // Profile already exists, update it instead
+        const profileId = existingProfiles[0].id;
+        const validation = validateProfile(req.body);
+        
+        if (!validation.valid) {
+          return res.status(400).json({
+            success: false,
+            error: 'Validation failed',
+            errors: validation.errors
+          });
+        }
+        
+        const updated = await profileCRUD.update(profileId, req.body);
+        return res.json({
+          success: true,
+          message: 'Profile updated (only one profile allowed)',
+          data: updated
+        });
+      }
+      
+      // No profile exists, create first one
+      const validation = validateProfile(req.body);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          errors: validation.errors
+        });
+      }
+      
+      const profile = await profileCRUD.create(req.body);
+      res.status(201).json({
+        success: true,
+        message: 'Profile created successfully',
+        data: profile
+      });
+    } catch (error) {
+      console.error('Profile create error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create profile',
         message: error.message
       });
     }
