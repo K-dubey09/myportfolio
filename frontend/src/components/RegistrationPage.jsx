@@ -63,13 +63,13 @@ const RegistrationPage = () => {
     setLoading(true);
 
     try {
-      const result = await register(formData.email, formData.password, formData.name, 'viewer');
+      const result = await register(formData.email, formData.password, formData.name);
       
       if (result.success) {
         setStep(3); // Success step
         toast.success('Registration successful! Welcome to the platform!');
         setTimeout(() => {
-          navigate('/login');
+          navigate('/');
         }, 2000);
       } else {
         toast.error(result.error || 'Registration failed');

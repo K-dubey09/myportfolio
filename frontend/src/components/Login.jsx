@@ -25,12 +25,28 @@ const Login = ({ onClose }) => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(credentials.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await login(credentials.email, credentials.password);
       
       if (result.success) {
-        toast.success(`Welcome back, ${result.user.name}!`);
+        const roleName = result.user.role === 'admin' ? 'Admin' : result.user.role === 'editor' ? 'Editor' : 'Viewer';
+        toast.success(`Welcome back, ${result.user.name}! (${roleName})`);
         if (onClose) onClose();
+        
+        // Redirect based on role
+        if (result.user.role === 'admin') {
+          setTimeout(() => navigate('/admin'), 500);
+        } else {
+          setTimeout(() => navigate('/'), 500);
+        }
       } else {
         setError(result.error || 'Login failed');
         toast.error(result.error || 'Login failed');
@@ -176,15 +192,21 @@ const Login = ({ onClose }) => {
         </button>
 
         <div className="login-info">
-          <h4>Role Benefits:</h4>
+          <h4>Account Benefits:</h4>
           <div className="role-benefits">
             <div className="benefit-item">
-              <strong>Viewer:</strong> Access to exclusive blogs, vlogs, and gallery content
+              <strong>👁️ Viewer:</strong> Access exclusive blogs, vlogs, and gallery content
             </div>
             <div className="benefit-item">
-              <strong>Admin:</strong> Full access to admin panel and content management
+              <strong>✏️ Editor:</strong> Create and manage content, upload files
+            </div>
+            <div className="benefit-item">
+              <strong>👑 Admin:</strong> Full system access and user management
             </div>
           </div>
+          <p className="security-note">
+            🔒 Your data is secured with Firebase Authentication
+          </p>
         </div>
 
         {onClose && (
