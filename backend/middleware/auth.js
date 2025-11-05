@@ -1,43 +1,54 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import firebaseConfig from '../config/firebase.js';
+import { UserHelpers } from '../utils/firestoreHelpers.js';
 
-// Basic authentication middleware
+const rateLimitStore = new Map();
+
 export const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({ error: 'Access token required' });
+      return res.status(401).json({ message: 'Access token is required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Check if user still exists and is active
-    const user = await User.findById(decoded.userId);
+    const decodedToken = await firebaseConfig.getAuth().verifyIdToken(token);
+    const user = await UserHelpers.getUserById(decodedToken.uid);
+
     if (!user || !user.isActive) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+      return res.status(403).json({ message: 'User is inactive or does not exist' });
     }
 
-    req.user = decoded;
+    req.user = {
+      uid: user.uid,
+      email: user.email,
+      role: decodedToken.role || user.role,
+      permissions: decodedToken.permissions || user.permissions
+    };
+
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
-    return res.status(403).json({ error: 'Invalid token' });
+    console.error('Token verification error:', error);
+    if (error.code === 'auth/id-token-expired') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
+    if (error.code === 'auth/argument-error') {
+      return res.status(401).json({ message: 'Invalid token format' });
+    }
+    return res.status(403).json({ message: 'Invalid or expired token' });
   }
 };
 
-// Role-based access control middleware
-export const requireRole = (roles) => {
+export const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ 
-        error: 'Insufficient permissions',
-        required: roles,
+        message: 'Access denied. Insufficient role privileges.',
+        required: allowedRoles,
         current: req.user.role
       });
     }
@@ -46,121 +57,69 @@ export const requireRole = (roles) => {
   };
 };
 
-// Permission-based access control middleware
-export const requirePermission = (permission) => {
-  return async (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    try {
-      // Get fresh user data to check permissions
-      const user = await User.findById(req.user.userId);
-      if (!user || !user.isActive) {
-        return res.status(401).json({ error: 'User not found or inactive' });
-      }
-
-      if (!user.permissions[permission]) {
-        return res.status(403).json({ 
-          error: 'Permission denied',
-          required: permission,
-          userPermissions: user.permissions
-        });
-      }
-
-      next();
-    } catch (error) {
-      console.error('Permission check error:', error);
-      res.status(500).json({ error: 'Permission check failed' });
-    }
-  };
-};
-
-// Admin only middleware
-export const requireAdmin = requireRole(['admin']);
-
-// Admin or Editor middleware
-export const requireAdminOrEditor = requireRole(['admin', 'editor']);
-
-// Check if user owns resource or is admin
-export const requireOwnershipOrAdmin = (resourceField = 'userId') => {
+export const requirePermission = (...requiredPermissions) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // Admin can access any resource
-    if (req.user.role === 'admin') {
-      return next();
-    }
+    const userPermissions = req.user.permissions || {};
+    const hasPermission = requiredPermissions.every(perm => userPermissions[perm] === true);
 
-    // Check if user owns the resource
-    const resourceUserId = req.body[resourceField] || req.params[resourceField];
-    if (resourceUserId !== req.user.userId) {
-      return res.status(403).json({ error: 'Access denied: You can only access your own resources' });
-    }
-
-    next();
-  };
-};
-
-// Rate limiting middleware (simple implementation)
-const rateLimitMap = new Map();
-
-// Function to clear rate limit cache (useful for development and admin reset)
-export const clearRateLimit = (identifier = null) => {
-  if (identifier) {
-    rateLimitMap.delete(identifier);
-  } else {
-    rateLimitMap.clear();
-  }
-};
-
-export const rateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
-  return (req, res, next) => {
-    const identifier = req.ip || req.connection.remoteAddress;
-    const now = Date.now();
-    const windowStart = now - windowMs;
-
-    // Clean old entries
-    for (const [key, timestamps] of rateLimitMap.entries()) {
-      rateLimitMap.set(key, timestamps.filter(time => time > windowStart));
-      if (rateLimitMap.get(key).length === 0) {
-        rateLimitMap.delete(key);
-      }
-    }
-
-    // Check current requests
-    const userRequests = rateLimitMap.get(identifier) || [];
-    const recentRequests = userRequests.filter(time => time > windowStart);
-
-    if (recentRequests.length >= maxRequests) {
-      return res.status(429).json({ 
-        error: 'Too many requests',
-        retryAfter: Math.ceil(windowMs / 1000)
+    if (!hasPermission) {
+      return res.status(403).json({ 
+        message: 'Access denied. Insufficient permissions.',
+        required: requiredPermissions,
+        current: Object.keys(userPermissions).filter(k => userPermissions[k])
       });
     }
 
-    // Add current request
-    recentRequests.push(now);
-    rateLimitMap.set(identifier, recentRequests);
-
     next();
   };
 };
 
-// Audit log middleware
-export const auditLog = (action) => {
+export const requireAdmin = requireRole('admin');
+export const requireAdminOrEditor = requireRole('admin', 'editor');
+
+export const rateLimit = (maxRequests = 100, windowMs = 60000) => {
   return (req, res, next) => {
-    const originalSend = res.send;
+    const identifier = req.user?.uid || req.ip;
+    const now = Date.now();
     
-    res.send = function(data) {
-      // Log the action
-      console.log(`[AUDIT] ${new Date().toISOString()} - User: ${req.user?.email || 'Anonymous'} - Action: ${action} - IP: ${req.ip} - Status: ${res.statusCode}`);
-      
-      originalSend.call(this, data);
-    };
+    if (!rateLimitStore.has(identifier)) {
+      rateLimitStore.set(identifier, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
 
+    const record = rateLimitStore.get(identifier);
+    
+    if (now > record.resetTime) {
+      rateLimitStore.set(identifier, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+
+    if (record.count >= maxRequests) {
+      const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+      return res.status(429).json({ 
+        message: 'Too many requests',
+        retryAfter: `${retryAfter} seconds`
+      });
+    }
+
+    record.count++;
     next();
   };
 };
+
+export const clearRateLimit = (identifier) => {
+  return rateLimitStore.delete(identifier);
+};
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (now > value.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 300000);

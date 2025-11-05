@@ -3,17 +3,23 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import database from './config/database.js';
-import { upload, GridFSUtils, initializeGridFS } from './utils/fileUpload.js';
-import { ProfileController } from './controllers/profileController.js';
-import createCRUDController from './controllers/crudController.js';
-import { AuthController } from './controllers/authController.js';
-import { UserController } from './controllers/userController.js';
-import AccessKeyController from './controllers/accessKeyController.js';
-import AdminRequestController from './controllers/adminRequestController.js';
-import { FileController } from './controllers/fileController.js';
-import imageRoutes from './routes/imageRoutes.js';
-import portfolioRoutes from './routes/portfolioRoutes.js';
+import firebaseConfig from './config/firebase.js';
+import * as AuthController from './controllers/authController.js';
+import {
+  ProfileController,
+  SkillsController,
+  ProjectsController,
+  ExperiencesController,
+  EducationController,
+  BlogsController,
+  VlogsController,
+  GalleryController,
+  TestimonialsController,
+  ServicesController,
+  ContactsController,
+  ContactInfoController,
+  AchievementsController
+} from './controllers/allControllers.js';
 import { 
   authenticateToken, 
   requireRole, 
@@ -21,7 +27,6 @@ import {
   requireAdmin, 
   requireAdminOrEditor,
   rateLimit,
-  auditLog,
   clearRateLimit
 } from './middleware/auth.js';
 
@@ -29,30 +34,15 @@ import {
 dotenv.config();
 
 // Debug environment variables
-console.log('🔧 JWT_SECRET loaded:', process.env.JWT_SECRET ? 'YES' : 'NO');
+console.log('🔧 Firebase Project:', process.env.FIREBASE_PROJECT_ID || 'my-portfolio-7ceb6');
 console.log('🔧 Environment:', process.env.NODE_ENV);
-console.log('🔧 MongoDB URI:', process.env.MONGODB_URI ? 'SET' : 'NOT SET');
 
 // Get directory name for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Import models
-import Profile from './models/Profile.js';
-import User from './models/User.js';
-import Skill from './models/Skill.js';
-import Project from './models/Project.js';
-import Experience from './models/Experience.js';
-import Education from './models/Education.js';
-import Blog from './models/Blog.js';
-import Vlog from './models/Vlog.js';
-import Gallery from './models/Gallery.js';
-import Testimonial from './models/Testimonial.js';
-import Service from './models/Service.js';
-import Contact from './models/Contact.js';
-import ContactInfo from './models/ContactInfo.js';
+// Import contact info controller for backward compatibility
 import contactInfoController from './controllers/contactInfoController.js';
-import Achievement from './models/Achievement.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -127,49 +117,26 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Async initialization function
 const initializeServer = async () => {
   try {
-    // Connect to MongoDB
-    await database.connect();
-    
-    // Initialize GridFS after database connection
-    initializeGridFS();
-
-// Initialize first admin user if no users exist
-const initializeAdmin = async () => {
-  try {
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      const adminUser = new User({
-        email: process.env.ADMIN_EMAIL || 'admin@portfolio.com',
-        password: process.env.ADMIN_PASSWORD || 'admin123',
-        name: 'Administrator',
-        role: 'admin'
-      });
-      await adminUser.save();
-      console.log('✅ Admin user created successfully');
-    }
-  } catch (error) {
-    console.error('Error initializing admin user:', error);
-  }
-};
-
-await initializeAdmin();
+    // Initialize Firebase Admin SDK
+    await firebaseConfig.initialize();
+    console.log('✅ Firebase initialized successfully');
 
 // ==================== AUTHENTICATION ROUTES ====================
-app.post('/api/auth/register', auditLog('USER_REGISTER'), AuthController.register);
-app.post('/api/auth/login', AuthController.login); // Removed auditLog temporarily
-app.post('/api/auth/logout', authenticateToken, auditLog('USER_LOGOUT'), AuthController.logout);
+app.post('/api/auth/register', AuthController.register);
+app.post('/api/auth/login', AuthController.login);
+app.post('/api/auth/logout', authenticateToken, AuthController.logout);
 app.get('/api/auth/profile', authenticateToken, AuthController.getProfile);
-app.put('/api/auth/profile', authenticateToken, auditLog('PROFILE_UPDATE'), AuthController.updateProfile);
-app.put('/api/auth/change-password', authenticateToken, auditLog('PASSWORD_CHANGE'), AuthController.changePassword);
+app.put('/api/auth/profile', authenticateToken, AuthController.updateProfile);
+app.put('/api/auth/change-password', authenticateToken, AuthController.changePassword);
 
 // ==================== USER MANAGEMENT ROUTES (Admin Only) ====================
-app.get('/api/admin/users', authenticateToken, requireAdmin, auditLog('VIEW_USERS'), UserController.getAllUsers);
-app.get('/api/admin/users/stats', authenticateToken, requireAdmin, UserController.getUserStats);
-app.get('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.getUserById);
-app.put('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('UPDATE_USER'), UserController.updateUserRole);
-app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, auditLog('DELETE_USER'), UserController.deleteUser);
-// Assign or generate a unique userNumber for a user (admin only)
-app.post('/api/admin/users/:id/assign-id', authenticateToken, requireAdmin, auditLog('ASSIGN_USER_NUMBER'), UserController.assignUserNumber);
+// Temporarily commented out - Need to create Firebase UserController
+// app.get('/api/admin/users', authenticateToken, requireAdmin, UserController.getAllUsers);
+// app.get('/api/admin/users/stats', authenticateToken, requireAdmin, UserController.getUserStats);
+// app.get('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.getUserById);
+// app.put('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.updateUserRole);
+// app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.deleteUser);
+// app.post('/api/admin/users/:id/assign-id', authenticateToken, requireAdmin, UserController.assignUserNumber);
 
 // ==================== ADMIN UTILITY ROUTES ====================
 // Clear rate limits (admin only)
@@ -187,217 +154,242 @@ app.post('/api/admin/clear-rate-limit', authenticateToken, requireAdmin, (req, r
   }
 });
 
-// Create CRUD controllers for each model
-const skillController = createCRUDController(Skill, 'Skill');
-const projectController = createCRUDController(Project, 'Project');
-const experienceController = createCRUDController(Experience, 'Experience');
-const educationController = createCRUDController(Education, 'Education');
-const blogController = createCRUDController(Blog, 'Blog');
-const vlogController = createCRUDController(Vlog, 'Vlog');
-const galleryController = createCRUDController(Gallery, 'Gallery');
-const testimonialController = createCRUDController(Testimonial, 'Testimonial');
-const serviceController = createCRUDController(Service, 'Service');
-const contactController = createCRUDController(Contact, 'Contact');
-const achievementController = createCRUDController(Achievement, 'Achievement');
-// ContactInfo uses specialized controller to ensure only one record exists
-
-// ==================== FILE ROUTES (GridFS) ====================
-// Serve files from GridFS
-app.get('/api/files/:filename', FileController.serveFile);
-
-// Upload file to GridFS
-app.post('/api/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('file'), FileController.uploadFile);
-
-// List files with pagination
-app.get('/api/files', authenticateToken, FileController.listFiles);
-
-// Delete file from GridFS
-app.delete('/api/files/:filename', authenticateToken, FileController.deleteFile);
-
-// Get file info
-app.get('/api/files/:filename/info', authenticateToken, FileController.getFileInfo);
-
-// Legacy upload endpoint for backward compatibility
-app.post('/api/admin/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('file'), FileController.uploadFile);
-
-// ==================== IMAGE MANAGEMENT ROUTES ====================
-app.use('/api/images', imageRoutes);
-
-// ==================== PORTFOLIO ROUTES ====================
-app.use('/api/portfolio', portfolioRoutes);
-
 // ==================== PROFILE ROUTES ====================
-app.get('/api/profile', ProfileController.getProfile);
-app.get('/api/admin/profile', authenticateToken, ProfileController.getProfile);
-app.get('/api/admin/profile/get-or-create', authenticateToken, ProfileController.getOrCreateProfile);
-app.post('/api/admin/profile', authenticateToken, requirePermission('canEditProfile'), auditLog('PROFILE_CREATE_UPDATE'), ProfileController.createOrUpdateProfile);
-app.put('/api/admin/profile', authenticateToken, requirePermission('canEditProfile'), auditLog('PROFILE_UPDATE'), ProfileController.updateProfile);
-app.post('/api/admin/profile/picture', authenticateToken, requirePermission('canUploadFiles'), upload.single('profilePicture'), ProfileController.uploadProfilePicture);
-app.delete('/api/admin/profile/reset', authenticateToken, requirePermission('canEditProfile'), auditLog('PROFILE_RESET'), ProfileController.resetProfile);
+app.get('/api/profile', ProfileController.getAll);
+app.post('/api/profile', authenticateToken, requirePermission('canEditProfile'), ProfileController.create);
+app.put('/api/profile/:id', authenticateToken, requirePermission('canEditProfile'), ProfileController.update);
+app.delete('/api/profile/:id', authenticateToken, requireAdmin, ProfileController.delete);
+
+// Admin profile routes
+app.get('/api/admin/profile', authenticateToken, ProfileController.getAll);
+app.post('/api/admin/profile', authenticateToken, requirePermission('canEditProfile'), ProfileController.create);
+app.put('/api/admin/profile/:id', authenticateToken, requirePermission('canEditProfile'), ProfileController.update);
 
 // ==================== SKILLS ROUTES ====================
-app.get('/api/skills', skillController.getAll);
-app.get('/api/admin/skills', authenticateToken, skillController.getAll);
+app.get('/api/skills', SkillsController.getAll);
+app.get('/api/skills/:id', SkillsController.getById);
+app.get('/api/skills/search', SkillsController.search);
+app.post('/api/skills', authenticateToken, requirePermission('canCreatePosts'), SkillsController.create);
+app.put('/api/skills/:id', authenticateToken, requirePermission('canEditPosts'), SkillsController.update);
+app.delete('/api/skills/:id', authenticateToken, requirePermission('canDeletePosts'), SkillsController.delete);
 
-// ==================== ACCESS KEYS (Admin) ====================
-app.post('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeyController.createKey);
-app.get('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeyController.listKeys);
-app.delete('/api/admin/access-keys/:id', authenticateToken, requireAdmin, AccessKeyController.deleteKey);
-
-// Public endpoint for using a key (authenticated user)
-app.post('/api/access-keys/use', authenticateToken, AccessKeyController.useKey);
-
-// Request admin approval (viewer -> request admin) (authenticated)
-app.post('/api/request-admin', authenticateToken, AdminRequestController.createRequest);
-
-// Admin: list and approve requests
-app.get('/api/admin/requests', authenticateToken, requireAdmin, AdminRequestController.listRequests);
-app.post('/api/admin/requests/:id/approve', authenticateToken, requireAdmin, AdminRequestController.approveRequest);
-app.post('/api/admin/requests/:id/reject', authenticateToken, requireAdmin, AdminRequestController.rejectRequest);
-
-// Admin: list conversions & revert
-app.get('/api/admin/conversions', authenticateToken, requireAdmin, AccessKeyController.listConversions);
-app.post('/api/admin/revert-user/:id', authenticateToken, requireAdmin, AccessKeyController.revertUser);
-app.get('/api/admin/skills/:id', authenticateToken, skillController.getById);
-app.post('/api/admin/skills', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_SKILL'), skillController.create);
-app.put('/api/admin/skills/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_SKILL'), skillController.update);
-app.delete('/api/admin/skills/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_SKILL'), skillController.delete);
+// Admin skills routes
+app.get('/api/admin/skills', authenticateToken, SkillsController.getAll);
+app.get('/api/admin/skills/:id', authenticateToken, SkillsController.getById);
+app.post('/api/admin/skills', authenticateToken, requirePermission('canCreatePosts'), SkillsController.create);
+app.put('/api/admin/skills/:id', authenticateToken, requirePermission('canEditPosts'), SkillsController.update);
+app.delete('/api/admin/skills/:id', authenticateToken, requirePermission('canDeletePosts'), SkillsController.delete);
+app.post('/api/admin/skills/batch', authenticateToken, requirePermission('canCreatePosts'), SkillsController.batchCreate);
 
 // ==================== PROJECTS ROUTES ====================
-app.get('/api/projects', projectController.getAll);
-app.get('/api/admin/projects', authenticateToken, projectController.getAll);
-app.get('/api/admin/projects/:id', authenticateToken, projectController.getById);
-app.post('/api/admin/projects', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_PROJECT'), projectController.create);
-app.put('/api/admin/projects/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_PROJECT'), projectController.update);
-app.delete('/api/admin/projects/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_PROJECT'), projectController.delete);
+app.get('/api/projects', ProjectsController.getAll);
+app.get('/api/projects/:id', ProjectsController.getById);
+app.get('/api/projects/search', ProjectsController.search);
+
+// Admin projects routes
+app.get('/api/admin/projects', authenticateToken, ProjectsController.getAll);
+app.get('/api/admin/projects/:id', authenticateToken, ProjectsController.getById);
+app.post('/api/admin/projects', authenticateToken, requirePermission('canCreatePosts'), ProjectsController.create);
+app.put('/api/admin/projects/:id', authenticateToken, requirePermission('canEditPosts'), ProjectsController.update);
+app.delete('/api/admin/projects/:id', authenticateToken, requirePermission('canDeletePosts'), ProjectsController.delete);
+app.post('/api/admin/projects/batch', authenticateToken, requirePermission('canCreatePosts'), ProjectsController.batchCreate);
 app.post('/api/admin/projects/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('image'), projectController.uploadFile);
 
-// ==================== EXPERIENCE ROUTES ====================
-app.get('/api/experiences', experienceController.getAll);
-app.get('/api/admin/experiences', authenticateToken, experienceController.getAll);
-app.get('/api/admin/experiences/:id', authenticateToken, experienceController.getById);
-app.post('/api/admin/experiences', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_EXPERIENCE'), experienceController.create);
-app.put('/api/admin/experiences/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_EXPERIENCE'), experienceController.update);
-app.delete('/api/admin/experiences/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_EXPERIENCE'), experienceController.delete);
+// ==================== EXPERIENCES ROUTES ====================
+app.get('/api/experiences', ExperiencesController.getAll);
+app.get('/api/experiences/:id', ExperiencesController.getById);
+
+// Admin experiences routes
+app.get('/api/admin/experiences', authenticateToken, ExperiencesController.getAll);
+app.get('/api/admin/experiences/:id', authenticateToken, ExperiencesController.getById);
+app.post('/api/admin/experiences', authenticateToken, requirePermission('canCreatePosts'), ExperiencesController.create);
+app.put('/api/admin/experiences/:id', authenticateToken, requirePermission('canEditPosts'), ExperiencesController.update);
+app.delete('/api/admin/experiences/:id', authenticateToken, requirePermission('canDeletePosts'), ExperiencesController.delete);
+app.post('/api/admin/experiences/batch', authenticateToken, requirePermission('canCreatePosts'), ExperiencesController.batchCreate);
 app.post('/api/admin/experiences/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('logo'), experienceController.uploadFile);
 
 // ==================== EDUCATION ROUTES ====================
-app.get('/api/education', educationController.getAll);
-app.get('/api/admin/education', authenticateToken, educationController.getAll);
-app.get('/api/admin/education/:id', authenticateToken, educationController.getById);
-app.post('/api/admin/education', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_EDUCATION'), educationController.create);
-app.put('/api/admin/education/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_EDUCATION'), educationController.update);
-app.delete('/api/admin/education/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_EDUCATION'), educationController.delete);
+app.get('/api/education', EducationController.getAll);
+app.get('/api/education/:id', EducationController.getById);
+
+// Admin education routes
+app.get('/api/admin/education', authenticateToken, EducationController.getAll);
+app.get('/api/admin/education/:id', authenticateToken, EducationController.getById);
+app.post('/api/admin/education', authenticateToken, requirePermission('canCreatePosts'), EducationController.create);
+app.put('/api/admin/education/:id', authenticateToken, requirePermission('canEditPosts'), EducationController.update);
+app.delete('/api/admin/education/:id', authenticateToken, requirePermission('canDeletePosts'), EducationController.delete);
+app.post('/api/admin/education/batch', authenticateToken, requirePermission('canCreatePosts'), EducationController.batchCreate);
 app.post('/api/admin/education/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('logo'), educationController.uploadFile);
 
 // ==================== BLOGS ROUTES ====================
-app.get('/api/blogs', blogController.getAll);
-app.get('/api/admin/blogs', authenticateToken, blogController.getAll);
-app.get('/api/admin/blogs/:id', authenticateToken, blogController.getById);
-app.post('/api/admin/blogs', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_BLOG'), blogController.create);
-app.put('/api/admin/blogs/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_BLOG'), blogController.update);
-app.delete('/api/admin/blogs/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_BLOG'), blogController.delete);
+app.get('/api/blogs', BlogsController.getAll);
+app.get('/api/blogs/:id', BlogsController.getById);
+app.get('/api/blogs/search', BlogsController.search);
+
+// Admin blogs routes
+app.get('/api/admin/blogs', authenticateToken, BlogsController.getAll);
+app.get('/api/admin/blogs/:id', authenticateToken, BlogsController.getById);
+app.post('/api/admin/blogs', authenticateToken, requirePermission('canCreatePosts'), BlogsController.create);
+app.put('/api/admin/blogs/:id', authenticateToken, requirePermission('canEditPosts'), BlogsController.update);
+app.delete('/api/admin/blogs/:id', authenticateToken, requirePermission('canDeletePosts'), BlogsController.delete);
+app.post('/api/admin/blogs/batch', authenticateToken, requirePermission('canCreatePosts'), BlogsController.batchCreate);
 app.post('/api/admin/blogs/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('image'), blogController.uploadFile);
 
 // ==================== VLOGS ROUTES ====================
-app.get('/api/vlogs', vlogController.getAll);
-app.get('/api/admin/vlogs', authenticateToken, vlogController.getAll);
-app.get('/api/admin/vlogs/:id', authenticateToken, vlogController.getById);
-app.post('/api/admin/vlogs', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_VLOG'), vlogController.create);
-app.put('/api/admin/vlogs/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_VLOG'), vlogController.update);
-app.delete('/api/admin/vlogs/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_VLOG'), vlogController.delete);
+app.get('/api/vlogs', VlogsController.getAll);
+app.get('/api/vlogs/:id', VlogsController.getById);
+app.get('/api/vlogs/search', VlogsController.search);
+
+// Admin vlogs routes
+app.get('/api/admin/vlogs', authenticateToken, VlogsController.getAll);
+app.get('/api/admin/vlogs/:id', authenticateToken, VlogsController.getById);
+app.post('/api/admin/vlogs', authenticateToken, requirePermission('canCreatePosts'), VlogsController.create);
+app.put('/api/admin/vlogs/:id', authenticateToken, requirePermission('canEditPosts'), VlogsController.update);
+app.delete('/api/admin/vlogs/:id', authenticateToken, requirePermission('canDeletePosts'), VlogsController.delete);
+app.post('/api/admin/vlogs/batch', authenticateToken, requirePermission('canCreatePosts'), VlogsController.batchCreate);
 app.post('/api/admin/vlogs/upload', authenticateToken, requirePermission('canUploadFiles'), upload.fields([
   { name: 'video', maxCount: 1 },
   { name: 'thumbnail', maxCount: 1 }
 ]), vlogController.uploadFile);
 
 // ==================== GALLERY ROUTES ====================
-app.get('/api/gallery', galleryController.getAll);
-app.get('/api/admin/gallery', authenticateToken, galleryController.getAll);
-app.get('/api/admin/gallery/:id', authenticateToken, galleryController.getById);
-app.post('/api/admin/gallery', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_GALLERY'), galleryController.create);
-app.put('/api/admin/gallery/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_GALLERY'), galleryController.update);
-app.delete('/api/admin/gallery/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_GALLERY'), galleryController.delete);
+app.get('/api/gallery', GalleryController.getAll);
+app.get('/api/gallery/:id', GalleryController.getById);
+app.get('/api/gallery/search', GalleryController.search);
+
+// Admin gallery routes
+app.get('/api/admin/gallery', authenticateToken, GalleryController.getAll);
+app.get('/api/admin/gallery/:id', authenticateToken, GalleryController.getById);
+app.post('/api/admin/gallery', authenticateToken, requirePermission('canCreatePosts'), GalleryController.create);
+app.put('/api/admin/gallery/:id', authenticateToken, requirePermission('canEditPosts'), GalleryController.update);
+app.delete('/api/admin/gallery/:id', authenticateToken, requirePermission('canDeletePosts'), GalleryController.delete);
+app.post('/api/admin/gallery/batch', authenticateToken, requirePermission('canCreatePosts'), GalleryController.batchCreate);
 app.post('/api/admin/gallery/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('image'), galleryController.uploadFile);
 
 // ==================== TESTIMONIALS ROUTES ====================
-app.get('/api/testimonials', testimonialController.getAll);
-app.get('/api/admin/testimonials', authenticateToken, testimonialController.getAll);
-app.get('/api/admin/testimonials/:id', authenticateToken, testimonialController.getById);
-app.post('/api/admin/testimonials', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_TESTIMONIAL'), testimonialController.create);
-app.put('/api/admin/testimonials/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_TESTIMONIAL'), testimonialController.update);
-app.delete('/api/admin/testimonials/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_TESTIMONIAL'), testimonialController.delete);
+app.get('/api/testimonials', TestimonialsController.getAll);
+app.get('/api/testimonials/:id', TestimonialsController.getById);
+
+// Admin testimonials routes
+app.get('/api/admin/testimonials', authenticateToken, TestimonialsController.getAll);
+app.get('/api/admin/testimonials/:id', authenticateToken, TestimonialsController.getById);
+app.post('/api/admin/testimonials', authenticateToken, requirePermission('canCreatePosts'), TestimonialsController.create);
+app.put('/api/admin/testimonials/:id', authenticateToken, requirePermission('canEditPosts'), TestimonialsController.update);
+app.delete('/api/admin/testimonials/:id', authenticateToken, requirePermission('canDeletePosts'), TestimonialsController.delete);
+app.post('/api/admin/testimonials/batch', authenticateToken, requirePermission('canCreatePosts'), TestimonialsController.batchCreate);
 app.post('/api/admin/testimonials/upload', authenticateToken, requirePermission('canUploadFiles'), upload.single('avatar'), testimonialController.uploadFile);
 
 // ==================== ACHIEVEMENTS ROUTES ====================
-app.get('/api/achievements', achievementController.getAll);
-app.get('/api/admin/achievements', authenticateToken, achievementController.getAll);
-app.get('/api/admin/achievements/:id', authenticateToken, achievementController.getById);
-app.post('/api/admin/achievements', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_ACHIEVEMENT'), achievementController.create);
-app.put('/api/admin/achievements/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_ACHIEVEMENT'), achievementController.update);
-app.delete('/api/admin/achievements/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_ACHIEVEMENT'), achievementController.delete);
+app.get('/api/achievements', AchievementsController.getAll);
+app.get('/api/achievements/:id', AchievementsController.getById);
+app.get('/api/achievements/search', AchievementsController.search);
+
+// Admin achievements routes
+app.get('/api/admin/achievements', authenticateToken, AchievementsController.getAll);
+app.get('/api/admin/achievements/:id', authenticateToken, AchievementsController.getById);
+app.post('/api/admin/achievements', authenticateToken, requirePermission('canCreatePosts'), AchievementsController.create);
+app.put('/api/admin/achievements/:id', authenticateToken, requirePermission('canEditPosts'), AchievementsController.update);
+app.delete('/api/admin/achievements/:id', authenticateToken, requirePermission('canDeletePosts'), AchievementsController.delete);
+app.post('/api/admin/achievements/batch', authenticateToken, requirePermission('canCreatePosts'), AchievementsController.batchCreate);
 
 // ==================== SERVICES ROUTES ====================
-app.get('/api/services', serviceController.getAll);
-app.get('/api/admin/services', authenticateToken, serviceController.getAll);
-app.get('/api/admin/services/:id', authenticateToken, serviceController.getById);
-app.post('/api/admin/services', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_SERVICE'), serviceController.create);
-app.put('/api/admin/services/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_SERVICE'), serviceController.update);
-app.delete('/api/admin/services/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_SERVICE'), serviceController.delete);
+app.get('/api/services', ServicesController.getAll);
+app.get('/api/services/:id', ServicesController.getById);
+app.get('/api/services/search', ServicesController.search);
+
+// Admin services routes
+app.get('/api/admin/services', authenticateToken, ServicesController.getAll);
+app.get('/api/admin/services/:id', authenticateToken, ServicesController.getById);
+app.post('/api/admin/services', authenticateToken, requirePermission('canCreatePosts'), ServicesController.create);
+app.put('/api/admin/services/:id', authenticateToken, requirePermission('canEditPosts'), ServicesController.update);
+app.delete('/api/admin/services/:id', authenticateToken, requirePermission('canDeletePosts'), ServicesController.delete);
+app.post('/api/admin/services/batch', authenticateToken, requirePermission('canCreatePosts'), ServicesController.batchCreate);
 
 // ==================== CONTACTS ROUTES ====================
-app.get('/api/contacts', contactController.getAll); // Public endpoint for contact form submission
-app.post('/api/contacts', contactController.create); // Public endpoint for contact form submission
-app.get('/api/admin/contacts', authenticateToken, contactController.getAll);
-app.get('/api/admin/contacts/:id', authenticateToken, contactController.getById);
-app.put('/api/admin/contacts/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_CONTACT'), contactController.update);
-app.delete('/api/admin/contacts/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_CONTACT'), contactController.delete);
+// Public contact form submission
+app.post('/api/contacts', ContactsController.create);
+app.get('/api/contacts', ContactsController.getAll);
+
+// Admin contacts routes
+app.get('/api/admin/contacts', authenticateToken, ContactsController.getAll);
+app.get('/api/admin/contacts/:id', authenticateToken, ContactsController.getById);
+app.put('/api/admin/contacts/:id', authenticateToken, ContactsController.update);
+app.delete('/api/admin/contacts/:id', authenticateToken, requirePermission('canDeletePosts'), ContactsController.delete);
+app.post('/api/admin/contacts/:id/mark-read', authenticateToken, ContactsController.markAsRead);
 
 // ==================== CONTACT INFO ROUTES ====================
-app.get('/api/contact-info', contactInfoController.getAll); // Public endpoint for getting contact info
-app.get('/api/admin/contact-info', authenticateToken, contactInfoController.getAll);
-app.get('/api/admin/contact-info/get-or-create', authenticateToken, contactInfoController.getOrCreate);
-app.get('/api/admin/contact-info/:id', authenticateToken, contactInfoController.getById);
-app.post('/api/admin/contact-info', authenticateToken, requirePermission('canCreatePosts'), auditLog('CREATE_CONTACT_INFO'), contactInfoController.create);
-app.put('/api/admin/contact-info/:id', authenticateToken, requirePermission('canEditPosts'), auditLog('UPDATE_CONTACT_INFO'), contactInfoController.update);
-app.delete('/api/admin/contact-info/:id', authenticateToken, requirePermission('canDeletePosts'), auditLog('DELETE_CONTACT_INFO'), contactInfoController.delete);
+// Public contact info
+app.get('/api/contact-info', ContactInfoController.getAll);
 
-// ==================== LEGACY PORTFOLIO DATA ROUTE (Combined) ====================
-// Note: This route is deprecated in favor of /api/portfolio/* routes
-app.get('/api/portfolio-legacy', async (req, res) => {
+// Admin contact info routes
+app.get('/api/admin/contact-info', authenticateToken, ContactInfoController.getAll);
+app.post('/api/admin/contact-info', authenticateToken, requirePermission('canEditProfile'), ContactInfoController.create);
+app.put('/api/admin/contact-info/:id', authenticateToken, requirePermission('canEditProfile'), ContactInfoController.update);
+app.delete('/api/admin/contact-info/:id', authenticateToken, requireAdmin, ContactInfoController.delete);
+
+// ==================== ACCESS KEYS (Admin) ====================
+app.post('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeyController.createKey);
+app.get('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeyController.listKeys);
+app.delete('/api/admin/access-keys/:id', authenticateToken, requireAdmin, AccessKeyController.deleteKey);
+app.post('/api/access-keys/use', authenticateToken, AccessKeyController.useKey);
+
+// ==================== ADMIN REQUESTS ====================
+app.post('/api/request-admin', authenticateToken, AdminRequestController.createRequest);
+app.get('/api/admin/requests', authenticateToken, requireAdmin, AdminRequestController.listRequests);
+app.post('/api/admin/requests/:id/approve', authenticateToken, requireAdmin, AdminRequestController.approveRequest);
+app.post('/api/admin/requests/:id/reject', authenticateToken, requireAdmin, AdminRequestController.rejectRequest);
+
+// ==================== CONVERSIONS ====================
+app.get('/api/admin/conversions', authenticateToken, requireAdmin, AccessKeyController.listConversions);
+app.post('/api/admin/revert-user/:id', authenticateToken, requireAdmin, AccessKeyController.revertUser);
+
+// ==================== PORTFOLIO DATA AGGREGATION ROUTE ====================
+// Get all portfolio data in one request (useful for initial page load)
+app.get('/api/portfolio', async (req, res) => {
   try {
-    const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials, services, contacts, contactInfo] = await Promise.all([
-      Profile.findOne(),
-      Skill.find().sort({ category: 1, name: 1 }),
-      Project.find().sort({ featured: -1, createdAt: -1 }),
-      Experience.find().sort({ startDate: -1 }),
-      Education.find().sort({ startDate: -1 }),
-      Blog.find().sort({ publishDate: -1, createdAt: -1 }),
-      Vlog.find().sort({ publishedDate: -1, createdAt: -1 }),
-      Gallery.find().sort({ createdAt: -1 }),
-      Testimonial.find().sort({ featured: -1, createdAt: -1 }),
-      Service.find().sort({ featured: -1, createdAt: -1 }),
-      Contact.find().sort({ createdAt: -1 }),
-      ContactInfo.findOne()
+    const { profileCRUD, skillsCRUD, projectsCRUD, experiencesCRUD, educationCRUD, 
+            blogsCRUD, vlogsCRUD, galleryCRUD, testimonialsCRUD, servicesCRUD, 
+            contactInfoCRUD, achievementsCRUD } = require('./utils/firestoreCRUD');
+    
+    const [profile, skills, projects, experiences, education, blogs, vlogs, gallery, testimonials, services, contactInfo, achievements] = await Promise.all([
+      profileCRUD.getAll({}).then(data => data[0] || null),
+      skillsCRUD.getAll({}),
+      projectsCRUD.getAll({}),
+      experiencesCRUD.getAll({}),
+      educationCRUD.getAll({}),
+      blogsCRUD.getAll({}),
+      vlogsCRUD.getAll({}),
+      galleryCRUD.getAll({}),
+      testimonialsCRUD.getAll({}),
+      servicesCRUD.getAll({}),
+      contactInfoCRUD.getAll({}).then(data => data[0] || null),
+      achievementsCRUD.getAll({})
     ]);
 
     res.json({
-      profile: profile || {},
-      skills: skills || [],
-      projects: projects || [],
-      experiences: experiences || [],
-      education: education || [],
-      blogs: blogs || [],
-      vlogs: vlogs || [],
-      gallery: gallery || [],
-      testimonials: testimonials || [],
-      services: services || [],
-      contacts: contacts || [],
-      contactInfo: contactInfo || {}
+      success: true,
+      data: {
+        profile: profile || {},
+        skills: skills || [],
+        projects: projects || [],
+        experiences: experiences || [],
+        education: education || [],
+        blogs: blogs || [],
+        vlogs: vlogs || [],
+        gallery: gallery || [],
+        testimonials: testimonials || [],
+        services: services || [],
+        contactInfo: contactInfo || {},
+        achievements: achievements || []
+      }
     });
   } catch (error) {
     console.error('Error fetching portfolio data:', error);
-    res.status(500).json({ error: 'Failed to fetch portfolio data' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch portfolio data',
+      message: error.message 
+    });
   }
 });
 
@@ -424,7 +416,7 @@ app.use((req, res) => {
       console.log(`📁 File serving at http://localhost:${PORT}/api/files/:id`);
       console.log(`🔐 Admin login at http://localhost:${PORT}/api/auth/login`);
       console.log(`📊 Portfolio data at http://localhost:${PORT}/api/portfolio`);
-      console.log(`🗄️  MongoDB connection: mongodb://localhost:27017/my-portfolio`);
+      console.log(`� Firebase project: my-portfolio-7ceb6`);
     });
 
   } catch (error) {
@@ -456,7 +448,6 @@ process.on('SIGINT', async () => {
   
   if (shutdownRequests >= 2) {
     console.log('🔄 Double SIGINT - Gracefully shutting down...');
-    await database.disconnect();
     process.exit(0);
   } else {
     console.log('🔄 Press Ctrl+C again within 3 seconds to shutdown');
