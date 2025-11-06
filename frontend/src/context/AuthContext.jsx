@@ -93,6 +93,71 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const requestRegisterOTP = async (email, name) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/register/request-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return { success: true, expiresIn: data.expiresIn };
+      } else {
+        return { success: false, error: data.message || 'Failed to send OTP' };
+      }
+    } catch (error) {
+      console.error('Request OTP error:', error);
+      return { success: false, error: error.message || 'Network error' };
+    }
+  };
+
+  const verifyRegisterOTP = async (email, otp, password) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/register/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await signInWithCustomToken(auth, data.customToken);
+        return { success: true, user: data.user };
+      } else {
+        return { success: false, error: data.message || 'OTP verification failed' };
+      }
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      return { success: false, error: error.message || 'Network error' };
+    }
+  };
+
+  const googleSignIn = async (idToken) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await signInWithCustomToken(auth, data.customToken);
+        return { success: true, user: data.user };
+      } else {
+        return { success: false, error: data.message || 'Google sign-in failed' };
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      return { success: false, error: error.message || 'Network error' };
+    }
+  };
+
   const logout = async () => {
     try {
       await firebaseSignOut(auth);
@@ -172,6 +237,9 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    requestRegisterOTP,
+    verifyRegisterOTP,
+    googleSignIn,
     logout,
     updateProfile,
     changePassword,
