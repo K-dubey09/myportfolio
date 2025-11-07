@@ -18,10 +18,10 @@ const RegistrationPage = () => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [step, setStep] = useState(1); // 1=name/email, 2=confirm, 3=password, 4=OTP, 5=success
-  const [otp, setOtp] = useState('');
-  const [otpTimer, setOtpTimer] = useState(0);
-  const { requestRegisterOTP, verifyRegisterOTP } = useAuth();
+  const [step, setStep] = useState(1); // 1=name/email, 2=confirm, 3=password, 4=email-sent, 5=success
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+  const [verificationLink, setVerificationLink] = useState('');
+  const { requestEmailVerification } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,7 +58,7 @@ const RegistrationPage = () => {
     }
   };
 
-  const handleRequestOTP = async () => {
+  const handleRequestEmailVerification = async () => {
     // Validate password fields first
     if (!formData.password) {
       setErrors({ password: 'Password is required' });
@@ -87,72 +87,36 @@ const RegistrationPage = () => {
     setLoading(true);
     
     try {
-      const result = await requestRegisterOTP(formData.email, formData.name);
+      const result = await requestEmailVerification(formData.email, formData.name, formData.password);
       
       if (result.success) {
-        setOtpTimer(600); // 10 minutes
-        setStep(4); // Move to OTP step (step 4)
-        toast.success('OTP sent to your email! Please check your inbox.');
-        
-        // Start countdown timer
-        const interval = setInterval(() => {
-          setOtpTimer(prev => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+        setVerificationEmailSent(true);
+        // Store the verification link if provided (for development)
+        if (result.verificationLink) {
+          setVerificationLink(result.verificationLink);
+        }
+        setStep(4); // Move to email-sent step (step 4)
+        toast.success('Verification link generated! Check the console for the link.');
       } else {
         // Check if error is about existing user
         if (result.error && result.error.includes('already exists')) {
           toast.error('This email is already registered. Please login instead.');
           setTimeout(() => navigate('/login'), 2000);
         } else {
-          toast.error(result.error || 'Failed to send OTP');
+          toast.error(result.error || 'Failed to send verification email');
         }
       }
     } catch (error) {
-      console.error('OTP request error:', error);
+      console.error('Email verification request error:', error);
       toast.error('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOTP = async () => {
-    if (otp.length !== 6) {
-      setErrors({ otp: 'Please enter a valid 6-digit OTP' });
-      toast.error('Please enter a valid 6-digit OTP');
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      const result = await verifyRegisterOTP(formData.email, otp, formData.password);
-      
-      if (result.success) {
-        setStep(5); // Success step (step 5)
-        toast.success('Registration successful! Welcome to the platform!');
-        setTimeout(() => navigate('/'), 2000);
-      } else {
-        setErrors({ otp: result.error || 'Invalid OTP' });
-        toast.error(result.error || 'Invalid OTP. Please try again.');
-      }
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      toast.error('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    setOtp('');
+  const handleResendEmail = async () => {
     setErrors({});
-    await handleRequestOTP();
+    await handleRequestEmailVerification();
   };
 
   // Success step
@@ -553,8 +517,8 @@ const RegistrationPage = () => {
 
                 <motion.button 
                   type="button"
-                  onClick={handleRequestOTP}
-                  className="otp-button"
+                  onClick={handleRequestEmailVerification}
+                  className="email-verification-button"
                   disabled={loading}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -565,12 +529,12 @@ const RegistrationPage = () => {
                   {loading ? (
                     <>
                       <div className="spinner"></div>
-                      Sending OTP...
+                      Sending Email...
                     </>
                   ) : (
                     <>
                       <Mail size={18} />
-                      Send Verification Code
+                      Send Verification Email
                     </>
                   )}
                 </motion.button>
@@ -578,76 +542,78 @@ const RegistrationPage = () => {
             </motion.div>
           )}
 
-          {/* Step 4: OTP Verification */}
+          {/* Step 4: Email Verification Sent */}
           {step === 4 && (
             <motion.div 
-              className="form-step otp-step"
+              className="form-step email-sent-step"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.4 }}
             >
               <motion.div 
-                className="otp-info"
+                className="email-sent-info"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <p>We've sent a verification code to:</p>
+                <CheckCircle size={64} className="email-sent-icon" />
+                <h3>Check Your Email</h3>
+                <p>We've sent a verification link to:</p>
                 <strong>{formData.email}</strong>
-                <span className="otp-hint">Check your inbox and spam folder</span>
+                <span className="email-hint">
+                  Click the verification link below to complete your registration.
+                  The link will expire in 24 hours.
+                </span>
               </motion.div>
 
-              <div className="form-group">
-                <label htmlFor="otp">
-                  <Mail size={18} />
-                  Enter 6-Digit OTP
-                </label>
-                <motion.input
-                  type="text"
-                  id="otp"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  maxLength="6"
-                  className={`otp-input ${errors.otp ? 'error' : ''}`}
-                  disabled={loading}
+              {verificationLink && (
+                <motion.div 
+                  className="verification-link-section"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  autoFocus
-                />
-                {errors.otp && (
-                  <motion.span 
-                    className="error-text"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    {errors.otp}
-                  </motion.span>
-                )}
-              </div>
+                  transition={{ duration: 0.3, delay: 0.3 }}
+                >
+                  <h4>Development Mode - Click this link to verify:</h4>
+                  <div className="verification-link-container">
+                    <a 
+                      href={verificationLink}
+                      className="verification-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      🔗 Click to Verify Email
+                    </a>
+                  </div>
+                  <p className="dev-note">
+                    📧 In production, this link would be sent to your email automatically.
+                  </p>
+                </motion.div>
+              )}
 
               <motion.div 
-                className="otp-timer"
+                className="email-actions"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
+                transition={{ duration: 0.3, delay: 0.4 }}
               >
-                {otpTimer > 0 ? (
-                  <p>
-                    Time remaining: <strong>{Math.floor(otpTimer / 60)}:{String(otpTimer % 60).padStart(2, '0')}</strong>
-                  </p>
-                ) : (
-                  <button 
-                    type="button" 
-                    onClick={handleResendOTP}
-                    className="resend-otp-btn"
-                    disabled={loading}
-                  >
-                    Resend OTP
-                  </button>
-                )}
+                <p>Need a new verification link?</p>
+                
+                <button 
+                  type="button" 
+                  onClick={handleResendEmail}
+                  className="resend-email-btn"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="spinner"></div>
+                      Resending...
+                    </>
+                  ) : (
+                    'Resend Verification Email'
+                  )}
+                </button>
               </motion.div>
 
               {errors.submit && (
@@ -677,26 +643,15 @@ const RegistrationPage = () => {
 
                 <motion.button 
                   type="button"
-                  onClick={handleVerifyOTP}
-                  className="verify-button"
-                  disabled={loading || otp.length !== 6}
+                  onClick={() => navigate('/login')}
+                  className="login-button"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: 0.4 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {loading ? (
-                    <>
-                      <div className="spinner"></div>
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle size={18} />
-                      Verify & Register
-                    </>
-                  )}
+                  Go to Login
                 </motion.button>
               </div>
             </motion.div>

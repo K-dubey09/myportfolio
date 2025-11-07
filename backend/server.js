@@ -128,8 +128,8 @@ const initializeServer = async () => {
 
 // ==================== AUTHENTICATION ROUTES ====================
 app.post('/api/auth/register', AuthController.register);
-app.post('/api/auth/register/request-otp', AuthController.requestRegisterOTP);
-app.post('/api/auth/register/verify-otp', AuthController.verifyRegisterOTP);
+app.post('/api/auth/register/request-verification', AuthController.requestEmailVerification);
+app.post('/api/auth/register/verify-email', AuthController.verifyEmail);
 app.post('/api/auth/login', AuthController.login);
 app.post('/api/auth/google', AuthController.googleAuth);
 app.post('/api/auth/logout', authenticateToken, AuthController.logout);

@@ -1,33 +1,18 @@
 import firebaseConfig from '../config/firebase.js';
 import { UserHelpers } from '../utils/firestoreHelpers.js';
-import crypto from 'crypto';
 
-// Store OTP temporarily (in production, use Redis or database)
-const otpStore = new Map();
+// Store pending user registration data temporarily (in production, use Redis or database)
+const pendingRegistrations = new Map();
 
-// Generate 6-digit OTP
-const generateOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
-};
-
-// Send OTP via email (placeholder - integrate with email service)
-const sendOTPEmail = async (email, otp, name) => {
-  // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-  console.log(`📧 OTP for ${email} (${name}): ${otp}`);
-  console.log(`⚠️ In production, send this via email service`);
-  // For now, just log it - in production, use email service
-  return true;
-};
-
-// Request OTP for registration
-export const requestRegisterOTP = async (req, res) => {
+// Request email verification for registration
+export const requestEmailVerification = async (req, res) => {
   try {
-    const { email, name } = req.body;
-    console.log('📨 OTP Request received:', { email, name });
+    const { email, name, password } = req.body;
+    console.log('📨 Email verification request received:', { email, name });
 
-    if (!email || !name) {
-      console.log('❌ Missing email or name');
-      return res.status(400).json({ message: 'Email and name are required' });
+    if (!email || !name || !password) {
+      console.log('❌ Missing required fields');
+      return res.status(400).json({ message: 'Email, name, and password are required' });
     }
 
     // Validate email format
@@ -37,90 +22,134 @@ export const requestRegisterOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email format' });
     }
 
-    // Check if user already exists
-    console.log('🔍 Checking if user exists...');
-    const existingUser = await UserHelpers.getUserByEmail(email);
-    console.log('✅ User check complete:', existingUser ? 'EXISTS' : 'NEW USER');
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    // Generate OTP
-    const otp = generateOTP();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
-    console.log('🔢 OTP generated:', otp);
-
-    // Store OTP
-    otpStore.set(email, { otp, expiresAt, name, purpose: 'register' });
-    console.log('💾 OTP stored in memory');
-
-    // Send OTP via email
-    await sendOTPEmail(email, otp, name);
-    console.log('✉️ OTP email sent (console logged)');
-
-    console.log('✅ OTP request successful');
-    res.json({
-      message: 'OTP sent to your email',
-      expiresIn: 600 // 10 minutes in seconds
-    });
-  } catch (error) {
-    console.error('❌ Request OTP error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Verify OTP and complete registration
-export const verifyRegisterOTP = async (req, res) => {
-  try {
-    const { email, otp, password } = req.body;
-
-    if (!email || !otp || !password) {
-      return res.status(400).json({ message: 'Email, OTP, and password are required' });
-    }
-
     // Validate password strength
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
-    // Check OTP
-    const storedData = otpStore.get(email);
-    if (!storedData) {
-      return res.status(400).json({ message: 'OTP not found or expired' });
+    // Check if user already exists in our database
+    console.log('🔍 Checking if user exists in our database...');
+    const existingUser = await UserHelpers.getUserByEmail(email);
+    if (existingUser) {
+      console.log('❌ User already exists in our database');
+      return res.status(400).json({ message: 'User already exists' });
     }
 
-    if (storedData.purpose !== 'register') {
-      return res.status(400).json({ message: 'Invalid OTP purpose' });
+    try {
+      // Create Firebase Auth user (this will automatically send verification email)
+      console.log('🔥 Creating Firebase Auth user...');
+      const userRecord = await firebaseConfig.getAuth().createUser({
+        email: email,
+        password: password,
+        displayName: name,
+        emailVerified: false
+      });
+
+      console.log('✅ Firebase Auth user created:', userRecord.uid);
+
+      // Store pending registration data (to be completed when email is verified)
+      const registrationData = {
+        uid: userRecord.uid,
+        email: email,
+        name: name,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+      };
+      pendingRegistrations.set(userRecord.uid, registrationData);
+      console.log('💾 Pending registration stored');
+
+      // Generate email verification link
+      console.log('📧 Generating email verification link...');
+      const link = await firebaseConfig.getAuth().generateEmailVerificationLink(email);
+      console.log('🔗 Email verification link generated:', link);
+
+      // In a real app, you would send this link via email service
+      // For now, we'll return it in the response for testing
+      console.log('✉️ Email verification link ready');
+
+      res.json({
+        message: 'Firebase user created. Verification link generated.',
+        verificationLink: link, // In production, remove this and send via email
+        uid: userRecord.uid,
+        expiresIn: 86400
+      });
+
+    } catch (firebaseError) {
+      console.error('❌ Firebase Auth error:', firebaseError);
+      
+      if (firebaseError.code === 'auth/email-already-exists') {
+        return res.status(400).json({ message: 'Email is already registered with Firebase Auth' });
+      }
+      
+      throw firebaseError;
+    }
+  } catch (error) {
+    console.error('❌ Request email verification error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Complete registration after Firebase email verification
+export const verifyEmail = async (req, res) => {
+  try {
+    const { uid } = req.body;
+
+    if (!uid) {
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
-    if (Date.now() > storedData.expiresAt) {
-      otpStore.delete(email);
-      return res.status(400).json({ message: 'OTP has expired' });
+    console.log('🔍 Verifying email for Firebase user:', uid);
+
+    // Get Firebase user to check email verification status
+    const firebaseUser = await firebaseConfig.getAuth().getUser(uid);
+    
+    if (!firebaseUser.emailVerified) {
+      return res.status(400).json({ message: 'Email not yet verified. Please check your email and click the verification link.' });
     }
 
-    if (storedData.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP' });
+    console.log('✅ Firebase email verified for:', firebaseUser.email);
+
+    // Check if we have pending registration data
+    const pendingData = pendingRegistrations.get(uid);
+    if (!pendingData) {
+      return res.status(400).json({ message: 'No pending registration found for this user' });
     }
 
-    // OTP verified, create user
-    const newUser = await UserHelpers.createUser({ 
-      email, 
-      password, 
-      name: storedData.name,
+    if (Date.now() > pendingData.expiresAt) {
+      pendingRegistrations.delete(uid);
+      return res.status(400).json({ message: 'Registration has expired. Please register again.' });
+    }
+
+    // Check if user already exists in our database
+    const existingUser = await UserHelpers.getUserByEmail(firebaseUser.email);
+    if (existingUser) {
+      pendingRegistrations.delete(uid);
+      return res.status(400).json({ message: 'User already exists in our database' });
+    }
+
+    console.log('📝 Creating user in our database...');
+    
+    // Create user in our database with the same UID as Firebase
+    const newUser = await UserHelpers.createUserWithUID(uid, { 
+      email: firebaseUser.email, 
+      name: pendingData.name,
       emailVerified: true 
     });
 
-    // Clean up OTP
-    otpStore.delete(email);
+    // Clean up pending registration
+    pendingRegistrations.delete(uid);
+    console.log('🧹 Pending registration cleaned up');
 
     const customToken = await firebaseConfig.getAuth().createCustomToken(newUser.uid, {
       role: newUser.role,
       permissions: newUser.permissions
     });
 
+    console.log('✅ Registration completed successfully');
+    
     res.status(201).json({
-      message: 'Registration successful',
+      message: 'Email verified and registration successful',
       customToken,
       user: {
         uid: newUser.uid,
@@ -131,16 +160,17 @@ export const verifyRegisterOTP = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Verify OTP error:', error);
+    console.error('❌ Verify email error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 export const register = async (req, res) => {
-  // Direct registration is disabled - use OTP verification instead
+  // Direct registration is disabled - use email verification instead
   return res.status(403).json({ 
-    message: 'Direct registration is disabled. Please use email verification (OTP) to register.',
-    useOTP: true 
+    message: 'Direct registration is disabled. Please use email verification to register.',
+    useEmailVerification: true 
   });
 };
 

@@ -7,6 +7,7 @@ import Navigation from './components/Navigation'
 import PortfolioSite from './components/PortfolioSite'
 import AdminPanel from '../Admin/AdminPanel'
 import RegistrationPage from './components/RegistrationPage'
+import EmailVerification from './components/EmailVerification'
 import Login from './components/Login'
 import ProjectsPage from './pages/ProjectsPage'
 import BlogsPage from './pages/BlogsPage'
@@ -166,6 +167,7 @@ function App() {
             <Route path="/" element={<PortfolioSite />} />
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/admin" element={<AdminRoute />} />
             <Route path="/projects" element={
               <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>

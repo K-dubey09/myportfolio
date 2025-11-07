@@ -74,6 +74,39 @@ export const UserHelpers = {
     return { uid: firebaseUser.uid, ...userDoc };
   },
 
+  async createUserWithUID(uid, userData) {
+    const db = firebaseConfig.getFirestore();
+    const auth = firebaseConfig.getAuth();
+    
+    const usersCollection = db.collection('users');
+    const snapshot = await usersCollection.count().get();
+    const totalUsers = snapshot.data().count;
+    const isFirstUser = totalUsers === 0;
+    
+    const role = isFirstUser ? 'admin' : (userData.role || 'viewer');
+    const permissions = userData.permissions || defaultPermissions[role];
+    
+    await auth.setCustomUserClaims(uid, { role, permissions });
+    
+    const userDoc = {
+      uid: uid,
+      email: userData.email,
+      name: userData.name,
+      role,
+      isActive: true,
+      avatar: userData.avatar || null,
+      userNumber: totalUsers + 1,
+      emailVerified: userData.emailVerified || false,
+      lastLogin: admin.firestore.FieldValue.serverTimestamp(),
+      permissions,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    await usersCollection.doc(uid).set(userDoc);
+    return { uid: uid, ...userDoc };
+  },
+
   async getUserByEmail(email) {
     const db = firebaseConfig.getFirestore();
     const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();

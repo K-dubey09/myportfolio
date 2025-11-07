@@ -93,12 +93,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const requestRegisterOTP = async (email, name) => {
+  const requestEmailVerification = async (email, name, password) => {
     try {
-      const response = await fetch(`${API_BASE}/auth/register/request-otp`, {
+      const response = await fetch(`${API_BASE}/auth/register/request-verification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name })
+        body: JSON.stringify({ email, name, password })
       });
 
       const data = await response.json();
@@ -106,20 +106,20 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         return { success: true, expiresIn: data.expiresIn };
       } else {
-        return { success: false, error: data.message || 'Failed to send OTP' };
+        return { success: false, error: data.message || 'Failed to send verification email' };
       }
     } catch (error) {
-      console.error('Request OTP error:', error);
+      console.error('Request email verification error:', error);
       return { success: false, error: error.message || 'Network error' };
     }
   };
 
-  const verifyRegisterOTP = async (email, otp, password) => {
+  const verifyEmailRegistration = async (uid) => {
     try {
-      const response = await fetch(`${API_BASE}/auth/register/verify-otp`, {
+      const response = await fetch(`${API_BASE}/auth/register/verify-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, password })
+        body: JSON.stringify({ uid })
       });
 
       const data = await response.json();
@@ -128,10 +128,10 @@ export const AuthProvider = ({ children }) => {
         await signInWithCustomToken(auth, data.customToken);
         return { success: true, user: data.user };
       } else {
-        return { success: false, error: data.message || 'OTP verification failed' };
+        return { success: false, error: data.message || 'Email verification failed' };
       }
     } catch (error) {
-      console.error('Verify OTP error:', error);
+      console.error('Verify email error:', error);
       return { success: false, error: error.message || 'Network error' };
     }
   };
@@ -237,8 +237,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
-    requestRegisterOTP,
-    verifyRegisterOTP,
+    requestEmailVerification,
+    verifyEmailRegistration,
     googleSignIn,
     logout,
     updateProfile,
