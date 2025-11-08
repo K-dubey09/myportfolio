@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../config/firebase';
+import { auth, googleProvider, db } from '../config/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { User, Lock, Eye, EyeOff, LogIn, UserPlus, Mail } from 'lucide-react';
 import './Login.css';
@@ -14,7 +15,61 @@ const Login = ({ onClose }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailLinkTrackingId, setEmailLinkTrackingId] = useState(null);
   const { login, googleSignIn, sendEmailLinkForLogin } = useAuth();
+
+  // Check for existing tracking ID on mount (in case of page refresh)
+  useEffect(() => {
+    const storedTrackingId = window.localStorage.getItem('emailLinkTrackingId');
+    if (storedTrackingId) {
+      console.log('🔄 Restored email link tracking ID from localStorage:', storedTrackingId);
+      setEmailLinkTrackingId(storedTrackingId);
+    }
+  }, []);
+
+  // Real-time listener for cross-device email link login detection
+  useEffect(() => {
+    if (!emailLinkTrackingId) return; // Only listen if we have a tracking ID
+
+    console.log('🎧 Setting up Firestore listener for email link login:', emailLinkTrackingId);
+
+    // Listen to Firestore document changes
+    const unsubscribe = onSnapshot(
+      doc(db, 'emailLinkLoginTracking', emailLinkTrackingId),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          console.log('📡 Email link login status update:', data.status);
+
+          if (data.status === 'completed') {
+            console.log('✅ Email link login completed on another device! Redirecting...');
+            toast.success('Signed in successfully! Redirecting...');
+            
+            // Clean up listener
+            unsubscribe();
+            
+            // Clear tracking ID from localStorage
+            window.localStorage.removeItem('emailLinkTrackingId');
+            
+            // Redirect to home after a brief delay
+            setTimeout(() => {
+              if (onClose) onClose();
+              navigate('/', { replace: true });
+            }, 1500);
+          }
+        }
+      },
+      (error) => {
+        console.error('❌ Firestore listener error:', error);
+      }
+    );
+
+    // Cleanup listener on unmount
+    return () => {
+      console.log('🧹 Cleaning up email link login listener');
+      unsubscribe();
+    };
+  }, [emailLinkTrackingId, navigate, onClose]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -133,10 +188,16 @@ const Login = ({ onClose }) => {
     setError('');
 
     try {
-      await sendEmailLinkForLogin(credentials.email);
+      const result = await sendEmailLinkForLogin(credentials.email);
+      
+      if (result.success && result.trackingId) {
+        // Store tracking ID to enable cross-device detection
+        setEmailLinkTrackingId(result.trackingId);
+        console.log('📊 Email link tracking ID set:', result.trackingId);
+      }
+      
       toast.success('Sign-in link sent! Check your email to complete login.');
-      if (onClose) onClose();
-      navigate('/email-verification');
+      // Don't close or navigate - keep page open for cross-device detection
     } catch (err) {
       console.error('Email link error:', err);
       setError(err.message || 'Failed to send email link');

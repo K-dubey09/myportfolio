@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 import { 
   signInWithCustomToken, 
   onAuthStateChanged, 
@@ -9,6 +9,7 @@ import {
   signInWithEmailLink,
   sendEmailVerification
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -216,6 +217,9 @@ export const AuthProvider = ({ children }) => {
   // Passwordless login using email link (optional login method)
   const sendEmailLinkForLogin = async (email) => {
     try {
+      // Generate a temporary tracking ID for this login request
+      const trackingId = `login_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       // Configure action code settings
       const actionCodeSettings = {
         url: window.location.origin + '/email-verification',
@@ -225,12 +229,28 @@ export const AuthProvider = ({ children }) => {
       // Send sign-in link using Firebase client SDK
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
       
-      // Save email locally
+      // Save email and tracking ID locally
       window.localStorage.setItem('emailForSignIn', email);
+      window.localStorage.setItem('emailLinkTrackingId', trackingId);
+
+      // Create Firestore document for cross-device login tracking
+      try {
+        await setDoc(doc(db, 'emailLinkLoginTracking', trackingId), {
+          email: email,
+          status: 'pending', // Will change to 'completed' when user signs in
+          createdAt: serverTimestamp(),
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+        });
+        console.log('📊 Email link login tracking created:', trackingId);
+      } catch (firestoreError) {
+        console.warn('⚠️ Failed to create login tracking:', firestoreError.message);
+        // Non-critical error, continue anyway
+      }
 
       return { 
         success: true, 
-        message: 'Sign-in link sent! Check your email.'
+        message: 'Sign-in link sent! Check your email.',
+        trackingId
       };
     } catch (error) {
       console.error('Send email link error:', error);
@@ -254,6 +274,8 @@ export const AuthProvider = ({ children }) => {
 
       // Get email from storage or user input
       let email = window.localStorage.getItem('emailForSignIn');
+      const trackingId = window.localStorage.getItem('emailLinkTrackingId');
+      
       if (!email && emailFromUser) {
         email = emailFromUser;
       }
@@ -269,8 +291,25 @@ export const AuthProvider = ({ children }) => {
       const result = await signInWithEmailLink(auth, email, window.location.href);
       const user = result.user;
 
-      // Clear stored email
+      // Clear stored email and tracking ID
       window.localStorage.removeItem('emailForSignIn');
+      window.localStorage.removeItem('emailLinkTrackingId');
+
+      // Update Firestore tracking status to 'completed' for cross-device detection
+      if (trackingId) {
+        try {
+          const { updateDoc } = await import('firebase/firestore');
+          await updateDoc(doc(db, 'emailLinkLoginTracking', trackingId), {
+            status: 'completed',
+            completedAt: serverTimestamp(),
+            uid: user.uid
+          });
+          console.log('✅ Email link login tracking updated to completed');
+        } catch (firestoreError) {
+          console.warn('⚠️ Failed to update login tracking:', firestoreError.message);
+          // Non-critical error, continue anyway
+        }
+      }
 
       // Sync with backend
       const idToken = await user.getIdToken();
