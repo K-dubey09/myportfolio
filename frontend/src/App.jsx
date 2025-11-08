@@ -171,32 +171,32 @@ function App() {
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/admin" element={<AdminRoute />} />
             <Route path="/projects" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <ProjectsPage />
               </ProtectedRoute>
             } />
             <Route path="/blogs" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <BlogsPage />
               </ProtectedRoute>
             } />
             <Route path="/testimonials" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <TestimonialsPage />
               </ProtectedRoute>
             } />
             <Route path="/experience" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <ExperiencePage />
               </ProtectedRoute>
             } />
             <Route path="/education" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <EducationPage />
               </ProtectedRoute>
             } />
             <Route path="/skills" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <SkillsPage />
               </ProtectedRoute>
             } />
@@ -206,27 +206,27 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/vlogs" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor']}>
                 <VlogsPage />
               </ProtectedRoute>
             } />
             <Route path="/services" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <ServicesPage />
               </ProtectedRoute>
             } />
             <Route path="/achievements" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <AchievementsPage />
               </ProtectedRoute>
             } />
             <Route path="/certifications" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
                 <CertificationsPage />
               </ProtectedRoute>
             } />
             <Route path="/statistics" element={
-              <ProtectedRoute allowedRoles={['admin', 'user']}>
+              <ProtectedRoute allowedRoles={['admin', 'viewer']}>
                 <StatisticsPage />
               </ProtectedRoute>
             } />
