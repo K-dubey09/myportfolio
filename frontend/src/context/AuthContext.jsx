@@ -128,12 +128,13 @@ export const AuthProvider = ({ children }) => {
             emailVerified: user.emailVerified
           });
           
-          console.log('�📧 Attempting to send verification email to:', email);
+          console.log(' Attempting to send verification email to:', email);
           
           // Action code settings for the verification email
+          // Use current origin to ensure correct redirect URL
           const actionCodeSettings = {
-            url: 'http://localhost:5176/email-verification',
-            handleCodeInApp: false
+            url: `${window.location.origin}/email-verification`,
+            handleCodeInApp: true  // CRITICAL: Must be true to redirect to our app
           };
           
           try {

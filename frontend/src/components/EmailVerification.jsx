@@ -39,12 +39,23 @@ const EmailVerification = () => {
 
       // Complete registration in backend using oobCode
       // Backend will extract the email from oobCode
+      console.log('📝 Completing registration and logging in...');
       const result = await verifyEmailRegistration(null, oobCode);
         
       if (result.success) {
         setVerificationStatus('success');
-        toast.success('Email verified! Registration complete.');
-        setTimeout(() => navigate('/'), 2000);
+        console.log('✅ User logged in successfully!');
+        console.log('🏠 Redirecting to home page...');
+        
+        // Signal to registration page that verification is complete
+        localStorage.setItem('emailVerified', 'true');
+        localStorage.setItem('verificationComplete', Date.now().toString());
+        
+        toast.success('Welcome! You are now logged in.');
+        // Redirect immediately after successful login
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 1500);
       } else {
         setErrorMessage(result.error || 'Failed to complete registration');
         setVerificationStatus('error');
@@ -81,9 +92,11 @@ const EmailVerification = () => {
       <div className="email-verification-page">
         <div className="verification-container success">
           <CheckCircle size={64} className="success-icon" />
-          <h2>Email Verified Successfully!</h2>
-          <p>Your account has been activated.</p>
-          <p className="redirect-message">Redirecting you to the homepage...</p>
+          <h2>✅ Welcome! You're All Set!</h2>
+          <p>✓ Email verified successfully</p>
+          <p>✓ Account activated</p>
+          <p>✓ You are now logged in</p>
+          <p className="redirect-message">🏠 Taking you home now...</p>
         </div>
       </div>
     );

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, ArrowLeft, CheckCircle } from 'lucide-react';
+import { db } from '../config/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import './RegistrationPage.css';
 import './EmailInstructionsStyles.css';
 
@@ -20,8 +22,53 @@ const RegistrationPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1); // 1=name/email, 2=confirm, 3=password, 4=email-sent, 5=success
-  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
+  const [userUid, setUserUid] = useState(null);
   const { requestEmailVerification } = useAuth();
+
+  // Real-time listener for cross-device verification detection
+  useEffect(() => {
+    if (!userUid) return; // Only listen if we have a UID (after registration)
+
+    console.log('🎧 Setting up Firestore listener for UID:', userUid);
+
+    // Listen to Firestore document changes
+    const unsubscribe = onSnapshot(
+      doc(db, 'verificationTracking', userUid),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          console.log('📡 Verification status update:', data.status);
+
+          if (data.status === 'verified') {
+            console.log('✅ Email verified on another device! Redirecting...');
+            toast.success('Email verified! Redirecting to login...');
+            
+            // Clean up listener
+            unsubscribe();
+            
+            // Redirect to login page after a brief delay
+            setTimeout(() => {
+              navigate('/login', { 
+                state: { 
+                  message: 'Email verified successfully! Please log in.',
+                  email: formData.email 
+                }
+              });
+            }, 1500);
+          }
+        }
+      },
+      (error) => {
+        console.error('❌ Firestore listener error:', error);
+      }
+    );
+
+    // Cleanup listener on unmount
+    return () => {
+      console.log('🧹 Cleaning up Firestore listener');
+      unsubscribe();
+    };
+  }, [userUid, navigate, formData.email]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,7 +137,7 @@ const RegistrationPage = () => {
       const result = await requestEmailVerification(formData.email, formData.name, formData.password);
       
       if (result.success) {
-        setVerificationEmailSent(true);
+        setUserUid(result.uid); // Store UID for real-time verification tracking
         setStep(4); // Move to email-sent step (step 4)
         toast.success('Verification email sent! Check your inbox and spam folder.');
       } else {

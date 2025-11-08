@@ -123,6 +123,21 @@ export const requestEmailVerification = async (req, res) => {
       pendingRegistrations.set(userRecord.uid, registrationData);
       console.log('💾 Pending registration stored');
 
+      // Create Firestore document for cross-device verification tracking
+      try {
+        await admin.firestore().collection('verificationTracking').doc(userRecord.uid).set({
+          email: email,
+          name: name,
+          status: 'pending', // Will change to 'verified' when email is verified
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        });
+        console.log('📊 Firestore verification tracking created');
+      } catch (firestoreError) {
+        console.warn('⚠️ Failed to create verification tracking:', firestoreError.message);
+        // Non-critical error, continue anyway
+      }
+
       // Return custom token so frontend can sign in and send verification email
       res.json({
         success: true,
@@ -213,6 +228,18 @@ export const verifyEmail = async (req, res) => {
     // Clean up pending registration
     pendingRegistrations.delete(userUid);
     console.log('🧹 Pending registration cleaned up');
+
+    // Update Firestore verification tracking status to 'verified'
+    try {
+      await admin.firestore().collection('verificationTracking').doc(userUid).update({
+        status: 'verified',
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log('✅ Firestore verification tracking updated to verified');
+    } catch (firestoreError) {
+      console.warn('⚠️ Failed to update verification tracking:', firestoreError.message);
+      // Non-critical error, continue anyway
+    }
 
     const customToken = await admin.auth().createCustomToken(newUser.uid, {
       role: newUser.role,
