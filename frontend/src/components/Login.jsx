@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 import toast from 'react-hot-toast';
-import { User, Lock, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, LogIn, UserPlus, Mail } from 'lucide-react';
 import './Login.css';
 
 const Login = ({ onClose }) => {
@@ -14,7 +14,7 @@ const Login = ({ onClose }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login, googleSignIn } = useAuth();
+  const { login, googleSignIn, sendEmailLinkForLogin } = useAuth();
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -114,6 +114,38 @@ const Login = ({ onClose }) => {
     navigate('/register');
   };
 
+  const handleEmailLinkLogin = async () => {
+    if (!credentials.email) {
+      setError('Please enter your email address first');
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(credentials.email)) {
+      setError('Please enter a valid email address');
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await sendEmailLinkForLogin(credentials.email);
+      toast.success('Sign-in link sent! Check your email to complete login.');
+      if (onClose) onClose();
+      navigate('/email-verification');
+    } catch (err) {
+      console.error('Email link error:', err);
+      setError(err.message || 'Failed to send email link');
+      toast.error(err.message || 'Failed to send email link');
+    }
+
+    setLoading(false);
+  };
+
   return (
     <motion.div 
       className="login-overlay"
@@ -188,7 +220,7 @@ const Login = ({ onClose }) => {
             <button 
               type="button" 
               className="forgot-password-link"
-              onClick={() => toast.info('Password reset feature coming soon!')}
+              onClick={() => toast('Password reset feature coming soon!', { icon: 'ℹ️' })}
             >
               Forgot Password?
             </button>
@@ -240,6 +272,16 @@ const Login = ({ onClose }) => {
             <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
           </svg>
           Sign in with Google
+        </button>
+
+        <button 
+          type="button"
+          className="email-link-btn"
+          onClick={handleEmailLinkLogin}
+          disabled={loading || !credentials.email}
+        >
+          <Mail size={18} />
+          Sign in with Email Link
         </button>
 
         <div className="login-divider">

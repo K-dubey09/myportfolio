@@ -1,8 +1,70 @@
-import firebaseConfig from '../config/firebase.js';
+import firebaseConfig, { admin } from '../config/firebase.js';
 import { UserHelpers } from '../utils/firestoreHelpers.js';
 
 // Store pending user registration data temporarily (in production, use Redis or database)
 const pendingRegistrations = new Map();
+
+// Handle email link sign-in completion
+export const handleEmailLinkSignIn = async (req, res) => {
+  try {
+    const { idToken, email, name } = req.body;
+
+    if (!idToken || !email) {
+      return res.status(400).json({ message: 'ID token and email are required' });
+    }
+
+    console.log('🔍 Processing email link sign-in for:', email);
+
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    console.log('✅ Firebase token verified for UID:', uid);
+
+    // Check if user exists in our database
+    let user = await UserHelpers.getUserByEmail(email);
+    let isNewUser = false;
+
+    if (!user) {
+      console.log('📝 Creating new user in database...');
+      isNewUser = true;
+      
+      // Create user in our database with Firebase UID
+      user = await UserHelpers.createUserWithUID(uid, {
+        email: email,
+        name: name || 'User',
+        emailVerified: true,
+        provider: 'email-link'
+      });
+
+      console.log('✅ New user created:', user.uid);
+    } else {
+      console.log('👤 Existing user found:', user.uid);
+      await UserHelpers.updateLastLogin(user.uid);
+    }
+
+    res.json({
+      success: true,
+      message: isNewUser ? 'Account created successfully' : 'Sign-in successful',
+      isNewUser,
+      user: {
+        uid: user.uid,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        permissions: user.permissions
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Email link sign-in error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+};
 
 // Request email verification for registration
 export const requestEmailVerification = async (req, res) => {
@@ -36,18 +98,21 @@ export const requestEmailVerification = async (req, res) => {
     }
 
     try {
-      // Create Firebase Auth user (this will automatically send verification email)
+      // Create Firebase Auth user with password
       console.log('🔥 Creating Firebase Auth user...');
-      const userRecord = await firebaseConfig.getAuth().createUser({
+      const userRecord = await admin.auth().createUser({
         email: email,
         password: password,
         displayName: name,
         emailVerified: false
       });
 
-      console.log('✅ Firebase Auth user created:', userRecord.uid);
+      // Generate custom token for the user to sign in on frontend
+      console.log('🔐 Generating custom token...');
+      const customToken = await admin.auth().createCustomToken(userRecord.uid);
+      console.log('✅ Custom token generated');
 
-      // Store pending registration data (to be completed when email is verified)
+      // Store pending registration data
       const registrationData = {
         uid: userRecord.uid,
         email: email,
@@ -58,29 +123,18 @@ export const requestEmailVerification = async (req, res) => {
       pendingRegistrations.set(userRecord.uid, registrationData);
       console.log('💾 Pending registration stored');
 
-      // Generate email verification link
-      console.log('📧 Generating email verification link...');
-      const link = await firebaseConfig.getAuth().generateEmailVerificationLink(email);
-      console.log('🔗 Email verification link generated:', link);
-
-      // In a real app, you would send this link via email service
-      // For now, we'll return it in the response for testing
-      console.log('✉️ Email verification link ready');
-
+      // Return custom token so frontend can sign in and send verification email
       res.json({
-        message: 'Firebase user created. Verification link generated.',
-        verificationLink: link, // In production, remove this and send via email
+        success: true,
+        message: 'Account created! Verification email will be sent.',
+        customToken: customToken,
         uid: userRecord.uid,
+        email: email,
         expiresIn: 86400
       });
 
     } catch (firebaseError) {
       console.error('❌ Firebase Auth error:', firebaseError);
-      
-      if (firebaseError.code === 'auth/email-already-exists') {
-        return res.status(400).json({ message: 'Email is already registered with Firebase Auth' });
-      }
-      
       throw firebaseError;
     }
   } catch (error) {
@@ -90,19 +144,38 @@ export const requestEmailVerification = async (req, res) => {
   }
 };
 
-// Complete registration after Firebase email verification
+// Complete registration after Firebase email verification  
 export const verifyEmail = async (req, res) => {
   try {
-    const { uid } = req.body;
+    const { uid, oobCode } = req.body;
 
-    if (!uid) {
-      return res.status(400).json({ message: 'User ID is required' });
+    console.log('🔍 Verifying email with:', { uid, hasOobCode: !!oobCode });
+
+    let firebaseUser;
+    
+    // If we have oobCode, verify it and get the email
+    if (oobCode) {
+      try {
+        // Check the action code to get email
+        const info = await admin.auth().checkActionCode(oobCode);
+        const email = info.data.email;
+        console.log('� Email from action code:', email);
+        
+        // Get user by email
+        firebaseUser = await admin.auth().getUserByEmail(email);
+      } catch (codeError) {
+        console.error('❌ Invalid or expired action code:', codeError);
+        return res.status(400).json({ message: 'Invalid or expired verification link' });
+      }
+    } else if (uid) {
+      // Fallback to UID if provided
+      firebaseUser = await admin.auth().getUser(uid);
+    } else {
+      return res.status(400).json({ message: 'Either UID or verification code is required' });
     }
 
-    console.log('🔍 Verifying email for Firebase user:', uid);
-
-    // Get Firebase user to check email verification status
-    const firebaseUser = await firebaseConfig.getAuth().getUser(uid);
+    const userUid = firebaseUser.uid;
+    console.log('👤 Firebase user UID:', userUid);
     
     if (!firebaseUser.emailVerified) {
       return res.status(400).json({ message: 'Email not yet verified. Please check your email and click the verification link.' });
@@ -111,13 +184,13 @@ export const verifyEmail = async (req, res) => {
     console.log('✅ Firebase email verified for:', firebaseUser.email);
 
     // Check if we have pending registration data
-    const pendingData = pendingRegistrations.get(uid);
+    const pendingData = pendingRegistrations.get(userUid);
     if (!pendingData) {
       return res.status(400).json({ message: 'No pending registration found for this user' });
     }
 
     if (Date.now() > pendingData.expiresAt) {
-      pendingRegistrations.delete(uid);
+      pendingRegistrations.delete(userUid);
       return res.status(400).json({ message: 'Registration has expired. Please register again.' });
     }
 
@@ -131,17 +204,17 @@ export const verifyEmail = async (req, res) => {
     console.log('📝 Creating user in our database...');
     
     // Create user in our database with the same UID as Firebase
-    const newUser = await UserHelpers.createUserWithUID(uid, { 
+    const newUser = await UserHelpers.createUserWithUID(userUid, { 
       email: firebaseUser.email, 
       name: pendingData.name,
       emailVerified: true 
     });
 
     // Clean up pending registration
-    pendingRegistrations.delete(uid);
+    pendingRegistrations.delete(userUid);
     console.log('🧹 Pending registration cleaned up');
 
-    const customToken = await firebaseConfig.getAuth().createCustomToken(newUser.uid, {
+    const customToken = await admin.auth().createCustomToken(newUser.uid, {
       role: newUser.role,
       permissions: newUser.permissions
     });
@@ -159,8 +232,9 @@ export const verifyEmail = async (req, res) => {
         permissions: newUser.permissions
       }
     });
+
   } catch (error) {
-    console.error('❌ Verify email error:', error);
+    console.error('❌ Complete email link sign-in error:', error);
     console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -369,10 +443,10 @@ export const googleAuth = async (req, res) => {
         userNumber: totalUsers + 1,
         authProvider: 'google',
         emailVerified: true,
-        lastLogin: firebaseConfig.admin.firestore.FieldValue.serverTimestamp(),
+        lastLogin: admin.firestore.FieldValue.serverTimestamp(),
         permissions,
-        createdAt: firebaseConfig.admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebaseConfig.admin.firestore.FieldValue.serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
 
       await usersCollection.doc(uid).set(userDoc);

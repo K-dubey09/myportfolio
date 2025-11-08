@@ -1,211 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../config/firebase';
+import { applyActionCode } from 'firebase/auth';
 import toast from 'react-hot-toast';
-import { CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import './EmailVerification.css';
 
 const EmailVerification = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { verifyEmailRegistration } = useAuth();
-  
+  const [loading, setLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState('verifying'); // 'verifying', 'success', 'error'
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      // This page will be accessed after Firebase email verification
-      // We need to check if user is authenticated and complete registration
+    const handleEmailVerification = async () => {
+    try {
+      // Get the action code from URL parameters
+      const mode = searchParams.get('mode');
+      const oobCode = searchParams.get('oobCode');
       
-      // Wait for Firebase auth state to be determined
-      setTimeout(async () => {
-        const currentUser = auth.currentUser;
+      console.log('🔍 Email verification initiated', { mode, oobCode });
+
+      if (mode !== 'verifyEmail' || !oobCode) {
+        // This verification page is only for email verification from registration
+        // Not for passwordless email link sign-in
+        setErrorMessage('Invalid verification link. Please request a new one.');
+        setVerificationStatus('error');
+        setLoading(false);
+        return;
+      }
+
+      // Apply the email verification code
+      await applyActionCode(auth, oobCode);
+      console.log('✅ Email verified successfully in Firebase');
+
+      // Complete registration in backend using oobCode
+      // Backend will extract the email from oobCode
+      const result = await verifyEmailRegistration(null, oobCode);
         
-        if (!currentUser) {
-          setVerificationStatus('error');
-          setErrorMessage('No authenticated user found. Please click the verification link in your email.');
-          toast.error('Please click the verification link in your email first');
-          return;
-        }
-
-        if (!currentUser.emailVerified) {
-          setVerificationStatus('error');
-          setErrorMessage('Email not yet verified. Please check your email and click the verification link.');
-          toast.error('Email not verified');
-          return;
-        }
-
-        try {
-          // Complete registration in our backend
-          const result = await verifyEmailRegistration(currentUser.uid);
-          
-          if (result.success) {
-            setVerificationStatus('success');
-            toast.success('Email verified successfully! Welcome to the platform!');
-            // Redirect to dashboard after 3 seconds
-            setTimeout(() => navigate('/'), 3000);
-          } else {
-            setVerificationStatus('error');
-            setErrorMessage(result.error || 'Registration completion failed');
-            toast.error(result.error || 'Registration completion failed');
-          }
-        } catch (error) {
-          console.error('Registration completion error:', error);
-          setVerificationStatus('error');
-          setErrorMessage('Network error occurred during registration completion');
-          toast.error('Network error. Please try again.');
-        }
-      }, 1000); // Give Firebase auth time to initialize
-    };
-
-    verifyEmail();
-  }, [verifyEmailRegistration, navigate]);
-
-  const handleRetryRegistration = () => {
-    navigate('/register');
+      if (result.success) {
+        setVerificationStatus('success');
+        toast.success('Email verified! Registration complete.');
+        setTimeout(() => navigate('/'), 2000);
+      } else {
+        setErrorMessage(result.error || 'Failed to complete registration');
+        setVerificationStatus('error');
+        toast.error(result.error);
+      }
+        
+    } catch (error) {
+      console.error('❌ Email verification error:', error);
+      setErrorMessage(error.message || 'Verification failed');
+      setVerificationStatus('error');
+      toast.error('Verification failed: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoToLogin = () => {
-    navigate('/login');
-  };
+    handleEmailVerification();
+  }, [searchParams, verifyEmailRegistration, navigate]);
 
-  return (
-    <div className="email-verification-page">
-      <div className="container">
-        <motion.div 
-          className="verification-card"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Loading State */}
-          {verificationStatus === 'verifying' && (
-            <motion.div 
-              className="verification-content verifying"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Loader2 size={64} className="verification-icon spinning" />
-              <h2>Verifying Your Email</h2>
-              <p>Please wait while we verify your email address...</p>
-            </motion.div>
-          )}
-
-          {/* Success State */}
-          {verificationStatus === 'success' && (
-            <motion.div 
-              className="verification-content success"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", duration: 0.8, delay: 0.2 }}
-              >
-                <CheckCircle size={64} className="verification-icon success-icon" />
-              </motion.div>
-              <h2>Email Verified! 🎉</h2>
-              <p>Your account has been successfully created and verified.</p>
-              <div className="success-details">
-                <p>You now have <strong>Viewer</strong> access and can:</p>
-                <ul>
-                  <li>✨ Access exclusive blog posts</li>
-                  <li>🎥 Watch premium video content</li>
-                  <li>🖼️ Browse complete image gallery</li>
-                  <li>💼 View detailed project portfolios</li>
-                </ul>
-              </div>
-              <p className="redirect-info">Redirecting you to the homepage in a few seconds...</p>
-              
-              <motion.button 
-                onClick={() => navigate('/')}
-                className="success-button"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.8 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Go to Homepage
-              </motion.button>
-            </motion.div>
-          )}
-
-          {/* Error State */}
-          {verificationStatus === 'error' && (
-            <motion.div 
-              className="verification-content error"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <XCircle size={64} className="verification-icon error-icon" />
-              <h2>Verification Failed</h2>
-              <p className="error-message">{errorMessage}</p>
-              
-              <div className="error-help">
-                <h4>Possible reasons:</h4>
-                <ul>
-                  <li>The verification link has expired (links are valid for 24 hours)</li>
-                  <li>The link has already been used</li>
-                  <li>The link is malformed or corrupted</li>
-                  <li>An account with this email already exists</li>
-                </ul>
-              </div>
-
-              <div className="error-actions">
-                <motion.button 
-                  onClick={handleRetryRegistration}
-                  className="retry-button"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Try Registration Again
-                </motion.button>
-
-                <motion.button 
-                  onClick={handleGoToLogin}
-                  className="login-button"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.4 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Go to Login
-                </motion.button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Navigation */}
-          <motion.div 
-            className="navigation"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <button 
-              onClick={() => navigate('/')}
-              className="nav-button"
-            >
-              <ArrowLeft size={16} />
-              Back to Homepage
-            </button>
-          </motion.div>
-        </motion.div>
+  if (loading) {
+    return (
+      <div className="email-verification-page">
+        <div className="verification-container">
+          <Loader2 className="spinner" size={48} />
+          <h2>Verifying your email...</h2>
+          <p>Please wait while we complete your verification.</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (verificationStatus === 'success') {
+    return (
+      <div className="email-verification-page">
+        <div className="verification-container success">
+          <CheckCircle size={64} className="success-icon" />
+          <h2>Email Verified Successfully!</h2>
+          <p>Your account has been activated.</p>
+          <p className="redirect-message">Redirecting you to the homepage...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (verificationStatus === 'error') {
+    return (
+      <div className="email-verification-page">
+        <div className="verification-container error">
+          <XCircle size={64} className="error-icon" />
+          <h2>Verification Failed</h2>
+          <p className="error-message">{errorMessage}</p>
+          <button 
+            onClick={() => navigate('/register')} 
+            className="retry-btn"
+          >
+            Try Again
+          </button>
+          <button 
+            onClick={() => navigate('/login')} 
+            className="login-btn-link"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default EmailVerification;

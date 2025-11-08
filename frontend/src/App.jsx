@@ -167,6 +167,7 @@ function App() {
             <Route path="/" element={<PortfolioSite />} />
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/register" element={<RegistrationPage />} />
+            <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/admin" element={<AdminRoute />} />
             <Route path="/projects" element={

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, ArrowLeft, CheckCircle } from 'lucide-react';
 import './RegistrationPage.css';
+import './EmailInstructionsStyles.css';
 
 const RegistrationPage = () => {
   const navigate = useNavigate();
@@ -20,7 +21,6 @@ const RegistrationPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1); // 1=name/email, 2=confirm, 3=password, 4=email-sent, 5=success
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
-  const [verificationLink, setVerificationLink] = useState('');
   const { requestEmailVerification } = useAuth();
 
   const handleChange = (e) => {
@@ -91,12 +91,8 @@ const RegistrationPage = () => {
       
       if (result.success) {
         setVerificationEmailSent(true);
-        // Store the verification link if provided (for development)
-        if (result.verificationLink) {
-          setVerificationLink(result.verificationLink);
-        }
         setStep(4); // Move to email-sent step (step 4)
-        toast.success('Verification link generated! Check the console for the link.');
+        toast.success('Verification email sent! Check your inbox and spam folder.');
       } else {
         // Check if error is about existing user
         if (result.error && result.error.includes('already exists')) {
@@ -562,34 +558,16 @@ const RegistrationPage = () => {
                 <p>We've sent a verification link to:</p>
                 <strong>{formData.email}</strong>
                 <span className="email-hint">
-                  Click the verification link below to complete your registration.
+                  Click the verification link in your email to complete your registration.
                   The link will expire in 24 hours.
                 </span>
+                <div className="email-instructions">
+                  <p>📧 <strong>Check your inbox</strong> for an email from Firebase</p>
+                  <p>📂 Don't see it? <strong>Check your spam/junk folder</strong></p>
+                  <p>🔗 <strong>Click the verification link</strong> in the email</p>
+                  <p>✅ You'll be redirected back here once verified</p>
+                </div>
               </motion.div>
-
-              {verificationLink && (
-                <motion.div 
-                  className="verification-link-section"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 }}
-                >
-                  <h4>Development Mode - Click this link to verify:</h4>
-                  <div className="verification-link-container">
-                    <a 
-                      href={verificationLink}
-                      className="verification-link"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      🔗 Click to Verify Email
-                    </a>
-                  </div>
-                  <p className="dev-note">
-                    📧 In production, this link would be sent to your email automatically.
-                  </p>
-                </motion.div>
-              )}
 
               <motion.div 
                 className="email-actions"
@@ -597,7 +575,7 @@ const RegistrationPage = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: 0.4 }}
               >
-                <p>Need a new verification link?</p>
+                <p>Didn't receive the email?</p>
                 
                 <button 
                   type="button" 

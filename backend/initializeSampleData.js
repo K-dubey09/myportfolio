@@ -64,7 +64,7 @@ const sampleData = {
     phone: "+1234567890",
     bio: "Passionate developer with 5+ years of experience in web development",
     location: "San Francisco, CA",
-    avatar: "https://via.placeholder.com/150",
+    avatar: "https://picsum.photos/150/150?random=1",
     socialLinks: {
       github: "https://github.com/johndoe",
       linkedin: "https://linkedin.com/in/johndoe",
@@ -89,7 +89,7 @@ const sampleData = {
       description: "Full-stack e-commerce platform with React and Node.js",
       technologies: ["React", "Node.js", "MongoDB", "Stripe"],
       url: "https://github.com/johndoe/ecommerce",
-      imageUrl: "https://via.placeholder.com/400x300",
+      imageUrl: "https://picsum.photos/400/300?random=2",
       featured: true,
       status: "completed",
       startDate: "2023-01-01",
@@ -100,7 +100,7 @@ const sampleData = {
       description: "Collaborative task management application",
       technologies: ["React", "Firebase", "Material-UI"],
       url: "https://github.com/johndoe/taskapp",
-      imageUrl: "https://via.placeholder.com/400x300",
+      imageUrl: "https://picsum.photos/400/300?random=3",
       featured: true,
       status: "completed",
       startDate: "2023-07-01",
@@ -111,7 +111,7 @@ const sampleData = {
       description: "Personal portfolio website with admin panel",
       technologies: ["React", "Node.js", "Firebase"],
       url: "https://johndoe.dev",
-      imageUrl: "https://via.placeholder.com/400x300",
+      imageUrl: "https://picsum.photos/400/300?random=4",
       featured: true,
       status: "ongoing",
       startDate: "2024-01-01"
@@ -178,7 +178,7 @@ const sampleData = {
       excerpt: "Learn the basics of React Hooks and how to use them effectively",
       author: "John Doe",
       tags: ["React", "JavaScript", "Frontend"],
-      imageUrl: "https://via.placeholder.com/800x400",
+      imageUrl: "https://picsum.photos/800/400?random=5",
       featured: true,
       status: "published",
       views: 1500,
@@ -190,7 +190,7 @@ const sampleData = {
       excerpt: "Step-by-step guide to creating robust REST APIs with Express",
       author: "John Doe",
       tags: ["Node.js", "Backend", "API"],
-      imageUrl: "https://via.placeholder.com/800x400",
+      imageUrl: "https://picsum.photos/800/400?random=6",
       featured: true,
       status: "published",
       views: 2200,
@@ -203,7 +203,7 @@ const sampleData = {
       title: "Day in the Life of a Developer",
       description: "Follow me through a typical day as a full-stack developer",
       videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      thumbnailUrl: "https://via.placeholder.com/640x360",
+      thumbnailUrl: "https://picsum.photos/640/360?random=7",
       duration: "15:30",
       featured: true,
       status: "published",
@@ -216,14 +216,14 @@ const sampleData = {
     {
       title: "Project Screenshot 1",
       description: "Homepage of e-commerce platform",
-      imageUrl: "https://via.placeholder.com/800x600",
+      imageUrl: "https://picsum.photos/800/600?random=8",
       category: "projects",
       tags: ["e-commerce", "frontend"]
     },
     {
       title: "Project Screenshot 2",
       description: "Dashboard of task management app",
-      imageUrl: "https://via.placeholder.com/800x600",
+      imageUrl: "https://picsum.photos/800/600?random=9",
       category: "projects",
       tags: ["dashboard", "ui"]
     }
@@ -235,7 +235,7 @@ const sampleData = {
       position: "Product Manager",
       company: "Tech Corp",
       message: "John is an exceptional developer who consistently delivers high-quality work",
-      avatar: "https://via.placeholder.com/100",
+      avatar: "https://picsum.photos/100/100?random=10",
       rating: 5,
       featured: true
     },
@@ -244,7 +244,7 @@ const sampleData = {
       position: "CTO",
       company: "StartupXYZ",
       message: "Working with John has been a pleasure. His technical skills are outstanding",
-      avatar: "https://via.placeholder.com/100",
+      avatar: "https://picsum.photos/100/100?random=11",
       rating: 5,
       featured: true
     }

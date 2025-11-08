@@ -54,7 +54,13 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174', 'http://localhost:5175'],
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5173', 
+    'http://localhost:3000', 
+    'http://localhost:5174', 
+    'http://localhost:5175', 
+    'http://localhost:5176'
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -131,6 +137,7 @@ app.post('/api/auth/register', AuthController.register);
 app.post('/api/auth/register/request-verification', AuthController.requestEmailVerification);
 app.post('/api/auth/register/verify-email', AuthController.verifyEmail);
 app.post('/api/auth/login', AuthController.login);
+app.post('/api/auth/email-link-signin', AuthController.handleEmailLinkSignIn); // Email link login option
 app.post('/api/auth/google', AuthController.googleAuth);
 app.post('/api/auth/logout', authenticateToken, AuthController.logout);
 app.get('/api/auth/profile', authenticateToken, AuthController.getProfile);
