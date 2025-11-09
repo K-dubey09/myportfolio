@@ -8,6 +8,7 @@ import PortfolioSite from './components/PortfolioSite'
 import AdminPanel from '../Admin/AdminPanel'
 import RegistrationPage from './components/RegistrationPage'
 import EmailVerification from './components/EmailVerification'
+import EmailVerificationHandler from './components/EmailVerificationHandler';
 import Login from './components/Login'
 import ProjectsPage from './pages/ProjectsPage'
 import BlogsPage from './pages/BlogsPage'
@@ -156,113 +157,36 @@ const ProfileRoute = () => {
   return <ProfilePage />
 }
 
-function App() {
+const App = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <div className="app">
-            <ConditionalNavigation />
-            <Routes>
+          <Toaster position="top-center" reverseOrder={false} />
+          <ConditionalNavigation />
+          <Routes>
             <Route path="/" element={<PortfolioSite />} />
-            <Route path="/login" element={<LoginRoute />} />
             <Route path="/register" element={<RegistrationPage />} />
-            <Route path="/email-verification" element={<EmailVerification />} />
+            <Route path="/login" element={<LoginRoute />} />
             <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/admin" element={<AdminRoute />} />
-            <Route path="/projects" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <ProjectsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/blogs" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <BlogsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/testimonials" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <TestimonialsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/experience" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <ExperiencePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/education" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <EducationPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/skills" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <SkillsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/gallery" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor']}>
-                <GalleryPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/vlogs" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor']}>
-                <VlogsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/services" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <ServicesPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/achievements" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <AchievementsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/certifications" element={
-              <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer']}>
-                <CertificationsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/statistics" element={
-              <ProtectedRoute allowedRoles={['admin', 'viewer']}>
-                <StatisticsPage />
-              </ProtectedRoute>
-            } />
+            <Route path="/email-verification-pending" element={<EmailVerificationHandler />} />
+            <Route path="/admin" element={<AdminPanelWrapper />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/blogs" element={<BlogsPage />} />
+            <Route path="/testimonials" element={<TestimonialsPage />} />
+            <Route path="/experience" element={<ExperiencePage />} />
+            <Route path="/education" element={<EducationPage />} />
+            <Route path="/skills" element={<SkillsPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/vlogs" element={<VlogsPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/achievements" element={<AchievementsPage />} />
+            <Route path="/certifications" element={<CertificationsPage />} />
+            <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/profile" element={<ProfileRoute />} />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            } />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-                borderRadius: '10px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-              },
-              success: {
-                iconTheme: {
-                  primary: '#4ade80',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
-                },
-              },
-            }}
-          />
-        </div>
-      </Router>
+        </Router>
       </AuthProvider>
     </ThemeProvider>
   )
@@ -278,5 +202,14 @@ const ConditionalNavigation = () => {
   }
   return <Navigation />
 }
+
+// Hide Navigation on AdminPanel
+const AdminPanelWrapper = () => {
+  return (
+    <>
+      <AdminPanel />
+    </>
+  );
+};
 
 export default App

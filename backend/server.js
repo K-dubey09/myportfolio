@@ -136,6 +136,7 @@ const initializeServer = async () => {
 app.post('/api/auth/register', AuthController.register);
 app.post('/api/auth/register/request-verification', AuthController.requestEmailVerification);
 app.post('/api/auth/register/verify-email', AuthController.verifyEmail);
+app.get('/api/auth/verification-status/:uid', AuthController.getVerificationStatus);
 app.post('/api/auth/login', AuthController.login);
 app.post('/api/auth/email-link-signin', AuthController.handleEmailLinkSignIn); // Email link login option
 app.post('/api/auth/google', AuthController.googleAuth);

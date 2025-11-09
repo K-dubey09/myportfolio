@@ -159,111 +159,149 @@ export const requestEmailVerification = async (req, res) => {
   }
 };
 
-// Complete registration after Firebase email verification  
+// Complete registration after Firebase email verification
 export const verifyEmail = async (req, res) => {
   try {
-    const { uid, oobCode } = req.body;
+    const { oobCode } = req.body;
 
-    console.log('🔍 Verifying email with:', { uid, hasOobCode: !!oobCode });
-
-    let firebaseUser;
-    
-    // If we have oobCode, verify it and get the email
-    if (oobCode) {
-      try {
-        // Check the action code to get email
-        const info = await admin.auth().checkActionCode(oobCode);
-        const email = info.data.email;
-        console.log('� Email from action code:', email);
-        
-        // Get user by email
-        firebaseUser = await admin.auth().getUserByEmail(email);
-      } catch (codeError) {
-        console.error('❌ Invalid or expired action code:', codeError);
-        return res.status(400).json({ message: 'Invalid or expired verification link' });
-      }
-    } else if (uid) {
-      // Fallback to UID if provided
-      firebaseUser = await admin.auth().getUser(uid);
-    } else {
-      return res.status(400).json({ message: 'Either UID or verification code is required' });
+    if (!oobCode) {
+      return res.status(400).json({ message: 'Verification code is required.' });
     }
 
+    console.log('🔍 Verifying email with oobCode...');
+
+    // 1. Check the action code to get user info (email)
+    const info = await admin.auth().checkActionCode(oobCode);
+    const email = info.data.email;
+    console.log('✅ Action code is valid for email:', email);
+
+    // 2. Apply the action code. This marks the user as `emailVerified` in Firebase Auth.
+    await admin.auth().applyActionCode(oobCode);
+    console.log('✅ Email verified in Firebase Authentication for:', email);
+
+    // 3. Get the user from Firebase to get their UID
+    const firebaseUser = await admin.auth().getUserByEmail(email);
     const userUid = firebaseUser.uid;
     console.log('👤 Firebase user UID:', userUid);
-    
-    if (!firebaseUser.emailVerified) {
-      return res.status(400).json({ message: 'Email not yet verified. Please check your email and click the verification link.' });
-    }
 
-    console.log('✅ Firebase email verified for:', firebaseUser.email);
+    // 4. Update our Firestore verification tracking document
+    const trackingDocRef = admin.firestore().collection('verificationTracking').doc(userUid);
+    const trackingDoc = await trackingDocRef.get();
 
-    // Check if we have pending registration data
-    const pendingData = pendingRegistrations.get(userUid);
-    if (!pendingData) {
-      return res.status(400).json({ message: 'No pending registration found for this user' });
-    }
-
-    if (Date.now() > pendingData.expiresAt) {
-      pendingRegistrations.delete(userUid);
-      return res.status(400).json({ message: 'Registration has expired. Please register again.' });
-    }
-
-    // Check if user already exists in our database
-    const existingUser = await UserHelpers.getUserByEmail(firebaseUser.email);
-    if (existingUser) {
-      pendingRegistrations.delete(uid);
-      return res.status(400).json({ message: 'User already exists in our database' });
-    }
-
-    console.log('📝 Creating user in our database...');
-    
-    // Create user in our database with the same UID as Firebase
-    const newUser = await UserHelpers.createUserWithUID(userUid, { 
-      email: firebaseUser.email, 
-      name: pendingData.name,
-      emailVerified: true 
-    });
-
-    // Clean up pending registration
-    pendingRegistrations.delete(userUid);
-    console.log('🧹 Pending registration cleaned up');
-
-    // Update Firestore verification tracking status to 'verified'
-    try {
-      await admin.firestore().collection('verificationTracking').doc(userUid).update({
+    if (trackingDoc.exists) {
+      await trackingDocRef.update({
         status: 'verified',
         verifiedAt: admin.firestore.FieldValue.serverTimestamp()
       });
-      console.log('✅ Firestore verification tracking updated to verified');
-    } catch (firestoreError) {
-      console.warn('⚠️ Failed to update verification tracking:', firestoreError.message);
-      // Non-critical error, continue anyway
+      console.log('📊 Firestore verification tracking updated to "verified"');
+    } else {
+      // If for some reason the tracking doc doesn't exist, create it now as verified.
+      await trackingDocRef.set({
+        email: email,
+        status: 'verified',
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp() // Fallback
+      });
+       console.warn(`⚠️ Verification tracking doc for ${userUid} did not exist. Created it now.`);
     }
 
-    const customToken = await admin.auth().createCustomToken(newUser.uid, {
-      role: newUser.role,
-      permissions: newUser.permissions
-    });
+    // The user is NOT created in the main 'users' collection here.
+    // That happens in the `getVerificationStatus` controller when the original device polls.
+    // This endpoint's only job is to verify the email and update the tracking status.
 
-    console.log('✅ Registration completed successfully');
-    
-    res.status(201).json({
-      message: 'Email verified and registration successful',
-      customToken,
-      user: {
-        uid: newUser.uid,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        permissions: newUser.permissions
-      }
+    res.status(200).json({
+      success: true,
+      message: 'Email has been successfully verified.'
     });
 
   } catch (error) {
-    console.error('❌ Complete email link sign-in error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Email verification completion error:', error);
+    if (error.code === 'auth/invalid-action-code') {
+      return res.status(400).json({ message: 'Invalid or expired verification link. Please try registering again.' });
+    }
+    res.status(500).json({ message: 'Server error during email verification.', error: error.message });
+  }
+};
+
+export const getVerificationStatus = async (req, res) => {
+  try {
+    const { uid } = req.params;
+    if (!uid) {
+      return res.status(400).json({ message: 'User ID is required.' });
+    }
+
+    console.log(`[Status Check] Checking verification for UID: ${uid}`);
+
+    const trackingDocRef = admin.firestore().collection('verificationTracking').doc(uid);
+    const trackingDoc = await trackingDocRef.get();
+
+    if (!trackingDoc.exists) {
+      console.log(`[Status Check] No tracking document found for UID: ${uid}`);
+      // To prevent polling indefinitely for a non-existent registration, we should check if the user exists and is verified.
+      try {
+        const user = await admin.auth().getUser(uid);
+        if (user.emailVerified) {
+           console.log(`[Status Check] User ${uid} is already verified in Firebase Auth.`);
+           // If user exists and is verified, but no tracking doc, something went wrong.
+           // Let's try to recover by creating a user record if it doesn't exist.
+           let dbUser = await UserHelpers.getUserById(uid);
+           if (!dbUser) {
+             dbUser = await UserHelpers.createUserWithUID(uid, {
+               email: user.email,
+               name: user.displayName || 'User',
+               emailVerified: true,
+             });
+           }
+           const customToken = await admin.auth().createCustomToken(uid);
+           return res.json({ status: 'verified', customToken, user: dbUser });
+        }
+      } catch (userError) {
+        // User does not exist in Firebase Auth either.
+        return res.status(404).json({ status: 'not_found', message: 'Registration not found.' });
+      }
+      return res.status(404).json({ status: 'not_found', message: 'Registration process not initiated.' });
+    }
+
+    const trackingData = trackingDoc.data();
+    console.log(`[Status Check] Tracking status for ${uid}: ${trackingData.status}`);
+
+    if (trackingData.status === 'verified') {
+      // The user is verified. Let's ensure they exist in our main 'users' collection.
+      let user = await UserHelpers.getUserById(uid);
+      if (!user) {
+        console.log(`[Status Check] User ${uid} verified, but not in DB. Creating now.`);
+        // If the user document doesn't exist, create it now.
+        const firebaseUser = await admin.auth().getUser(uid);
+        user = await UserHelpers.createUserWithUID(uid, {
+          email: firebaseUser.email,
+          name: trackingData.name || firebaseUser.displayName,
+          emailVerified: true,
+        });
+      }
+      
+      // Generate a custom token for login
+      const customToken = await admin.auth().createCustomToken(uid);
+      console.log(`[Status Check] Generated token for verified user ${uid}.`);
+      
+      return res.json({
+        status: 'verified',
+        customToken,
+        user: {
+          uid: user.uid,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          permissions: user.permissions,
+        },
+      });
+    }
+
+    // If not verified, just return the pending status.
+    res.json({ status: 'pending' });
+
+  } catch (error) {
+    console.error('❌ Error in getVerificationStatus:', error);
+    res.status(500).json({ message: 'Server error while checking status.', error: error.message });
   }
 };
 
