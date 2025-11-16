@@ -6492,6 +6492,138 @@ a,
     width: 36px;
     height: 36px;
   }
+}
+
+/* Gallery Section Shapes */
+.shape-gallery-1 {
+  width: 370px;
+  height: 370px;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  top: 10%;
+  left: -185px;
+  animation: float 20s ease-in-out infinite;
+}
+
+.shape-gallery-2 {
+  width: 310px;
+  height: 310px;
+  background: linear-gradient(225deg, #8b5cf6, #ec4899);
+  bottom: 10%;
+  right: -155px;
+  animation: float 27s ease-in-out infinite reverse;
+}
+
+.shape-gallery-3 {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, #ec4899, transparent);
+  top: 50%;
+  right: 15%;
+  animation: pulse 16s ease-in-out infinite;
+}
+
+/* Testimonial Section Shapes */
+.shape-testimonial-1 {
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  top: 20%;
+  right: -175px;
+  animation: float 25s ease-in-out infinite;
+}
+
+.shape-testimonial-2 {
+  width: 290px;
+  height: 290px;
+  background: radial-gradient(circle, #06b6d4, transparent);
+  bottom: 20%;
+  left: 10%;
+  animation: pulse 21s ease-in-out infinite;
+}
+
+/* Contact Section Shapes */
+.shape-contact-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  top: 15%;
+  left: -200px;
+  animation: float 22s ease-in-out infinite;
+}
+
+.shape-contact-2 {
+  width: 330px;
+  height: 330px;
+  background: linear-gradient(225deg, #3b82f6, #8b5cf6);
+  bottom: 15%;
+  right: -165px;
+  animation: float 28s ease-in-out infinite reverse;
+}
+
+.shape-contact-3 {
+  width: 270px;
+  height: 270px;
+  background: radial-gradient(circle, #10b981, transparent);
+  top: 50%;
+  right: 20%;
+  animation: pulse 19s ease-in-out infinite;
+}
+
+/* Gallery Grid Animations */
+.gallery-item-modern {
+  animation: fadeInScale 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Testimonial Cards Animations */
+.testimonial-card-modern {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Contact Cards Animations */
+.contact-info-card-modern,
+.contact-form-card-modern {
+  animation: fadeInUp 0.7s ease-out forwards;
+  opacity: 0;
+}
+
+.contact-info-card-modern {
+  animation-delay: 0.1s;
+}
+
+.contact-form-card-modern {
+  animation-delay: 0.2s;
+}
+
+/* Responsive Gallery/Testimonial/Contact Shapes */
+@media (max-width: 768px) {
+  .shape-gallery-1,
+  .shape-testimonial-1,
+  .shape-contact-1 {
+    width: 200px;
+    height: 200px;
+  }
+
+  .shape-gallery-2,
+  .shape-gallery-3,
+  .shape-testimonial-2,
+  .shape-contact-2,
+  .shape-contact-3 {
+    width: 150px;
+    height: 150px;
+  }
 
   .hero-title {
     font-size: 1.4rem;
