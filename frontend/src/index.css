@@ -1,0 +1,21 @@
+/* Global Font Family - Elegant Classical Serif */
+* {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+}
+
+body,
+html,
+input,
+button,
+textarea,
+select,
+option {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+}
+
+/* Ensure all text elements use the serif font */
+h1, h2, h3, h4, h5, h6,
+p, span, a, label, li, div,
+.btn, .nav-links, .card {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+}

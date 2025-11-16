@@ -7,11 +7,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { useLocation, useNavigate } from 'react-router-dom';
+import LanguageSelector from './LanguageSelector';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
   const { theme, isAnimated, setSpecificTheme, toggleAnimations } = useTheme();
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -101,7 +104,6 @@ const Navigation = () => {
     setSpecificTheme(selectedTheme);
     setIsThemeDropdownOpen(false);
     setIsDropdownOpen(false);
-    setShowAdvanced(false);
   };
 
   const handleDropdownMouseEnter = () => {
@@ -125,39 +127,39 @@ const Navigation = () => {
   const dropdownItems = [
     // Only show Profile option for non-admin users 
     // (admin users should use the Profile tab in the admin panel instead)
-    ...(user && user.role !== 'admin' ? [{ name: 'Profile', icon: UserCircle, action: () => navigate('/profile') }] : []),
-    { name: 'Settings', icon: Settings, action: () => navigate('/settings') },
+    ...(user && user.role !== 'admin' ? [{ name: t('nav.profile'), icon: UserCircle, action: () => navigate('/profile') }] : []),
+    { name: t('nav.settings'), icon: Settings, action: () => navigate('/settings') },
     {
-      name: 'Theme',
+      name: t('nav.theme'),
       icon: Palette,
       action: () => setIsThemeDropdownOpen((prev) => !prev),
       isThemeSelector: true,
       hasSubmenu: true
     },
     {
-      name: 'Animations',
+      name: t('nav.animations'),
       icon: Star,
       action: toggleAnimations,
       isToggler: true,
       isActive: isAnimated
     },
-    { name: 'Logout', icon: LogOut, action: logout, danger: true }
+    { name: t('nav.logout'), icon: LogOut, action: logout, danger: true }
   ];
 
   const mainNavLinks = [
-    { name: 'Home', target: 'top', icon: Home },
-    { name: 'Services', target: 'services', icon: Layers },
-    { name: 'Projects', target: 'projects', icon: Briefcase },
-    { name: 'Experience', target: 'experience', icon: Briefcase },
-    { name: 'Education', target: 'education', icon: GraduationCap },
-    { name: 'Blogs', target: 'blogs', icon: BookOpen },
-    { name: 'Testimonials', target: 'testimonials', icon: Star },
-    { name: 'Contact', target: 'contact', icon: MessageSquare },
+    { name: t('nav.home'), target: 'top', icon: Home },
+    { name: t('nav.services'), target: 'services', icon: Layers },
+    { name: t('nav.projects'), target: 'projects', icon: Briefcase },
+    { name: t('nav.experience'), target: 'experience', icon: Briefcase },
+    { name: t('nav.education'), target: 'education', icon: GraduationCap },
+    { name: t('nav.blogs'), target: 'blogs', icon: BookOpen },
+    { name: t('nav.testimonials'), target: 'testimonials', icon: Star },
+    { name: t('nav.contact'), target: 'contact', icon: MessageSquare },
   ];
 
   const additionalPages = [
-    { name: 'Gallery', path: '/gallery', icon: Images, protected: true },
-    { name: 'Skills', path: '/skills', icon: Star, protected: true },
+    { name: t('nav.gallery'), path: '/gallery', icon: Images, protected: true },
+    { name: t('nav.skills'), path: '/skills', icon: Star, protected: true },
   ];
 
   const scrollToSection = useCallback((id) => {

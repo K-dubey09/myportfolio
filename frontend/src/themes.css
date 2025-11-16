@@ -1,3 +1,12 @@
+/* Global Font - Elegant Serif */
+* {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+}
+
+body, html {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
+}
+
 /* Theme Variables */
 :root {
   /* Light Theme */
@@ -17,6 +26,18 @@
   --hero-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
   --card-bg: #ffffff;
   --nav-bg: rgba(255, 255, 255, 0.95);
+  
+  /* Hero Card Variables */
+  --hero-card-bg: rgba(255, 255, 255, 0.05);
+  --hero-card-border: rgba(212, 175, 55, 0.2);
+  --hero-left-bg: linear-gradient(180deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.08) 100%);
+  --hero-right-bg: linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(255, 215, 0, 0.05) 100%);
+  --hero-badge-bg: rgba(102, 126, 234, 0.15);
+  --hero-badge-text: #667eea;
+  --hero-badge-border: rgba(102, 126, 234, 0.3);
+  --golden-accent: rgba(212, 175, 55, 0.6);
+  --golden-accent-light: rgba(255, 215, 0, 0.4);
+  
   /* aliases and helpers */
   --background-gradient: var(--hero-gradient);
   --gradient-primary: var(--accent-gradient);
@@ -58,6 +79,18 @@
   --hero-gradient: linear-gradient(135deg, #2d3748 0%, #4a5568 50%, #667eea 100%);
   --card-bg: #2d3748;
   --nav-bg: rgba(45, 55, 72, 0.95);
+  
+  /* Hero Card Variables - Dark Theme */
+  --hero-card-bg: rgba(255, 255, 255, 0.03);
+  --hero-card-border: rgba(212, 175, 55, 0.2);
+  --hero-left-bg: linear-gradient(180deg, rgba(15, 12, 41, 0.9) 0%, rgba(48, 43, 99, 0.8) 100%);
+  --hero-right-bg: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(255, 215, 0, 0.08) 100%);
+  --hero-badge-bg: rgba(15, 12, 41, 0.95);
+  --hero-badge-text: #FFD700;
+  --hero-badge-border: rgba(212, 175, 55, 0.3);
+  --golden-accent: rgba(212, 175, 55, 0.8);
+  --golden-accent-light: rgba(255, 215, 0, 0.6);
+  
   --background-gradient: var(--hero-gradient);
   --gradient-primary: var(--accent-gradient);
   --primary-color: var(--accent-primary);
@@ -97,6 +130,18 @@
   --hero-gradient: linear-gradient(135deg, #3b82f6 0%, #1e40af 50%, #1d4ed8 100%);
   --card-bg: #ffffff;
   --nav-bg: rgba(240, 248, 255, 0.95);
+  
+  /* Hero Card Variables - Blue Theme */
+  --hero-card-bg: rgba(59, 130, 246, 0.05);
+  --hero-card-border: rgba(37, 99, 235, 0.2);
+  --hero-left-bg: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.08) 100%);
+  --hero-right-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+  --hero-badge-bg: rgba(37, 99, 235, 0.15);
+  --hero-badge-text: #1e40af;
+  --hero-badge-border: rgba(37, 99, 235, 0.3);
+  --golden-accent: rgba(37, 99, 235, 0.6);
+  --golden-accent-light: rgba(59, 130, 246, 0.4);
+  
   --background-gradient: var(--hero-gradient);
   --gradient-primary: var(--accent-gradient);
   --primary-color: var(--accent-primary);

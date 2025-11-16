@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
-import { Github, ExternalLink, Star, Calendar, Filter } from 'lucide-react'
+import { useTranslation } from '../hooks/useTranslation'
+import {   Github, ExternalLink, Star, Calendar, Filter } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const ProjectsPage = () => {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -64,7 +66,7 @@ const ProjectsPage = () => {
       <div className="dedicated-page">
         <div className="page-loading">
           <div className="spinner"></div>
-          <p>Loading projects...</p>
+          <p>{t('projects.loading')}</p>
         </div>
       </div>
     )
@@ -75,10 +77,10 @@ const ProjectsPage = () => {
       <div className="dedicated-page">
         <div className="page-error">
           <Github size={64} />
-          <h2>Error Loading Projects</h2>
+          <h2>{t('projects.error')}</h2>
           <p>{error}</p>
           <button onClick={fetchProjects} className="retry-btn">
-            Try Again
+            {t('projects.tryAgain')}
           </button>
         </div>
       </div>
@@ -93,12 +95,12 @@ const ProjectsPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h1>All Projects</h1>
-        <p>Explore my complete portfolio of projects and applications</p>
+        <h1>{t('projects.title')}</h1>
+        <p>{t('projects.subtitle')}</p>
         
         {!user && (
           <div className="login-notice">
-            <p>Some projects may be hidden. <a href="/login">Login</a> to see all projects.</p>
+            <p>{t('projects.loginNotice')} <a href="/login">{t('projects.loginLink')}</a> {t('common.viewAll').toLowerCase()}.</p>
           </div>
         )}
       </motion.div>
@@ -112,7 +114,7 @@ const ProjectsPage = () => {
         <div className="search-bar">
           <input
             type="text"
-            placeholder="Search projects, technologies..."
+            placeholder={t('projects.search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -121,8 +123,8 @@ const ProjectsPage = () => {
         <div className="filter-controls">
           <Filter size={16} />
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">All Projects</option>
-            <option value="featured">Featured</option>
+            <option value="all">{t('projects.all')}</option>
+            <option value="featured">{t('projects.featured')}</option>
             <option value="react">React</option>
             <option value="node">Node.js</option>
             <option value="javascript">JavaScript</option>
@@ -139,7 +141,7 @@ const ProjectsPage = () => {
       >
         {filteredProjects.length === 0 ? (
           <div className="no-results">
-            <p>No projects found matching your criteria.</p>
+            <p>{t('projects.noResults')}</p>
           </div>
         ) : (
           filteredProjects.map((project, index) => (
@@ -208,7 +210,7 @@ const ProjectsPage = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Github size={16} />
-                      GitHub
+                      {t('projects.viewGithub')}
                     </motion.a>
                   )}
                   {project.liveUrl && (
@@ -221,7 +223,7 @@ const ProjectsPage = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <ExternalLink size={16} />
-                      Live Demo
+                      {t('projects.viewLive')}
                     </motion.a>
                   )}
                 </div>

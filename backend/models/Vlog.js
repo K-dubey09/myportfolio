@@ -20,7 +20,38 @@ const vlogSchema = new mongoose.Schema({
     enum: ['YouTube', 'Vimeo', 'Instagram', 'TikTok', 'Self-hosted'],
     default: 'YouTube'
   },
-  embedCode: { type: String } // For external platforms
+  embedCode: { type: String }, // For external platforms
+  // Language-specific content
+  language: { type: String, default: 'en', enum: ['en', 'hi', 'es'] },
+  translations: {
+    en: {
+      title: { type: String },
+      description: { type: String }
+    },
+    hi: {
+      title: { type: String },
+      description: { type: String }
+    },
+    es: {
+      title: { type: String },
+      description: { type: String }
+    }
+  },
+  // Language-specific video/thumbnail URLs
+  languageMedia: {
+    en: { 
+      videoUrl: { type: String },
+      thumbnailUrl: { type: String }
+    },
+    hi: { 
+      videoUrl: { type: String },
+      thumbnailUrl: { type: String }
+    },
+    es: { 
+      videoUrl: { type: String },
+      thumbnailUrl: { type: String }
+    }
+  }
 }, {
   timestamps: true
 });

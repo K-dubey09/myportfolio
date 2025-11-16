@@ -20,11 +20,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
   const { changePassword, deleteAccount } = useAuth();
   const { theme, setSpecificTheme, isAnimated, toggleAnimations } = useTheme();
+  const { language, changeLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState('appearance');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -131,6 +133,7 @@ const SettingsPage = () => {
 
   const tabs = [
     { id: 'appearance', name: 'Appearance', icon: Palette },
+    { id: 'language', name: 'Language', icon: Globe },
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'privacy', name: 'Privacy', icon: Shield },
     { id: 'security', name: 'Security', icon: Lock },
@@ -228,6 +231,85 @@ const SettingsPage = () => {
                         <span className="toggle-knob"><span className="knob-icon" /></span>
                       </span>
                     </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Language Tab */}
+            {activeTab === 'language' && (
+              <div className="settings-section">
+                <h2>Language & Localization</h2>
+                <p>Choose your preferred language for the entire portfolio</p>
+
+                <div className="setting-group">
+                  <h3>Select Language</h3>
+                  <p>All content including navigation, pages, and messages will be displayed in your selected language</p>
+                  <div className="language-selector-settings">
+                    <button
+                      className={`language-option ${language === 'en' ? 'active' : ''}`}
+                      onClick={() => {
+                        changeLanguage('en');
+                        showMessage('Language changed to English', 'success');
+                      }}
+                    >
+                      <Globe size={20} />
+                      <div className="language-details">
+                        <div className="language-info">
+                          <span className="language-name">English</span>
+                          <span className="language-native">English</span>
+                        </div>
+                        <span className="language-flag">🇬🇧</span>
+                      </div>
+                      {language === 'en' && <div className="active-indicator">✓</div>}
+                    </button>
+                    <button
+                      className={`language-option ${language === 'hi' ? 'active' : ''}`}
+                      onClick={() => {
+                        changeLanguage('hi');
+                        showMessage('भाषा हिन्दी में बदल गई', 'success');
+                      }}
+                    >
+                      <Globe size={20} />
+                      <div className="language-details">
+                        <div className="language-info">
+                          <span className="language-name">Hindi</span>
+                          <span className="language-native">हिन्दी</span>
+                        </div>
+                        <span className="language-flag">🇮🇳</span>
+                      </div>
+                      {language === 'hi' && <div className="active-indicator">✓</div>}
+                    </button>
+                    <button
+                      className={`language-option ${language === 'es' ? 'active' : ''}`}
+                      onClick={() => {
+                        changeLanguage('es');
+                        showMessage('Idioma cambiado a Español', 'success');
+                      }}
+                    >
+                      <Globe size={20} />
+                      <div className="language-details">
+                        <div className="language-info">
+                          <span className="language-name">Spanish</span>
+                          <span className="language-native">Español</span>
+                        </div>
+                        <span className="language-flag">🇪🇸</span>
+                      </div>
+                      {language === 'es' && <div className="active-indicator">✓</div>}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="setting-group">
+                  <h3>Language Information</h3>
+                  <div className="info-card">
+                    <p>
+                      <strong>Current Language:</strong> {language === 'en' ? 'English' : language === 'hi' ? 'हिन्दी (Hindi)' : 'Español (Spanish)'}
+                    </p>
+                    <p>
+                      <strong>Note:</strong> Media content (images, videos) will be displayed based on your selected language when available. 
+                      If content is not available in your language, the default (English) version will be shown.
+                    </p>
                   </div>
                 </div>
               </div>

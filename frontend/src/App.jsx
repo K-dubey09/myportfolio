@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { LanguageProvider } from './context/LanguageContext'
 import Navigation from './components/Navigation'
 import PortfolioSite from './components/PortfolioSite'
 import AdminPanel from '../Admin/AdminPanel'
@@ -160,10 +161,11 @@ const ProfileRoute = () => {
 const App = () => {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <Router>
-          <Toaster position="top-center" reverseOrder={false} />
-          <ConditionalNavigation />
+      <LanguageProvider>
+        <AuthProvider>
+          <Router>
+            <Toaster position="top-center" reverseOrder={false} />
+            <ConditionalNavigation />
           <Routes>
             <Route path="/" element={<PortfolioSite />} />
             <Route path="/register" element={<RegistrationPage />} />
@@ -188,6 +190,7 @@ const App = () => {
           </Routes>
         </Router>
       </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   )
 }
