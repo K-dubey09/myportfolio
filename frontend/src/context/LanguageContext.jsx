@@ -1,14 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { LanguageContext } from './LanguageContextBase';
 
-const LanguageContext = createContext();
-
-export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-};
+// Context moved to LanguageContextBase.js to satisfy Fast Refresh rules
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {

@@ -258,5 +258,7 @@ export const servicesCRUD = new FirestoreCRUD('services');
 export const contactsCRUD = new FirestoreCRUD('contacts');
 export const contactInfoCRUD = new FirestoreCRUD('contactInfo');
 export const achievementsCRUD = new FirestoreCRUD('achievements');
+// History/audit trail for contact info changes
+export const contactInfoHistoryCRUD = new FirestoreCRUD('contactInfoHistory');
 export const accessKeysCRUD = new FirestoreCRUD('accessKeys');
 export const adminRequestsCRUD = new FirestoreCRUD('adminRequests');

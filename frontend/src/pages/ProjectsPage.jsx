@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { API_URL } from '../config/env'
 import { useTranslation } from '../hooks/useTranslation'
 import {   Github, ExternalLink, Star, Calendar, Filter } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -20,7 +21,7 @@ const ProjectsPage = () => {
       setError(null)
       const headers = user ? { 'Authorization': `Bearer ${user.token}` } : {}
       
-      const response = await fetch('http://localhost:5000/api/projects', { headers })
+  const response = await fetch(`${API_URL}/projects`, { headers })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch projects: ${response.status}`)

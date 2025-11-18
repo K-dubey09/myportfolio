@@ -2257,6 +2257,13 @@ p, span, a, button, input, textarea, label, li, div {
   color: #4a90e2;
 }
 
+/* Active state for current section */
+.nav-link.active {
+  background: rgba(74, 144, 226, 0.15);
+  color: #4a90e2;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.18);
+}
+
 .nav-link.secondary {
   color: #888;
   font-size: 0.9rem;
@@ -2711,11 +2718,20 @@ p, span, a, button, input, textarea, label, li, div {
 }
 
 .experience-content {
-  background: white;
+  background: var(--card-bg);
   padding: 2rem;
   border-radius: 15px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 20px rgba(139, 92, 246, 0.1);
+  border: 1px solid var(--border-color);
   position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.experience-content:hover {
+  box-shadow: 0 15px 40px rgba(139, 92, 246, 0.2);
+  border-color: var(--accent-color);
+  transform: translateX(10px);
 }
 
 .experience-content::before {
@@ -2724,9 +2740,10 @@ p, span, a, button, input, textarea, label, li, div {
   top: 50%;
   width: 15px;
   height: 15px;
-  background: #007bff;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
   border-radius: 50%;
   transform: translateY(-50%);
+  box-shadow: 0 0 15px var(--accent-color);
 }
 
 .experience-item:nth-child(odd) .experience-content::before {
@@ -2738,13 +2755,14 @@ p, span, a, button, input, textarea, label, li, div {
 }
 
 .experience-content h3 {
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .experience-content h4 {
-  color: #007bff;
+  color: var(--accent-color);
   margin-bottom: 1rem;
   font-weight: 600;
 }
@@ -2761,14 +2779,37 @@ p, span, a, button, input, textarea, label, li, div {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .experience-description {
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: 1rem;
+}
+
+.experience-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.experience-tech .tech-tag {
+  padding: 4px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  color: var(--accent-color);
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.experience-tech .tech-tag:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
 }
 
 /* Education Grid */
@@ -5229,6 +5270,241 @@ a,
   }
 }
 
+/* ========================================
+   MODERN VLOG SECTION STYLES
+   ======================================== */
+
+.vlogs-section {
+  padding: 100px 0;
+  position: relative;
+}
+
+/* Ensure the vlogs header sits above card thumbnails and decorative shapes */
+.vlogs-section .section-header {
+  position: relative;
+  z-index: 3;
+}
+
+.vlogs-section .vlogs-grid {
+  position: relative;
+  z-index: 1;
+  margin-top: 2rem;
+}
+
+.vlogs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+  margin-top: 40px;
+}
+
+.vlog-card-modern {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+  position: relative;
+}
+
+.vlog-card-modern:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+  border-color: var(--accent-color);
+}
+
+.vlog-thumbnail-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 aspect ratio */
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.vlog-thumbnail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vlog-card-modern:hover .vlog-thumbnail {
+  transform: scale(1.08);
+}
+
+.vlog-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    transparent 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.vlog-card-modern:hover .vlog-play-overlay {
+  opacity: 1;
+}
+
+.vlog-play-button {
+  width: 80px;
+  height: 80px;
+  background: rgba(139, 92, 246, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.5);
+  transform: scale(0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vlog-card-modern:hover .vlog-play-button {
+  transform: scale(1);
+  background: var(--accent-color);
+}
+
+.vlog-play-button svg {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  margin-left: 4px;
+}
+
+.vlog-meta-badges {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.vlog-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(20, 20, 31, 0.95);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.vlog-badge:hover {
+  background: rgba(139, 92, 246, 0.95);
+  border-color: rgba(139, 92, 246, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.vlog-badge svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent-color);
+}
+
+.vlog-content {
+  padding: 20px 24px 24px;
+}
+
+.vlog-title {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vlog-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.vlog-date,
+.vlog-platform {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.vlog-date svg,
+.vlog-platform svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-color);
+}
+
+.vlog-watch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.vlog-watch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+}
+
+.vlog-watch-btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.vlog-watch-btn:hover svg {
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .vlogs-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .vlog-thumbnail-wrapper {
+    padding-top: 60%;
+  }
+}
+
 /* Modern Gallery Section */
 .gallery-section {
   padding: 100px 0;
@@ -5240,6 +5516,7 @@ a,
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
   animation: fadeIn 0.6s ease-out;
+  grid-auto-rows: 300px; /* Uniform height for all items */
 }
 
 .gallery-item-modern {
@@ -5250,17 +5527,17 @@ a,
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 300px;
+  height: 100%; /* Take full grid cell height */
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
 }
 
 .gallery-item-modern.tall {
-  grid-row: span 2;
-  height: 624px;
+  grid-row: span 1; /* Remove tall behavior for uniform height */
 }
 
 .gallery-item-modern:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(139, 92, 246, 0.3);
   border-color: var(--accent-color);
 }
 
@@ -5280,8 +5557,8 @@ a,
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(20, 20, 31, 0.95) 0%,
-    rgba(20, 20, 31, 0.7) 40%,
+    rgba(139, 92, 246, 0.95) 0%,
+    rgba(59, 130, 246, 0.8) 40%,
     transparent 100%
   );
   display: flex;
@@ -5290,6 +5567,7 @@ a,
   padding: 24px;
   opacity: 0;
   transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
 }
 
 .gallery-item-modern:hover .gallery-overlay-modern {
@@ -5326,12 +5604,13 @@ a,
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(139, 92, 246, 0.2);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 20px;
-  color: #e9d5ff;
+  color: #fff;
   font-size: 0.85rem;
   backdrop-filter: blur(10px);
+  font-weight: 500;
 }
 
 .gallery-tag svg {
@@ -5389,26 +5668,30 @@ a,
   }
 
   .gallery-grid-modern {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: 1fr;
     gap: 16px;
+    grid-auto-rows: 250px; /* Smaller uniform height on mobile */
   }
 
   .gallery-item-modern.tall {
     grid-row: span 1;
-    height: 300px;
   }
 
   .gallery-overlay-modern {
     opacity: 1;
     background: linear-gradient(
       to top,
-      rgba(20, 20, 31, 0.9) 0%,
-      rgba(20, 20, 31, 0.5) 50%,
+      rgba(139, 92, 246, 0.9) 0%,
+      rgba(59, 130, 246, 0.6) 40%,
       transparent 100%
     );
   }
 
-  .gallery-info h3,
+  .gallery-info h3 {
+    font-size: 1.2rem;
+    transform: translateY(0);
+  }
+  
   .gallery-tags {
     transform: translateY(0);
   }
@@ -6038,9 +6321,10 @@ a,
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
+  opacity: 1; /* Changed from 0 to prevent disappearing */
   transform-style: preserve-3d;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .achievement-card::before {
@@ -6208,9 +6492,10 @@ a,
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
+  opacity: 1; /* Changed from 0 to prevent disappearing */
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
+  cursor: pointer;
 }
 
 .service-card:hover {
@@ -6348,9 +6633,10 @@ a,
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
+  opacity: 1; /* Changed from 0 to prevent disappearing */
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
+  cursor: pointer;
 }
 
 .project-card:hover {
@@ -6656,7 +6942,9 @@ a,
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
+  opacity: 1; /* Changed from 0 to prevent disappearing */
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .education-icon-wrapper {
@@ -6700,7 +6988,9 @@ a,
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
+  opacity: 1; /* Changed from 0 to prevent disappearing */
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .blog-image-wrapper {
@@ -6745,6 +7035,824 @@ a,
 
 .blog-card:hover .blog-image-overlay svg {
   transform: scale(1) rotate(0deg);
+}
+
+/* ==================== 3D FLIP CARD EFFECT ==================== */
+.card-flip-container {
+  perspective: 1000px;
+  width: 100%;
+  height: 100%;
+}
+
+.card-flip-container.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.card-front {
+  z-index: 2;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+  border: 1px solid var(--border-color);
+}
+
+.card-back-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--accent-color);
+}
+
+.card-back-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-close-btn {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.card-close-btn:hover {
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+}
+
+.card-back-content {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 0.95rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.card-back-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-back-content::-webkit-scrollbar-track {
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 10px;
+}
+
+.card-back-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+  border-radius: 10px;
+}
+
+.card-back-meta {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.card-meta-tag {
+  padding: 6px 14px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid var(--accent-color);
+  border-radius: 20px;
+  color: var(--accent-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.card-meta-tag:hover {
+  background: rgba(139, 92, 246, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ==================== SECTION BACKGROUND PATTERNS ==================== */
+.achievements-section,
+.services-section,
+.projects-section,
+.education-section,
+.blogs-section,
+.vlogs-section,
+.gallery-section {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Geometric Pattern Background */
+.achievements-section::before,
+.services-section::before,
+.projects-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Large vibrant gradient orbs */
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.35) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 50%),
+    /* Glowing grid */
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(139, 92, 246, 0.2) 49px, rgba(139, 92, 246, 0.2) 51px),
+    repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(59, 130, 246, 0.15) 49px, rgba(59, 130, 246, 0.15) 51px),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.08) 50%, rgba(236, 72, 153, 0.1) 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 50px, 50px 50px, 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+  animation: patternShift 30s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+}
+
+/* Dot Grid Pattern - More Visible */
+.education-section::before,
+.blogs-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Glowing dots */
+    radial-gradient(circle, rgba(139, 92, 246, 0.4) 2px, transparent 2px),
+    /* Gradient overlay */
+    radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(59, 130, 246, 0.25) 0%, transparent 50%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%);
+  background-size: 30px 30px, 100% 100%, 100% 100%, 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 1;
+  animation: dotPulse 4s ease-in-out infinite;
+}
+
+/* Hexagon Pattern - More Vibrant */
+.vlogs-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Vibrant hexagons */
+    linear-gradient(30deg, rgba(139, 92, 246, 0.25) 12%, transparent 12.5%, transparent 87%, rgba(139, 92, 246, 0.25) 87.5%),
+    linear-gradient(150deg, rgba(59, 130, 246, 0.25) 12%, transparent 12.5%, transparent 87%, rgba(59, 130, 246, 0.25) 87.5%),
+    linear-gradient(30deg, rgba(236, 72, 153, 0.2) 12%, transparent 12.5%, transparent 87%, rgba(236, 72, 153, 0.2) 87.5%),
+    linear-gradient(150deg, rgba(139, 92, 246, 0.2) 12%, transparent 12.5%, transparent 87%, rgba(139, 92, 246, 0.2) 87.5%),
+    /* Gradient overlay */
+    radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+  background-size: 80px 140px, 80px 140px, 80px 140px, 80px 140px, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 0 0, 0 0;
+  pointer-events: none;
+  z-index: 0;
+  animation: hexagonShift 20s ease-in-out infinite;
+}
+
+@keyframes hexagonShift {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Wave Pattern - More Vibrant */
+.gallery-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Vibrant waves */
+    radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.4) 0%, rgba(139, 92, 246, 0.25) 30%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0.25) 30%, transparent 60%),
+    radial-gradient(ellipse at 0% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 50%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
+    /* Base gradient */
+    linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%);
+  background-size: 100% 50%, 100% 50%, 50% 100%, 50% 100%, 100% 100%;
+  background-position: 0 0, 0 100%, 0 50%, 100% 50%, 0 0;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  animation: waveShift 15s ease-in-out infinite;
+}
+
+/* Animated Gradient Orbs - More Visible */
+.achievements-section::after,
+.services-section::after,
+.projects-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(
+    circle, 
+    rgba(139, 92, 246, 0.35) 0%,
+    rgba(59, 130, 246, 0.28) 30%,
+    rgba(236, 72, 153, 0.20) 50%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: orbPulse 20s ease-in-out infinite, orbFloat 15s ease-in-out infinite;
+  filter: blur(70px);
+}
+
+@keyframes patternShift {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+    opacity: 0.9;
+  }
+  25% {
+    transform: translateX(20px) translateY(-20px);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(0) translateY(-40px);
+    opacity: 0.95;
+  }
+  75% {
+    transform: translateX(-20px) translateY(-20px);
+    opacity: 1;
+  }
+}
+
+@keyframes colorFlow {
+  0%, 100% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  50% {
+    filter: hue-rotate(10deg) brightness(1.1);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes waveShift {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateX(50px);
+    opacity: 1;
+  }
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.5;
+  }
+}
+
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateX(0) translateY(0);
+  }
+  33% {
+    transform: translate(-50%, -50%) translateX(30px) translateY(-30px);
+  }
+  66% {
+    transform: translate(-50%, -50%) translateX(-30px) translateY(30px);
+  }
+}
+
+/* Ensure content is above background patterns */
+.achievements-section > *:not(::before):not(::after),
+.services-section > *:not(::before):not(::after),
+.projects-section > *:not(::before):not(::after),
+.education-section > *:not(::before):not(::after),
+.blogs-section > *:not(::before):not(::after),
+.vlogs-section > *:not(::before):not(::after),
+.gallery-section > *:not(::before):not(::after),
+.hero-section > *:not(::before):not(::after),
+.profile-section > *:not(::before):not(::after),
+.experience-section > *:not(::before):not(::after),
+.skills-section > *:not(::before):not(::after),
+.testimonials-section > *:not(::before):not(::after),
+.contact-section > *:not(::before):not(::after) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==================== ADDITIONAL SECTION BACKGROUNDS ==================== */
+
+/* Hero Section - Advanced Particle Grid */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    /* Animated Grid - more visible */
+    linear-gradient(90deg, rgba(139, 92, 246, 0.12) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(139, 92, 246, 0.12) 1px, transparent 1px),
+    /* Radial Bursts - enhanced */
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.15) 20%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.28) 0%, rgba(59, 130, 246, 0.12) 20%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.2) 0%, rgba(236, 72, 153, 0.08) 25%, transparent 50%);
+  background-size: 50px 50px, 50px 50px, 100% 100%, 100% 100%, 100% 100%;
+  animation: gridFlow 30s linear infinite, radialPulse 15s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.3) 0%,
+    rgba(59, 130, 246, 0.22) 30%,
+    rgba(236, 72, 153, 0.15) 50%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: heroOrbFloat 25s ease-in-out infinite;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gridFlow {
+  0% {
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position: 50px 50px, 50px 50px, 0 0, 0 0, 0 0;
+  }
+}
+
+@keyframes radialPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes heroOrbFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.3;
+  }
+  33% {
+    transform: translate(-45%, -55%) scale(1.1);
+    opacity: 0.4;
+  }
+  66% {
+    transform: translate(-55%, -45%) scale(0.9);
+    opacity: 0.25;
+  }
+}
+
+/* Profile Section - Circular Wave Pattern */
+.profile-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Enhanced radial waves - much more visible */
+    radial-gradient(circle at 30% 20%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.25) 20%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(59, 130, 246, 0.40) 0%, rgba(59, 130, 246, 0.25) 20%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.30) 0%, rgba(236, 72, 153, 0.15) 30%, transparent 60%),
+    radial-gradient(circle at 15% 60%, rgba(139, 92, 246, 0.25) 0%, transparent 35%),
+    radial-gradient(circle at 85% 40%, rgba(59, 130, 246, 0.25) 0%, transparent 35%),
+    /* Base gradient overlay */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08), rgba(236, 72, 153, 0.08));
+  background-size: 100% 100%;
+  animation: profileWaves 20s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.profile-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(139, 92, 246, 0.25) 0deg,
+      transparent 5deg,
+      rgba(139, 92, 246, 0.25) 10deg,
+      transparent 15deg
+    );
+  animation: conicRotate 60s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes profileWaves {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+}
+
+@keyframes conicRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Experience Section - Timeline Pattern */
+.experience-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.experience-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Vertical lines for timeline feel - bolder */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 98px,
+      rgba(139, 92, 246, 0.30) 98px,
+      rgba(139, 92, 246, 0.30) 102px,
+      transparent 102px,
+      transparent 198px
+    ),
+    /* Horizontal connecting lines - more visible */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 79px,
+      rgba(59, 130, 246, 0.25) 79px,
+      rgba(59, 130, 246, 0.25) 81px,
+      transparent 81px,
+      transparent 159px
+    ),
+    /* Corner accents - much brighter */
+    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.25) 20%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.40) 0%, rgba(236, 72, 153, 0.25) 20%, transparent 50%),
+    radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.30) 0%, transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.30) 0%, transparent 40%),
+    /* Base gradient overlay */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  animation: timelineShift 25s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.experience-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  width: 4px;
+  height: 80%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(139, 92, 246, 0.5) 10%,
+    rgba(139, 92, 246, 0.7) 50%,
+    rgba(139, 92, 246, 0.5) 90%,
+    transparent 100%
+  );
+  transform: translateY(-50%);
+  animation: timelineGlow 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.7), 0 0 80px rgba(139, 92, 246, 0.4);
+}
+
+@keyframes timelineShift {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* Skills Section - Tech Grid Pattern */
+.skills-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.skills-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Circuit board style lines - much more visible */
+    linear-gradient(90deg, transparent 24%, rgba(139, 92, 246, 0.20) 25%, rgba(139, 92, 246, 0.20) 26%, transparent 27%, transparent 74%, rgba(139, 92, 246, 0.20) 75%, rgba(139, 92, 246, 0.20) 76%, transparent 77%, transparent),
+    linear-gradient(0deg, transparent 24%, rgba(59, 130, 246, 0.20) 25%, rgba(59, 130, 246, 0.20) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, 0.20) 75%, rgba(59, 130, 246, 0.20) 76%, transparent 77%, transparent),
+    /* Corner nodes - brighter */
+    radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 5%, transparent 10%),
+    radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.40) 0%, rgba(59, 130, 246, 0.20) 5%, transparent 10%),
+    radial-gradient(circle at 25% 75%, rgba(236, 72, 153, 0.40) 0%, rgba(236, 72, 153, 0.20) 5%, transparent 10%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 5%, transparent 10%),
+    /* Additional center nodes */
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.30) 0%, transparent 15%),
+    /* Base gradient overlay */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08), rgba(236, 72, 153, 0.08));
+  background-size: 100px 100px, 100px 100px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  animation: circuitPulse 8s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.skills-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 800px;
+  height: 800px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(139, 92, 246, 0.25) 0deg,
+    rgba(59, 130, 246, 0.20) 90deg,
+    rgba(236, 72, 153, 0.18) 180deg,
+    rgba(59, 130, 246, 0.20) 270deg,
+    rgba(139, 92, 246, 0.25) 360deg
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: skillsConicSpin 30s linear infinite;
+  filter: blur(70px);
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes skillsConicSpin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Testimonials Section - Quote Pattern */
+.testimonials-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.testimonials-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Scattered circles - much more visible */
+    radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0.15) 15%, transparent 30%),
+    radial-gradient(circle at 85% 25%, rgba(59, 130, 246, 0.30) 0%, rgba(59, 130, 246, 0.12) 15%, transparent 28%),
+    radial-gradient(circle at 25% 75%, rgba(236, 72, 153, 0.35) 0%, rgba(236, 72, 153, 0.15) 18%, transparent 35%),
+    radial-gradient(circle at 75% 85%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.18) 15%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.10) 20%, transparent 40%),
+    /* Additional accent circles */
+    radial-gradient(circle at 10% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 25%),
+    radial-gradient(circle at 90% 50%, rgba(139, 92, 246, 0.25) 0%, transparent 25%),
+    /* Base gradient overlay */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08), rgba(236, 72, 153, 0.08));
+  background-size: 100% 100%;
+  animation: testimonialFloat 20s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.testimonials-section::after {
+  content: '"';
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  font-size: 400px;
+  font-family: Georgia, serif;
+  color: rgba(139, 92, 246, 0.12);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 0;
+  transform: rotate(15deg);
+  animation: quoteFade 10s ease-in-out infinite;
+}
+
+@keyframes testimonialFloat {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(10px, -10px);
+  }
+  50% {
+    transform: translate(-10px, 10px);
+  }
+  75% {
+    transform: translate(10px, 10px);
+  }
+}
+
+/* Contact Section - Connection Network Pattern */
+.contact-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Network nodes - much brighter */
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.6) 3px, rgba(139, 92, 246, 0.3) 3px, rgba(139, 92, 246, 0.15) 4px, transparent 8px),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.6) 3px, rgba(59, 130, 246, 0.3) 3px, rgba(59, 130, 246, 0.15) 4px, transparent 8px),
+    radial-gradient(circle at 30% 70%, rgba(236, 72, 153, 0.6) 3px, rgba(236, 72, 153, 0.3) 3px, rgba(236, 72, 153, 0.15) 4px, transparent 8px),
+    radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.6) 3px, rgba(139, 92, 246, 0.3) 3px, rgba(139, 92, 246, 0.15) 4px, transparent 8px),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.7) 4px, rgba(59, 130, 246, 0.35) 4px, rgba(59, 130, 246, 0.18) 5px, transparent 10px),
+    /* Connection lines - more visible */
+    linear-gradient(135deg, transparent 48%, rgba(139, 92, 246, 0.25) 49%, rgba(139, 92, 246, 0.25) 51%, transparent 52%),
+    linear-gradient(45deg, transparent 48%, rgba(59, 130, 246, 0.20) 49%, rgba(59, 130, 246, 0.20) 51%, transparent 52%),
+    /* Base gradient overlay */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 200% 200%, 200% 200%, 100% 100%;
+  animation: networkPulse 6s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.contact-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.30) 0%,
+    rgba(59, 130, 246, 0.22) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: contactOrbExpand 15s ease-in-out infinite;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes networkPulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes contactOrbExpand {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.30;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0.45;
+  }
+}
+
+@keyframes circuitPulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes quoteFade {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes timelineGlow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Responsive Floating Shapes */
@@ -7982,3 +9090,658 @@ img {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
+/* ==================== ENHANCED SECTION MODERNIZATION ==================== */
+
+/* Section Spacing and Layout */
+.achievements-section,
+.services-section,
+.projects-section,
+.education-section,
+.blogs-section,
+.vlogs-section,
+.gallery-section {
+  padding: 120px 0;
+  position: relative;
+  min-height: 600px;
+}
+
+/* Enhanced Section Headers */
+.section-header {
+  position: relative;
+  z-index: 2;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Grid Layouts with Stagger Animation */
+.achievements-grid,
+.services-grid,
+.projects-grid,
+.education-grid,
+.blogs-grid {
+  animation-delay: 0.2s;
+}
+
+.achievement-card:nth-child(1),
+.service-card:nth-child(1),
+.project-card:nth-child(1),
+.education-card:nth-child(1),
+.blog-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.achievement-card:nth-child(2),
+.service-card:nth-child(2),
+.project-card:nth-child(2),
+.education-card:nth-child(2),
+.blog-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.achievement-card:nth-child(3),
+.service-card:nth-child(3),
+.project-card:nth-child(3),
+.education-card:nth-child(3),
+.blog-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.achievement-card:nth-child(4),
+.service-card:nth-child(4),
+.project-card:nth-child(4),
+.education-card:nth-child(4),
+.blog-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.achievement-card:nth-child(5),
+.service-card:nth-child(5),
+.project-card:nth-child(5),
+.education-card:nth-child(5),
+.blog-card:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.achievement-card:nth-child(6),
+.service-card:nth-child(6),
+.project-card:nth-child(6),
+.education-card:nth-child(6),
+.blog-card:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+/* Card Interaction States */
+.achievement-card.clickable,
+.service-card.clickable,
+.project-card.clickable,
+.education-card.clickable,
+.blog-card.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.achievement-card.clickable:active,
+.service-card.clickable:active,
+.project-card.clickable:active,
+.education-card.clickable:active,
+.blog-card.clickable:active {
+  transform: translateY(-8px) scale(0.98);
+}
+
+/* Click Indicator for Flippable Cards */
+.achievement-card.clickable::after,
+.service-card.clickable::after,
+.project-card.clickable::after,
+.education-card.clickable::after,
+.blog-card.clickable::after {
+  content: '↻';
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 35px;
+  height: 35px;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.achievement-card.clickable:hover::after,
+.service-card.clickable:hover::after,
+.project-card.clickable:hover::after,
+.education-card.clickable:hover::after,
+.blog-card.clickable:hover::after {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
+/* Vlog Card Enhancements */
+.vlog-card-modern {
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vlog-card-modern:hover {
+  transform: translateY(-12px) rotateX(2deg);
+  box-shadow: 0 30px 60px rgba(139, 92, 246, 0.4),
+              0 0 100px rgba(139, 92, 246, 0.15) inset;
+}
+
+.vlog-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--accent-color) 0%, 
+    var(--accent-secondary) 50%, 
+    var(--accent-color) 100%);
+  background-size: 200% 100%;
+  animation: gradientSlide 3s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.vlog-card-modern:hover::before {
+  opacity: 1;
+}
+
+/* Gallery Item Enhancements */
+.gallery-item-modern {
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gallery-item-modern::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(139, 92, 246, 0.0) 0%, 
+    rgba(139, 92, 246, 0.2) 50%,
+    rgba(59, 130, 246, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 1;
+}
+
+.gallery-item-modern:hover::before {
+  opacity: 1;
+}
+
+/* Smooth Loading States */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.card-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.05) 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    rgba(139, 92, 246, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Enhanced Focus States for Accessibility */
+.achievement-card:focus-visible,
+.service-card:focus-visible,
+.project-card:focus-visible,
+.education-card:focus-visible,
+.blog-card:focus-visible,
+.vlog-card-modern:focus-visible,
+.gallery-item-modern:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 4px;
+}
+
+/* Particle Effects on Section Scroll */
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100px, -100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .achievements-section,
+  .services-section,
+  .projects-section,
+  .education-section,
+  .blogs-section,
+  .vlogs-section,
+  .gallery-section {
+    padding: 80px 0;
+  }
+
+  .card-back {
+    padding: 20px;
+  }
+
+  .card-back-content {
+    max-height: 300px;
+    font-size: 0.9rem;
+  }
+
+  .achievement-card.clickable::after,
+  .service-card.clickable::after,
+  .project-card.clickable::after,
+  .education-card.clickable::after,
+  .blog-card.clickable::after {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* Reduce Motion for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .achievements-section::before,
+  .services-section::before,
+  .projects-section::before,
+  .education-section::before,
+  .blogs-section::before,
+  .vlogs-section::before,
+  .gallery-section::before,
+  .achievements-section::after,
+  .services-section::after,
+  .projects-section::after {
+    animation: none !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .achievements-section::before,
+  .services-section::before,
+  .projects-section::before,
+  .education-section::before,
+  .blogs-section::before,
+  .vlogs-section::before,
+  .gallery-section::before,
+  .achievements-section::after,
+  .services-section::after,
+  .projects-section::after,
+  .floating-shape {
+    display: none !important;
+  }
+
+  .achievement-card,
+  .service-card,
+  .project-card,
+  .education-card,
+  .blog-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* ========================================
+   DEDICATED PAGES - VIBRANT BACKGROUNDS
+   ======================================== */
+
+/* Projects Page - Geometric Pattern */
+.page-container:has(.projects-list),
+.page-container:has([class*="project"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.projects-list)::before,
+.page-container:has([class*="project"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Radial gradient orbs - vibrant */
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 25%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.18) 25%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 40%),
+    /* Geometric grid - repeating bold lines */
+    repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(139, 92, 246, 0.20) 49px, rgba(139, 92, 246, 0.20) 51px, transparent 51px, transparent 100px),
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(59, 130, 246, 0.15) 49px, rgba(59, 130, 246, 0.15) 51px, transparent 51px, transparent 100px),
+    /* Base gradient overlay */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 50px, 50px 50px, 100% 100%;
+  animation: patternShift 30s linear infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Skills Page - Circuit Board Pattern */
+.page-container:has(.skills-grid),
+.page-container:has([class*="skill"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.skills-grid)::before,
+.page-container:has([class*="skill"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Circuit board style lines */
+    linear-gradient(90deg, transparent 24%, rgba(139, 92, 246, 0.20) 25%, rgba(139, 92, 246, 0.20) 26%, transparent 27%, transparent 74%, rgba(139, 92, 246, 0.20) 75%, rgba(139, 92, 246, 0.20) 76%, transparent 77%, transparent),
+    linear-gradient(0deg, transparent 24%, rgba(59, 130, 246, 0.20) 25%, rgba(59, 130, 246, 0.20) 26%, transparent 27%, transparent 74%, rgba(59, 130, 246, 0.20) 75%, rgba(59, 130, 246, 0.20) 76%, transparent 77%, transparent),
+    /* Corner nodes */
+    radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 5%, transparent 10%),
+    radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.40) 0%, rgba(59, 130, 246, 0.20) 5%, transparent 10%),
+    radial-gradient(circle at 25% 75%, rgba(236, 72, 153, 0.40) 0%, rgba(236, 72, 153, 0.20) 5%, transparent 10%),
+    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 5%, transparent 10%),
+    /* Center node */
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.30) 0%, transparent 15%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08), rgba(236, 72, 153, 0.08));
+  background-size: 100px 100px, 100px 100px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  animation: circuitPulse 8s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Experience Page - Timeline Pattern */
+.page-container:has(.experience-list),
+.page-container:has([class*="experience"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.experience-list)::before,
+.page-container:has([class*="experience"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Vertical timeline lines */
+    repeating-linear-gradient(90deg, transparent, transparent 98px, rgba(139, 92, 246, 0.30) 98px, rgba(139, 92, 246, 0.30) 102px, transparent 102px, transparent 198px),
+    /* Horizontal connecting lines */
+    repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(59, 130, 246, 0.25) 79px, rgba(59, 130, 246, 0.25) 81px, transparent 81px, transparent 159px),
+    /* Corner accents */
+    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.25) 20%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.40) 0%, rgba(236, 72, 153, 0.25) 20%, transparent 50%),
+    radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.30) 0%, transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.30) 0%, transparent 40%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  animation: timelineShift 25s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Education Page - Dot Grid Pattern */
+.page-container:has(.education-list),
+.page-container:has([class*="education"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.education-list)::before,
+.page-container:has([class*="education"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Dot grid pattern */
+    radial-gradient(circle, rgba(139, 92, 246, 0.40) 2px, transparent 2px),
+    /* Radial burst overlays */
+    radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.30) 0%, transparent 30%),
+    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.25) 0%, transparent 30%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  background-size: 30px 30px, 100% 100%, 100% 100%, 100% 100%;
+  animation: dotPulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Services Page - Geometric Pattern (same as Projects) */
+.page-container:has(.services-list),
+.page-container:has([class*="service"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.services-list)::before,
+.page-container:has([class*="service"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 25%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.18) 25%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 40%),
+    repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(139, 92, 246, 0.20) 49px, rgba(139, 92, 246, 0.20) 51px, transparent 51px, transparent 100px),
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(59, 130, 246, 0.15) 49px, rgba(59, 130, 246, 0.15) 51px, transparent 51px, transparent 100px),
+    linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 50px, 50px 50px, 100% 100%;
+  animation: patternShift 30s linear infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gallery Page - Wave Pattern */
+.page-container:has(.gallery-grid),
+.page-container:has([class*="gallery"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.gallery-grid)::before,
+.page-container:has([class*="gallery"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Wave ellipses */
+    radial-gradient(ellipse 100% 30% at 50% 0%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 40%, transparent 70%),
+    radial-gradient(ellipse 100% 30% at 50% 100%, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.18) 40%, transparent 70%),
+    radial-gradient(ellipse 30% 100% at 0% 50%, rgba(236, 72, 153, 0.30) 0%, transparent 50%),
+    radial-gradient(ellipse 30% 100% at 100% 50%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%;
+  animation: waveShift 15s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Blogs Page - Dot Grid Pattern (same as Education) */
+.page-container:has(.blogs-list),
+.page-container:has([class*="blog"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.blogs-list)::before,
+.page-container:has([class*="blog"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle, rgba(139, 92, 246, 0.40) 2px, transparent 2px),
+    radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.30) 0%, transparent 30%),
+    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.25) 0%, transparent 30%),
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  background-size: 30px 30px, 100% 100%, 100% 100%, 100% 100%;
+  animation: dotPulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Testimonials Page - Quote Pattern */
+.page-container:has(.testimonials-grid),
+.page-container:has([class*="testimonial"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.testimonials-grid)::before,
+.page-container:has([class*="testimonial"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Scattered quote bubbles */
+    radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.35) 0%, rgba(139, 92, 246, 0.15) 15%, transparent 30%),
+    radial-gradient(circle at 85% 25%, rgba(59, 130, 246, 0.30) 0%, rgba(59, 130, 246, 0.12) 15%, transparent 28%),
+    radial-gradient(circle at 25% 75%, rgba(236, 72, 153, 0.35) 0%, rgba(236, 72, 153, 0.15) 18%, transparent 35%),
+    radial-gradient(circle at 75% 85%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.18) 15%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.10) 20%, transparent 40%),
+    radial-gradient(circle at 10% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 25%),
+    radial-gradient(circle at 90% 50%, rgba(139, 92, 246, 0.25) 0%, transparent 25%),
+    linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08), rgba(236, 72, 153, 0.08));
+  background-size: 100% 100%;
+  animation: testimonialFloat 20s ease-in-out infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Achievements Page - Geometric Pattern (same as Projects) */
+.page-container:has(.achievements-list),
+.page-container:has([class*="achievement"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.achievements-list)::before,
+.page-container:has([class*="achievement"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.40) 0%, rgba(139, 92, 246, 0.20) 25%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.18) 25%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 40%),
+    repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(139, 92, 246, 0.20) 49px, rgba(139, 92, 246, 0.20) 51px, transparent 51px, transparent 100px),
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(59, 130, 246, 0.15) 49px, rgba(59, 130, 246, 0.15) 51px, transparent 51px, transparent 100px),
+    linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.08));
+  background-size: 100% 100%, 100% 100%, 100% 100%, 50px 50px, 50px 50px, 100% 100%;
+  animation: patternShift 30s linear infinite, colorFlow 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Vlogs Page - Hexagon Pattern */
+.page-container:has(.vlogs-list),
+.page-container:has([class*="vlog"]) {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-container:has(.vlogs-list)::before,
+.page-container:has([class*="vlog"])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    /* Hexagon tessellation */
+    linear-gradient(30deg, rgba(139, 92, 246, 0.25) 12%, transparent 12.5%, transparent 87%, rgba(139, 92, 246, 0.25) 87.5%, rgba(139, 92, 246, 0.25)),
+    linear-gradient(150deg, rgba(139, 92, 246, 0.25) 12%, transparent 12.5%, transparent 87%, rgba(139, 92, 246, 0.25) 87.5%, rgba(139, 92, 246, 0.25)),
+    linear-gradient(30deg, rgba(59, 130, 246, 0.20) 12%, transparent 12.5%, transparent 87%, rgba(59, 130, 246, 0.20) 87.5%, rgba(59, 130, 246, 0.20)),
+    linear-gradient(150deg, rgba(59, 130, 246, 0.20) 12%, transparent 12.5%, transparent 87%, rgba(59, 130, 246, 0.20) 87.5%, rgba(59, 130, 246, 0.20)),
+    /* Radial overlays */
+    radial-gradient(circle at 30% 30%, rgba(139, 92, 246, 0.30) 0%, transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.30) 0%, transparent 40%),
+    /* Base gradient */
+    linear-gradient(135deg, rgba(139, 92, 246, 0.10), rgba(59, 130, 246, 0.08));
+  background-size: 80px 140px, 80px 140px, 80px 140px, 80px 140px, 100% 100%, 100% 100%, 100% 100%;
+  animation: hexagonShift 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure all page content stays above backgrounds */
+.page-container > *:not(::before):not(::after) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Print styles - hide backgrounds */
+@media print {
+  .page-container::before,
+  .page-container::after {
+    display: none !important;
+  }
+}
+

@@ -14,8 +14,7 @@ const AdminPanel = () => {
   const [accessKeys, setAccessKeys] = useState([]);
   const [conversions, setConversions] = useState([]);
   const [adminRequests, setAdminRequests] = useState([]);
-  const [viewerEditorSubTab, setViewerEditorSubTab] = useState('manage-keys');
-  const [veAnimate, setVeAnimate] = useState(false);
+  // Removed unused viewer/editor sub-tab state to satisfy lint rules
   const [genNotes, setGenNotes] = useState('');
   const API_BASE = (import.meta.env && import.meta.env.VITE_API_BASE) || 'http://localhost:5000';
   const [usersList, setUsersList] = useState([]);
@@ -369,12 +368,7 @@ const AdminPanel = () => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMobileMenuOpen]);
 
-  // Trigger a small entrance animation for viewer->editor subnav buttons on mount
-  useEffect(() => {
-    // slight delay so CSS can pick up and animate
-    const t = setTimeout(() => setVeAnimate(true), 40);
-    return () => clearTimeout(t);
-  }, []);
+  // Removed viewer/editor subnav animation effect (unused state cleaned up)
 
   // Form states for all content types
   const [profileForm, setProfileForm] = useState({
@@ -600,6 +594,9 @@ const AdminPanel = () => {
       showAvailability: true
     }
   });
+  // Contact Info History state
+  const [contactInfoHistory, setContactInfoHistory] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   const [serviceForm, setServiceForm] = useState({
     title: '',
@@ -692,13 +689,33 @@ const AdminPanel = () => {
           }
         }));
       }
+      // Fetch history after loading contact info
+      await fetchContactInfoHistory(authToken);
     } catch (error) {
       console.error('Error fetching portfolio data:', error);
       showMessage('Network error occurred', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [token, apiFetch, getIdToken]);
+  }, [token, apiFetch, getIdToken, fetchContactInfoHistory]);
+
+  // Fetch contact info history (latest first)
+  const fetchContactInfoHistory = useCallback(async (authToken = token) => {
+    if (!authToken) return;
+    setIsHistoryLoading(true);
+    try {
+      const { res, json } = await apiFetch('/api/admin/contact-info/history', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (res.ok && json?.success && Array.isArray(json.data)) {
+        setContactInfoHistory(json.data.slice(0, 20));
+      }
+    } catch (err) {
+      console.error('Failed to fetch contact info history', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [apiFetch, token]);
 
   useEffect(() => {
     if (token) {
@@ -1132,8 +1149,7 @@ const AdminPanel = () => {
   // Admin-side testimonials list and helpers (for Manage view)
   const [adminTestimonials, setAdminTestimonials] = useState([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(false);
-  const [testimonialsPage, setTestimonialsPage] = useState(1);
-  const [testimonialsPageSize, setTestimonialsPageSize] = useState(10);
+  // Removed unused pagination state for testimonials (was causing lint warnings)
 
   const fetchAdminTestimonials = useCallback(async () => {
     try {
@@ -1228,26 +1244,17 @@ const AdminPanel = () => {
     submit: async (e) => {
       e.preventDefault();
       setIsSubmitting(true);
-      
-      // Check if contact info already exists
-      const existingContactInfo = data?.contactinfo;
-      const url = existingContactInfo 
-        ? `${API_BASE}/api/admin/contact-info/${existingContactInfo.id}`
-        : `${API_BASE}/api/admin/contact-info`;
-      
-      const method = existingContactInfo ? 'PUT' : 'POST';
-      const success = await handleApiCall(url, method, contactInfoForm);
-      
+      // Always POST (controller upserts singleton 'primary')
+      const success = await handleApiCall(`${API_BASE}/api/admin/contact-info`, 'POST', contactInfoForm);
       if (success) {
-        showMessage(`Contact information ${existingContactInfo ? 'updated' : 'created'} successfully!`, 'success');
-        
-        // Scroll to top of form after submission
+        showMessage('Contact information saved successfully!', 'success');
+        // Refresh data & history
+        await fetchData();
+        await fetchContactInfoHistory();
         setTimeout(() => {
           const formElement = document.querySelector('.admin-form');
-          if (formElement) {
-            formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 100);
+          if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
       }
     }
   };
@@ -5038,6 +5045,30 @@ const AdminPanel = () => {
           </button>
         </div>
       </form>
+      <div className="contact-info-history-panel">
+        <h3>Recent Changes</h3>
+        {isHistoryLoading ? (
+          <p>Loading history...</p>
+        ) : contactInfoHistory.length === 0 ? (
+          <p>No history entries yet.</p>
+        ) : (
+          <ul className="history-list">
+            {contactInfoHistory.map(entry => (
+              <li key={entry.id} className="history-entry">
+                <div className="history-entry-meta">
+                  <span className={`history-action action-${entry.action}`}>{entry.action}</span>
+                  <span className="history-user">{entry.changedBy || 'unknown'}</span>
+                  <span className="history-time">{new Date(entry.snapshotAt || entry.updatedAt || entry.createdAt).toLocaleString()}</span>
+                </div>
+                <details>
+                  <summary>Payload</summary>
+                  <pre className="history-payload">{JSON.stringify(entry.payload, null, 2)}</pre>
+                </details>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 
@@ -5443,5 +5474,3 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
-
-

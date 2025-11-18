@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { API_URL } from '../config/env';
 import toast from 'react-hot-toast';
 
 const EmailVerification = () => {
@@ -12,7 +13,7 @@ const EmailVerification = () => {
     const mode = searchParams.get('mode');
 
     if (mode === 'verifyEmail' && oobCode) {
-      axios.post('http://localhost:5000/api/auth/register/verify-email', { oobCode })
+      axios.post(`${API_URL}/auth/register/verify-email`, { oobCode })
         .then(() => {
           toast.success('Email verified successfully!');
           setMessage('Your email has been verified. You can now close this tab and return to the original device to be logged in.');

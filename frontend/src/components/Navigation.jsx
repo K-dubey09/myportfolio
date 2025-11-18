@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { useLocation, useNavigate } from 'react-router-dom';
-import LanguageSelector from './LanguageSelector';
+// LanguageSelector removed from navbar per request (still available elsewhere if needed)
 
 const Navigation = () => {
   const { user, logout } = useAuth();
@@ -24,6 +24,7 @@ const Navigation = () => {
   const dropdownTimeoutRef = useRef(null);
   const themeTimeoutRef = useRef(null);
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('top');
 
   useEffect(() => {
     // copy refs to locals so cleanup uses stable values (avoids linter warning)
@@ -49,6 +50,32 @@ const Navigation = () => {
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Track active section to highlight nav link
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      setActiveSection('');
+      return; // only track sections on home page
+    }
+    const handleScroll = () => {
+      const sections = ['services','projects','experience','education','blogs','testimonials','contact'];
+      const scrollY = window.scrollY;
+      let current = 'top';
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const offsetTop = rect.top + window.scrollY;
+        if (scrollY + 120 >= offsetTop) {
+          current = id;
+        }
+      }
+      setActiveSection(current);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [location.pathname]);
 
   // Handle escape key for mobile menu
@@ -230,7 +257,8 @@ const Navigation = () => {
               <motion.button
                 key={item.target}
                 onClick={() => handleSectionClick(item.target)}
-                className="nav-link nav-btn"
+                className={`nav-link nav-btn ${activeSection === item.target ? 'active' : ''}`}
+                aria-current={activeSection === item.target ? 'page' : undefined}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, delay: index * 0.05 }}
@@ -290,6 +318,8 @@ const Navigation = () => {
                 <span>Login</span>
               </motion.button>
             )}
+
+            {/* Language selector removed */}
           </div>
 
           {/* Desktop User Dropdown moved into nav container */}

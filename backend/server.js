@@ -23,7 +23,8 @@ import {
   ServicesController,
   ContactsController,
   ContactInfoController,
-  AchievementsController
+  AchievementsController,
+  ContactInfoHistoryController
 } from './controllers/allControllers.js';
 import { 
   authenticateToken, 
@@ -369,6 +370,8 @@ app.get('/api/admin/contact-info', authenticateToken, ContactInfoController.getA
 app.post('/api/admin/contact-info', authenticateToken, requirePermission('canEditProfile'), ContactInfoController.create);
 app.put('/api/admin/contact-info/:id', authenticateToken, requirePermission('canEditProfile'), ContactInfoController.update);
 app.delete('/api/admin/contact-info/:id', authenticateToken, requireAdmin, ContactInfoController.delete);
+// History endpoint (read-only)
+app.get('/api/admin/contact-info/history', authenticateToken, requirePermission('canEditProfile'), ContactInfoHistoryController.getAll);
 
 // ==================== FEATURED CONTENT ROUTES ====================
 // Public featured content endpoints

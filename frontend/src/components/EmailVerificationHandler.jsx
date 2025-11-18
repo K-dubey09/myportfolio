@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_URL } from '../config/env';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -25,7 +26,7 @@ const EmailVerificationHandler = () => {
     const pollVerificationStatus = async () => {
       try {
         console.log('Polling for verification status for UID:', uid);
-        const response = await axios.get(`http://localhost:5000/api/auth/verification-status/${uid}`);
+  const response = await axios.get(`${API_URL}/auth/verification-status/${uid}`);
         const { status: verificationStatus, customToken, user } = response.data;
 
         if (verificationStatus === 'verified') {

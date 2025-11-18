@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { auth, db } from '../config/firebase';
 import { 
@@ -10,6 +11,7 @@ import {
   sendEmailVerification
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { API_URL } from '../config/env';
 
 const AuthContext = createContext();
 
@@ -29,15 +31,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [firebaseUser, setFirebaseUser] = useState(null);
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = API_URL;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       
       if (fbUser) {
-        const idToken = await fbUser.getIdToken();
-        const idTokenResult = await fbUser.getIdTokenResult();
+  const idTokenResult = await fbUser.getIdTokenResult();
         
         setUser({
           uid: fbUser.uid,

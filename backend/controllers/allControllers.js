@@ -12,7 +12,8 @@ import {
   servicesCRUD,
   contactsCRUD,
   contactInfoCRUD,
-  achievementsCRUD
+  achievementsCRUD,
+  contactInfoHistoryCRUD
 } from '../utils/firestoreCRUD.js';
 import {
   validateProfile,
@@ -288,6 +289,18 @@ export const ContactInfoController = {
       if (existingDoc) {
         // Update existing document
         const updated = await contactInfoCRUD.update('primary', req.body);
+        // Write history snapshot
+        try {
+          await contactInfoHistoryCRUD.create({
+            action: 'update',
+            contactInfoId: 'primary',
+            payload: req.body,
+            changedBy: req.user?.email || req.user?.uid || 'unknown',
+            snapshotAt: new Date().toISOString()
+          });
+        } catch (historyErr) {
+          console.error('Failed to write contact info history (update):', historyErr.message);
+        }
         return res.json({
           success: true,
           message: 'Contact info updated (only one record allowed)',
@@ -297,6 +310,18 @@ export const ContactInfoController = {
       } else {
         // Create new document with fixed ID 'primary'
         const created = await contactInfoCRUD.create(req.body, 'primary');
+        // Write history snapshot
+        try {
+          await contactInfoHistoryCRUD.create({
+            action: 'create',
+            contactInfoId: 'primary',
+            payload: req.body,
+            changedBy: req.user?.email || req.user?.uid || 'unknown',
+            snapshotAt: new Date().toISOString()
+          });
+        } catch (historyErr) {
+          console.error('Failed to write contact info history (create):', historyErr.message);
+        }
         return res.status(201).json({
           success: true,
           message: 'Contact info created',
@@ -317,6 +342,18 @@ export const ContactInfoController = {
   update: async (req, res) => {
     try {
       const updated = await contactInfoCRUD.update('primary', req.body);
+      // History snapshot
+      try {
+        await contactInfoHistoryCRUD.create({
+          action: 'update',
+          contactInfoId: 'primary',
+          payload: req.body,
+          changedBy: req.user?.email || req.user?.uid || 'unknown',
+          snapshotAt: new Date().toISOString()
+        });
+      } catch (historyErr) {
+        console.error('Failed to write contact info history (update endpoint):', historyErr.message);
+      }
       res.json({
         success: true,
         message: 'Contact info updated',
@@ -345,6 +382,17 @@ export const ContactInfoController = {
       };
       
       const updated = await contactInfoCRUD.update('primary', defaultContactInfo);
+      try {
+        await contactInfoHistoryCRUD.create({
+          action: 'reset',
+          contactInfoId: 'primary',
+          payload: defaultContactInfo,
+          changedBy: req.user?.email || req.user?.uid || 'unknown',
+          snapshotAt: new Date().toISOString()
+        });
+      } catch (historyErr) {
+        console.error('Failed to write contact info history (reset):', historyErr.message);
+      }
       res.json({
         success: true,
         message: 'Contact info reset to defaults',
@@ -354,6 +402,24 @@ export const ContactInfoController = {
       res.status(500).json({
         success: false,
         error: 'Failed to reset contact info',
+        message: error.message
+      });
+    }
+  }
+};
+
+// Contact Info History Controller (read-only)
+export const ContactInfoHistoryController = {
+  getAll: async (req, res) => {
+    try {
+      const items = await contactInfoHistoryCRUD.getAll({
+        orderBy: { field: 'updatedAt', direction: 'desc' }
+      });
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch contact info history',
         message: error.message
       });
     }
