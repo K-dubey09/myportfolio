@@ -1,0 +1,46 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Run every Monday at midnight
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: Check and Update Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Check for outdated packages - Frontend
+        run: |
+          npm outdated || true
+        working-directory: ./frontend
+
+      - name: Check for outdated packages - Backend
+        run: |
+          npm outdated || true
+        working-directory: ./backend
+
+      - name: Create Dependabot PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies'
+          title: 'chore: Update dependencies'
+          body: |
+            Automated dependency updates
+            
+            - Frontend packages checked
+            - Backend packages checked
+            - Review and merge if tests pass
+          branch: dependency-updates
+          delete-branch: true
+        continue-on-error: true

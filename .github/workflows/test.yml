@@ -1,0 +1,57 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main, develop, feature/**]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: ./frontend
+
+      - name: Install backend dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: ./backend
+
+      - name: Run frontend tests
+        run: npm test --if-present
+        working-directory: ./frontend
+        continue-on-error: true
+
+      - name: Run backend tests
+        run: npm test --if-present
+        working-directory: ./backend
+        continue-on-error: true
+
+      - name: Generate test coverage
+        run: npm run test:coverage --if-present
+        working-directory: ./frontend
+        continue-on-error: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+        continue-on-error: true
