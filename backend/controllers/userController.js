@@ -1,11 +1,10 @@
 import firebaseConfig from '../config/firebase.js';
 
-const db = firebaseConfig.getFirestore();
-
 export const UserController = {
   // Get all users (admin only)
   async getAllUsers(req, res) {
     try {
+      const db = firebaseConfig.getFirestore();
       const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
       const users = usersSnapshot.docs.map(doc => {
         const { password, ...userData } = doc.data();
@@ -33,6 +32,7 @@ export const UserController = {
   // Get user by ID (admin only)
   async getUserById(req, res) {
     try {
+      const db = firebaseConfig.getFirestore();
       const { id } = req.params;
       const userDoc = await db.collection('users').doc(id).get();
 
@@ -63,6 +63,7 @@ export const UserController = {
   // Update user role and permissions (admin only)
   async updateUserRole(req, res) {
     try {
+      const db = firebaseConfig.getFirestore();
       const { id } = req.params;
       const { role, isActive, permissions } = req.body;
 
@@ -155,6 +156,7 @@ export const UserController = {
   // Delete user (admin only)
   async deleteUser(req, res) {
     try {
+      const db = firebaseConfig.getFirestore();
       const { id } = req.params;
 
       // Prevent admin from deleting themselves
@@ -202,6 +204,7 @@ export const UserController = {
   // Get user statistics (admin only)
   async getUserStats(req, res) {
     try {
+      const db = firebaseConfig.getFirestore();
       const usersSnapshot = await db.collection('users').get();
       const users = usersSnapshot.docs.map(doc => doc.data());
 
@@ -263,6 +266,7 @@ export const UserController = {
   // Assign or generate a unique userId for a user (admin only)
   async assignUserNumber(req, res) {
     try {
+      const db = firebaseConfig.getFirestore();
       const { id } = req.params;
       const { userId: providedUserId } = req.body || {};
 

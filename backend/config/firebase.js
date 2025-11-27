@@ -33,22 +33,40 @@ class FirebaseConfig {
       this.db = admin.firestore();
       this.auth = admin.auth();
       this.storage = admin.storage();
-  this.projectId = serviceAccount.project_id;
-  this.storageBucketName = bucketToUse;
+      this.projectId = serviceAccount.project_id;
+      this.storageBucketName = bucketToUse;
       this.initialized = true;
 
-      console.log('Firebase Admin SDK initialized');
-      console.log('Project ID:', this.projectId);
+      console.log('✅ Firebase Admin SDK initialized');
+      console.log('✅ Project ID:', this.projectId);
+      console.log('✅ Storage Bucket:', this.storageBucketName);
+      console.log('✅ Firestore available:', !!this.db);
       return this;
     } catch (error) {
-      console.error('Firebase initialization error:', error);
+      console.error('❌ Firebase initialization error:', error);
       throw error;
     }
   }
 
-  getFirestore() { return this.db; }
-  getAuth() { return this.auth; }
-  getStorage() { return this.storage; }
+  getFirestore() { 
+    if (!this.initialized || !this.db) {
+      console.error('⚠️  Firestore not initialized. Call initialize() first.');
+      throw new Error('Firestore not initialized. Please ensure Firebase is initialized before use.');
+    }
+    return this.db; 
+  }
+  getAuth() { 
+    if (!this.initialized || !this.auth) {
+      throw new Error('Auth not initialized. Please ensure Firebase is initialized before use.');
+    }
+    return this.auth; 
+  }
+  getStorage() { 
+    if (!this.initialized || !this.storage) {
+      throw new Error('Storage not initialized. Please ensure Firebase is initialized before use.');
+    }
+    return this.storage; 
+  }
 
   getProjectId() { return this.projectId; }
   getStorageBucketName() { return this.storageBucketName; }

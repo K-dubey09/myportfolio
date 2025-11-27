@@ -26,6 +26,9 @@ import StatisticsPage from './pages/StatisticsPage'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import './App.css'
+import './modern-dark-styles.css'
+import './modern-sections.css'
+import './modern-hero.css'
 
 const LoginRoute = () => {
   const navigate = useNavigate()

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Play, Calendar, Eye, Clock, Search, Filter } from 'lucide-react';
+import { Play, Calendar, Eye, Clock, Search } from 'lucide-react';
+import { API_URL } from '../config/env';
 import './PagesStyles.css';
 
 const VlogsPage = () => {
@@ -17,7 +19,7 @@ const VlogsPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/vlogs', {
+      const response = await fetch(`${API_URL}/vlogs`, {
         headers: {
           'Content-Type': 'application/json',
           ...(user ? { Authorization: `Bearer ${user.token}` } : {})

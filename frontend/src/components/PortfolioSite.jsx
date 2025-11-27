@@ -2,21 +2,76 @@ import React, { useState, useEffect } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from '../hooks/useTranslation'
+import { API_URL } from '../config/env'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
+const PortfolioSite = () => {
+  const { theme, isAnimated } = useTheme()
+  const { user } = useAuth()
+  const { t } = useTranslation()
+  
+  // State for each section's data
+  const [profile, setProfile] = useState(null)
+  const [services, setServices] = useState([])
+  const [projects, setProjects] = useState([])
+  const [experience, setExperience] = useState([])
+  const [education, setEducation] = useState([])
+  const [blogs, setBlogs] = useState([])
+  const [vlogs, setVlogs] = useState([])
+  const [gallery, setGallery] = useState([])
+  const [contactInfo, setContactInfo] = useState(null)
+  const [testimonialsPreview, setTestimonialsPreview] = useState([])
+  const [achievementsPreview, setAchievementsPreview] = useState([])
+  const [loading, setLoading] = useState(true)
+  
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  })
+  const [contactStatus, setContactStatus] = useState({ type: '', message: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  if (loading) {
-    return (
-      <div className="portfolio-site">
-        <div className="container">
-          <div className="loading">
-            <div className="spinner"></div>
-            <span>Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Fetch data from Firebase via backend API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch all data in parallel - using featured endpoints for home page
+        const [profileRes, servicesRes, projectsRes, experienceRes, educationRes, blogsRes, vlogsRes, galleryRes, contactInfoRes] = await Promise.all([
+          fetch(`${API_URL}/profile`),
+          fetch(`${API_URL}/services/featured?limit=3`),
+          fetch(`${API_URL}/projects/featured?limit=3`),
+          fetch(`${API_URL}/experiences/featured?limit=2`),
+          fetch(`${API_URL}/education/featured?limit=2`),
+          fetch(`${API_URL}/blogs/featured?limit=3`),
+          fetch(`${API_URL}/vlogs/featured?limit=3`),
+          fetch(`${API_URL}/gallery/featured?limit=3`),
+          fetch(`${API_URL}/contact-info`)
+        ])
+
+        const [profileJson, servicesJson, projectsJson, experienceJson, educationJson, blogsJson, vlogsJson, galleryJson, contactInfoJson] = await Promise.all([
+          profileRes.json(),
+          servicesRes.json(),
+          projectsRes.json(),
+          experienceRes.json(),
+          educationRes.json(),
+          blogsRes.json(),
+          vlogsRes.json(),
+          galleryRes.json(),
+          contactInfoRes.json()
+        ])
+
+        // Extract data from backend response format { success, count, data: [] }
+        const servicesData = Array.isArray(servicesJson) ? servicesJson : (servicesJson.data || servicesJson.services || [])
+        const projectsData = Array.isArray(projectsJson) ? projectsJson : (projectsJson.data || projectsJson.projects || [])
+        const experienceData = Array.isArray(experienceJson) ? experienceJson : (experienceJson.data || experienceJson.experience || [])
+        const educationData = Array.isArray(educationJson) ? educationJson : (educationJson.data || educationJson.education || [])
+        const blogsData = Array.isArray(blogsJson) ? blogsJson : (blogsJson.data || blogsJson.blogs || [])
+        const vlogsData = Array.isArray(vlogsJson) ? vlogsJson : (vlogsJson.data || vlogsJson.vlogs || [])
+        const galleryData = Array.isArray(galleryJson) ? galleryJson : (galleryJson.data || galleryJson.gallery || [])
 
         // Set data - featured endpoints already return limited items
         setProfile(profileJson.data || profileJson)
@@ -29,40 +84,18 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
         setGallery(galleryData)
         
         // Handle contact info - could be array or single object
-        // Normalize contact info structure coming from backend (may be single object or array)
-        const rawContactInfo = Array.isArray(contactInfoJson?.data || contactInfoJson)
-          ? (contactInfoJson.data || contactInfoJson)[0]
-          : (contactInfoJson.data || contactInfoJson)
-
-        const normalizeContactInfo = (info) => {
-          if (!info) return null
-          // Ensure address is an object
-            let addressObj = info.address
-            if (!addressObj || typeof addressObj !== 'object') {
-              if (typeof addressObj === 'string' && addressObj.trim().length) {
-                // Treat string as city
-                addressObj = { street: '', city: addressObj, state: '', zipCode: '', country: '' }
-              } else {
-                addressObj = { street: '', city: '', state: '', zipCode: '', country: '' }
-              }
-            }
-          // Merge default display settings
-          const defaultDisplaySettings = {
-            showEmail: true,
-            showAddress: true,
-            showPhone: true,
-            showBusinessHours: true,
-            showSocialLinks: true,
-            showAvailability: true
-          }
-          const displaySettings = { ...defaultDisplaySettings, ...(info.displaySettings || {}) }
-          return { ...info, address: addressObj, displaySettings }
+        const contactInfoData = contactInfoJson.data || contactInfoJson
+        if (Array.isArray(contactInfoData) && contactInfoData.length > 0) {
+          setContactInfo(contactInfoData[0])
+        } else if (contactInfoData && !Array.isArray(contactInfoData)) {
+          setContactInfo(contactInfoData)
+        } else {
+          setContactInfo(null)
         }
-        setContactInfo(normalizeContactInfo(rawContactInfo))
         
         // Fetch achievements preview - using featured endpoint
         try {
-          const aRes = await fetch(`${API_BASE_URL}/api/achievements/featured?limit=3`)
+          const aRes = await fetch(`${API_URL}/achievements/featured?limit=3`)
           if (aRes.ok) {
             const aJson = await aRes.json()
             const items = Array.isArray(aJson) ? aJson : (aJson.data || aJson.achievements || [])
@@ -79,10 +112,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
         console.log('Blogs data:', blogsData)
         console.log('Vlogs data:', vlogsData)
         console.log('Gallery data:', galleryData)
-  console.log('Contact info data (normalized):', rawContactInfo)
+        console.log('Contact info data:', contactInfoData)
         // Fetch testimonials - using featured endpoint
         try {
-          const tRes = await fetch(`${API_BASE_URL}/api/testimonials/featured?limit=3`)
+          const tRes = await fetch(`${API_URL}/testimonials/featured?limit=3`)
           if (tRes.ok) {
             const tJson = await tRes.json()
             const testimonialsData = Array.isArray(tJson) ? tJson : (tJson.data || tJson.testimonials || [])
@@ -118,7 +151,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
     setContactStatus({ type: '', message: '' })
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contacts`, {
+      const response = await fetch(`${API_URL}/contacts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -149,12 +182,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
   if (loading) {
     return (
       <div className="portfolio-site">
-            <div className="vlogs-grid" style={{ marginTop: '1.75rem', position: 'relative', zIndex: 2 }}>
+        <div className="loading">Loading...</div>
       </div>
-                <div key={vlog._id || vlog.id || index} className="vlog-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                  {vlog.thumbnailUrl && (
-                    <div className="vlog-thumbnail" style={{ position: 'relative' }}>
-                      <img src={vlog.thumbnailUrl} alt={vlog.title || 'Vlog thumbnail'} loading="lazy" className="vlog-image" style={{ display: 'block', width: '100%', height: 'auto', objectFit: 'cover' }} />
+    )
+  }
+  return (
+    <div className={`portfolio-site ${isAnimated ? 'animations-enabled' : 'animations-disabled'}`} data-theme={theme}>
       {/* Modern Hero Section */}
       <section id="top" className={`section home-section ${isAnimated ? 'fade-in' : ''}`}>
         <div className="container">
@@ -164,7 +197,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
             <div className="floating-shape shape-2"></div>
             <div className="floating-shape shape-3"></div>
           </div>
-                        <span className="vlog-duration" style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.55)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+
           <div className="hero-content-modern">
             {/* Left Side - Profile Card */}
             <div className={`profile-card-modern ${isAnimated ? 'scale-in' : ''}`}>
@@ -176,7 +209,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                     alt={profile.name || 'Profile'} 
                     className="profile-pic-modern"
                   />
-                    <p style={{ marginTop: '0.5rem' }}>{vlog.description}</p>
+                  <div className="profile-badge">
                     <span className="badge-icon">✨</span>
                     <span className="badge-text">Available for Work</span>
                   </div>
@@ -202,20 +235,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
 
             {/* Right Side - Hero Content */}
             <div className={`hero-text-modern ${isAnimated ? 'slide-in-right' : ''}`}>
-              <div className="container">
-                <div className="section-header" style={{ position: 'relative', zIndex: 3 }}>
+              <div className="hero-intro">
+                <span className="greeting-text">👋 Hello, I'm</span>
                 <h1 className="hero-name">
                   {profile?.name || 'Your Name'}
                   <span className="name-underline"></span>
                 </h1>
                 <h2 className="hero-title">{profile?.title || 'Full Stack Developer'}</h2>
               </div>
-                <div className="vlogs-grid" style={{ marginTop: '2rem', position: 'relative' }}>
+
               <p className="hero-description">
                 {profile?.bio || t('home.description')}
               </p>
 
-                          <img src={vlog.thumbnailUrl} alt={vlog.title || 'Vlog thumbnail'} loading="lazy" className="vlog-image" style={{ display: 'block', width: '100%', height: 'auto', objectFit: 'cover' }} />
+              {/* CTA Buttons */}
               <div className="hero-cta-group">
                 <a href="#contact" className="cta-btn primary-cta">
                   <span className="cta-icon">💼</span>
@@ -602,25 +635,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
           <div className="floating-shape shape-vlog-2"></div>
           
           <div className="container">
-            <div className="section-header" style={{ position: 'relative', zIndex: 3 }}>
+            <div className="section-header">
               <h2>
                 <span className="section-icon">🎥</span>
                 Video Blogs
               </h2>
               <a href="/vlogs" className="view-all-link">View All</a>
             </div>
-            <div className="vlogs-grid" style={{ marginTop: '2rem', position: 'relative' }}>
+            <div className="vlogs-grid">
               {vlogs.map((vlog, index) => (
-                <div key={vlog._id || vlog.id || index} className="vlog-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div key={vlog._id || vlog.id || index} className="vlog-card">
                   {vlog.thumbnailUrl && (
-                    <div className="vlog-thumbnail" style={{ position: 'relative' }}>
-                      <img
-                        src={vlog.thumbnailUrl}
-                        alt={vlog.title || 'Vlog thumbnail'}
-                        loading="lazy"
-                        className="vlog-image"
-                        style={{ display: 'block', width: '100%', height: 'auto', objectFit: 'cover' }}
-                      />
+                    <div className="vlog-thumbnail">
+                      <img src={vlog.thumbnailUrl} alt={vlog.title} className="vlog-image" />
                       <div className="vlog-play-overlay">
                         <div className="play-button">
                           <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
@@ -630,22 +657,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                         </div>
                       </div>
                       {vlog.duration && (
-                        <span
-                          className="vlog-duration"
-                          style={{
-                            position: 'absolute',
-                            top: '8px',
-                            right: '8px',
-                            background: 'rgba(0,0,0,0.55)',
-                            color: '#fff',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
+                        <span className="vlog-duration">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
@@ -656,8 +668,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                     </div>
                   )}
                   <div className="vlog-content">
-                    <h3 style={{ marginTop: '0.85rem' }}>{vlog.title}</h3>
-                    <p style={{ marginTop: '0.5rem' }}>{vlog.description}</p>
+                    <h3>{vlog.title}</h3>
+                    <p>{vlog.description}</p>
                     <div className="vlog-meta">
                       {vlog.platform && (
                         <span className="vlog-platform">
@@ -669,22 +681,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                       )}
                       {vlog.publishedDate && (
                         <span className="vlog-date">
-                          {new Date(vlog.publishedDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
+                          {new Date(vlog.publishedDate).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
                           })}
                         </span>
                       )}
                     </div>
                     {vlog.videoUrl && (
-                      <a
-                        href={vlog.videoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="vlog-watch-btn"
-                        aria-label={`Watch vlog: ${vlog.title}`}
-                      >
+                      <a href={vlog.videoUrl} target="_blank" rel="noopener noreferrer" className="vlog-watch-btn">
                         <span>Watch Now</span>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -876,7 +882,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
               <div className="card-content-modern">
                 {contactInfo ? (
                   <div className="contact-info-list-modern">
-                    {contactInfo.displaySettings.showEmail && contactInfo.email && (
+                    {contactInfo.email && (
                       <div className="contact-item-modern">
                         <div className="contact-icon-modern">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -886,12 +892,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                         </div>
                         <div className="contact-details-modern">
                           <strong>Email</strong>
-                          <a href={`mailto:${contactInfo.email}`} className="contact-link-modern">{contactInfo.email}</a>
-                          {contactInfo.alternateEmail && <div className="alternate-value">Alt: <a href={`mailto:${contactInfo.alternateEmail}`}>{contactInfo.alternateEmail}</a></div>}
+                          <a href={`mailto:${contactInfo.email}`} className="contact-link-modern">
+                            {contactInfo.email}
+                          </a>
                         </div>
                       </div>
                     )}
-                    {contactInfo.displaySettings.showPhone && contactInfo.phone && (
+                    {contactInfo.phone && (
                       <div className="contact-item-modern">
                         <div className="contact-icon-modern">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -900,12 +907,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                         </div>
                         <div className="contact-details-modern">
                           <strong>Phone</strong>
-                          <a href={`tel:${contactInfo.phone}`} className="contact-link-modern">{contactInfo.phone}</a>
-                          {contactInfo.alternatePhone && <div className="alternate-value">Alt: <a href={`tel:${contactInfo.alternatePhone}`}>{contactInfo.alternatePhone}</a></div>}
+                          <a href={`tel:${contactInfo.phone}`} className="contact-link-modern">
+                            {contactInfo.phone}
+                          </a>
                         </div>
                       </div>
                     )}
-                    {contactInfo.displaySettings.showAddress && contactInfo.address && (contactInfo.address.city || contactInfo.address.state || contactInfo.address.country) && (
+                    {contactInfo.address && (
                       <div className="contact-item-modern">
                         <div className="contact-icon-modern">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -915,7 +923,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                         </div>
                         <div className="contact-details-modern">
                           <strong>Location</strong>
-                          <span>{[contactInfo.address.city, contactInfo.address.state, contactInfo.address.country].filter(Boolean).join(', ') || 'Not specified'}</span>
+                          <span>
+                            {contactInfo.address.city && contactInfo.address.state
+                              ? `${contactInfo.address.city}, ${contactInfo.address.state}`
+                              : contactInfo.address.city || contactInfo.address.state || 'Location not specified'
+                            }
+                          </span>
                         </div>
                       </div>
                     )}
@@ -930,68 +943,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:5000'
                         </div>
                         <div className="contact-details-modern">
                           <strong>Website</strong>
-                          <a href={contactInfo.website} target="_blank" rel="noopener noreferrer" className="contact-link-modern">Visit Website</a>
+                          <a href={contactInfo.website} target="_blank" rel="noopener noreferrer" className="contact-link-modern">
+                            Visit Website
+                          </a>
                         </div>
-                      </div>
-                    )}
-                    {contactInfo.displaySettings.showBusinessHours && contactInfo.businessHours && (
-                      <div className="contact-item-modern">
-                        <div className="contact-icon-modern">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                          </svg>
-                        </div>
-                        <div className="contact-details-modern">
-                          <strong>Business Hours</strong>
-                          <div className="hours-grid">
-                            {Object.entries(contactInfo.businessHours).map(([day, hours]) => (
-                              <div key={day} className="hours-row"><span className="day-label">{day.charAt(0).toUpperCase() + day.slice(1)}:</span> <span>{hours}</span></div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {contactInfo.displaySettings.showSocialLinks && contactInfo.socialLinks && (
-                      <div className="contact-item-modern">
-                        <div className="contact-icon-modern">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18 2h-3a4 4 0 0 0-4 4v3H8v4h3v9h4v-9h3l1-4h-4V6a1 1 0 0 1 1-1h3z" />
-                          </svg>
-                        </div>
-                        <div className="contact-details-modern">
-                          <strong>Social</strong>
-                          <div className="social-links-inline">
-                            {Object.entries(contactInfo.socialLinks).filter(([, val]) => val).map(([platform, url]) => (
-                              <a key={platform} href={url} target="_blank" rel="noopener noreferrer" className="contact-link-modern social-link">{platform}</a>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {contactInfo.displaySettings.showAvailability && (
-                      <div className="contact-item-modern">
-                        <div className="contact-icon-modern">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5zm4 4h6M9 9h6m-6 4h6" />
-                          </svg>
-                        </div>
-                        <div className="contact-details-modern">
-                          <strong>Availability</strong>
-                          <span>{contactInfo.availability || 'available'} • Avg response: {contactInfo.responseTime}</span>
-                          {contactInfo.timezone && <div className="timezone">Timezone: {contactInfo.timezone}</div>}
-                        </div>
-                      </div>
-                    )}
-                    {contactInfo.callToAction && (
-                      <div className="cta-block-modern">
-                        <h4>{contactInfo.callToAction.title}</h4>
-                        <p>{contactInfo.callToAction.subtitle}</p>
-                        {contactInfo.callToAction.buttonText && <a href="#contact" className="cta-button-simple">{contactInfo.callToAction.buttonText}</a>}
                       </div>
                     )}
                   </div>
-                ) : (<p className="no-data-modern">No contact information available.</p>)}
+                ) : (
+                  <p className="no-data-modern">No contact information available.</p>
+                )}
               </div>
             </div>
 

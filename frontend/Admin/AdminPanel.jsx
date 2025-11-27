@@ -614,6 +614,24 @@ const AdminPanel = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
+  // Fetch contact info history (latest first) - DEFINED FIRST to avoid hoisting issues
+  const fetchContactInfoHistory = useCallback(async (authToken = token) => {
+    if (!authToken) return;
+    setIsHistoryLoading(true);
+    try {
+      const { res, json } = await apiFetch('/api/admin/contact-info/history', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (res.ok && json?.success && Array.isArray(json.data)) {
+        setContactInfoHistory(json.data.slice(0, 20));
+      }
+    } catch (err) {
+      console.error('Failed to fetch contact info history', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [apiFetch, token]);
+
   // Fetch portfolio data
   const fetchData = useCallback(async () => {
     try {
@@ -698,24 +716,6 @@ const AdminPanel = () => {
       setIsLoading(false);
     }
   }, [token, apiFetch, getIdToken, fetchContactInfoHistory]);
-
-  // Fetch contact info history (latest first)
-  const fetchContactInfoHistory = useCallback(async (authToken = token) => {
-    if (!authToken) return;
-    setIsHistoryLoading(true);
-    try {
-      const { res, json } = await apiFetch('/api/admin/contact-info/history', {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
-      if (res.ok && json?.success && Array.isArray(json.data)) {
-        setContactInfoHistory(json.data.slice(0, 20));
-      }
-    } catch (err) {
-      console.error('Failed to fetch contact info history', err);
-    } finally {
-      setIsHistoryLoading(false);
-    }
-  }, [apiFetch, token]);
 
   useEffect(() => {
     if (token) {
