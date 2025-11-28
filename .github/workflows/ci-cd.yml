@@ -85,9 +85,24 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
 
       - name: Install frontend dependencies
         run: npm ci --legacy-peer-deps
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Create .env file for build
+        run: |
+          cat > .env << EOF
+          VITE_API_BASE=http://localhost:5000
+          VITE_FIREBASE_API_KEY=dummy-key
+          VITE_FIREBASE_AUTH_DOMAIN=dummy.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID=dummy-project
+          VITE_FIREBASE_STORAGE_BUCKET=dummy.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
+          VITE_FIREBASE_APP_ID=1:000000000000:web:dummy
+          VITE_FIREBASE_MEASUREMENT_ID=G-DUMMY
+          EOF
         working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Run frontend tests
@@ -98,6 +113,8 @@ jobs:
       - name: Build frontend
         run: npm run build
         working-directory: ${{ env.FRONTEND_DIR }}
+        env:
+          CI: false
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
