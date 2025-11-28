@@ -10,6 +10,7 @@ import AdminPanel from '../Admin/AdminPanel'
 import RegistrationPage from './components/RegistrationPage'
 import EmailVerification from './components/EmailVerification'
 import EmailVerificationHandler from './components/EmailVerificationHandler';
+import ProfileCompletionPage from './components/ProfileCompletionPage'
 import Login from './components/Login'
 import ProjectsPage from './pages/ProjectsPage'
 import BlogsPage from './pages/BlogsPage'
@@ -175,6 +176,7 @@ const App = () => {
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/email-verification-pending" element={<EmailVerificationHandler />} />
+            <Route path="/complete-profile" element={<ProfileCompletionPage />} />
             <Route path="/admin" element={<AdminPanelWrapper />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/blogs" element={<BlogsPage />} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../src/context/AuthContext';
+import InconsistencyLogsPanel from './components/InconsistencyLogsPanel';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -5396,6 +5397,12 @@ const AdminPanel = () => {
             >
               <span>👥</span> Users
             </button>
+            <button
+              className={activeTab === 'consistency' ? 'nav-item active' : 'nav-item'}
+              onClick={() => setActiveTab('consistency')}
+            >
+              <span>🔍</span> Data Consistency
+            </button>
           </div>
         </nav>
       </div>
@@ -5467,6 +5474,7 @@ const AdminPanel = () => {
           {activeTab === 'achievements' && renderAchievementsTab()}
           {activeTab === 'users' && renderUsersTab()}
           {activeTab === 'contacts' && renderContactsTab()}
+          {activeTab === 'consistency' && <InconsistencyLogsPanel />}
         </div>
       </div>
     </div>

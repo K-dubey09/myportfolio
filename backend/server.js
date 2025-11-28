@@ -10,6 +10,10 @@ import AccessKeysController from './controllers/accessKeysController.js';
 import AdminRequestsController from './controllers/adminRequestsController.js';
 import ConversionsController from './controllers/conversionsController.js';
 import UploadController, { upload } from './controllers/uploadController.js';
+import * as ProfileCompletionController from './controllers/profileCompletionController.js';
+import * as InconsistencyLogsController from './controllers/inconsistencyLogsController.js';
+import { checkUserConsistency, blockSuspendedUsers } from './middleware/userConsistencyCheck.js';
+import userConsistencyService from './services/userConsistencyService.js';
 import {
   ProfileController,
   SkillsController,
@@ -133,6 +137,10 @@ const initializeServer = async () => {
     await firebaseConfig.initialize();
     console.log('✅ Firebase initialized successfully');
 
+    // Start user consistency service
+    userConsistencyService.start();
+    console.log('✅ User consistency service started');
+
 // ==================== AUTHENTICATION ROUTES ====================
 app.post('/api/auth/register', AuthController.register);
 app.post('/api/auth/register/request-verification', AuthController.requestEmailVerification);
@@ -142,9 +150,15 @@ app.post('/api/auth/login', AuthController.login);
 app.post('/api/auth/email-link-signin', AuthController.handleEmailLinkSignIn); // Email link login option
 app.post('/api/auth/google', AuthController.googleAuth);
 app.post('/api/auth/logout', authenticateToken, AuthController.logout);
-app.get('/api/auth/profile', authenticateToken, AuthController.getProfile);
-app.put('/api/auth/profile', authenticateToken, AuthController.updateProfile);
-app.put('/api/auth/change-password', authenticateToken, AuthController.changePassword);
+
+// Profile status and completion (for suspended users)
+app.get('/api/auth/profile-status', authenticateToken, ProfileCompletionController.getProfileCompletionStatus);
+app.post('/api/auth/complete-profile', authenticateToken, ProfileCompletionController.completeProfile);
+
+// Protected routes with consistency checking
+app.get('/api/auth/profile', authenticateToken, checkUserConsistency, AuthController.getProfile);
+app.put('/api/auth/profile', authenticateToken, checkUserConsistency, blockSuspendedUsers, AuthController.updateProfile);
+app.put('/api/auth/change-password', authenticateToken, checkUserConsistency, blockSuspendedUsers, AuthController.changePassword);
 
 // ==================== USER MANAGEMENT ROUTES (Admin Only) ====================
 app.get('/api/admin/users', authenticateToken, requireAdmin, UserController.getAllUsers);
@@ -153,6 +167,14 @@ app.get('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.
 app.put('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.updateUserRole);
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, UserController.deleteUser);
 app.post('/api/admin/users/:id/assign-id', authenticateToken, requireAdmin, UserController.assignUserNumber);
+
+// ==================== USER INCONSISTENCY LOGS ROUTES (Admin Only) ====================
+app.get('/api/admin/inconsistency-logs', authenticateToken, requireAdmin, InconsistencyLogsController.getAllInconsistencyLogs);
+app.get('/api/admin/inconsistency-logs/:userId', authenticateToken, requireAdmin, InconsistencyLogsController.getUserInconsistencyLogs);
+app.get('/api/admin/deleted-accounts', authenticateToken, requireAdmin, InconsistencyLogsController.getDeletedAccounts);
+app.post('/api/admin/inconsistency-logs/:logId/resolve', authenticateToken, requireAdmin, InconsistencyLogsController.markInconsistencyResolved);
+app.get('/api/admin/inconsistency-stats', authenticateToken, requireAdmin, InconsistencyLogsController.getInconsistencyStats);
+app.post('/api/admin/restore-user/:userId', authenticateToken, requireAdmin, InconsistencyLogsController.restoreUserAccess);
 
 // ==================== ACCESS KEYS ROUTES (Admin Only) ====================
 app.get('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeysController.getAllAccessKeys);
@@ -532,6 +554,10 @@ process.on('SIGINT', async () => {
   
   if (shutdownRequests >= 2) {
     console.log('🔄 Double SIGINT - Gracefully shutting down...');
+    
+    // Stop consistency service
+    userConsistencyService.stop();
+    
     process.exit(0);
   } else {
     console.log('🔄 Press Ctrl+C again within 3 seconds to shutdown');
