@@ -8,8 +8,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "k-dubey09"
     assignees:
       - "k-dubey09"
     commit-message:
@@ -28,8 +26,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "k-dubey09"
     assignees:
       - "k-dubey09"
     commit-message:

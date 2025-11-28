@@ -1,7 +1,5 @@
 import firebaseConfig from '../config/firebase.js';
 
-const db = firebaseConfig.getFirestore();
-
 /**
  * Conversions Controller
  * Tracks conversion events and analytics
@@ -10,6 +8,8 @@ const db = firebaseConfig.getFirestore();
 // Get all conversions
 export const getAllConversions = async (req, res) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const conversionsRef = db.collection('conversions');
     const snapshot = await conversionsRef.orderBy('timestamp', 'desc').limit(100).get();
     
@@ -69,6 +69,8 @@ export const trackConversion = async (req, res) => {
       ip: req.ip || req.connection.remoteAddress
     };
 
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const docRef = await db.collection('conversions').add(newConversion);
 
     res.json({
@@ -93,7 +95,8 @@ export const trackConversion = async (req, res) => {
 export const getConversionStats = async (req, res) => {
   try {
     const { startDate, endDate, type } = req.query;
-    
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     let query = db.collection('conversions');
     
     // Filter by date range
@@ -159,6 +162,8 @@ export const deleteConversion = async (req, res) => {
   try {
     const { id } = req.params;
 
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     await db.collection('conversions').doc(id).delete();
 
     res.json({

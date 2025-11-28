@@ -1,7 +1,5 @@
 import firebaseConfig from '../config/firebase.js';
 
-const db = firebaseConfig.getFirestore();
-
 /**
  * Admin Requests Controller
  * Manages user role upgrade requests
@@ -10,6 +8,8 @@ const db = firebaseConfig.getFirestore();
 // Get all admin requests
 export const getAllRequests = async (req, res) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const requestsRef = db.collection('adminRequests');
     const snapshot = await requestsRef.orderBy('createdAt', 'desc').get();
     
@@ -59,6 +59,8 @@ export const createRequest = async (req, res) => {
     const { requestedRole, reason } = req.body;
 
     // Check if user already has a pending request
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const existingRequest = await db.collection('adminRequests')
       .where('userId', '==', userId)
       .where('status', '==', 'pending')
@@ -107,6 +109,8 @@ export const approveRequest = async (req, res) => {
     const { requestId } = req.params;
     const approvedBy = req.user.userId;
 
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const requestDoc = await db.collection('adminRequests').doc(requestId).get();
     
     if (!requestDoc.exists) {
@@ -154,6 +158,8 @@ export const rejectRequest = async (req, res) => {
     const rejectedBy = req.user.userId;
     const { reason } = req.body;
 
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const requestDoc = await db.collection('adminRequests').doc(requestId).get();
     
     if (!requestDoc.exists) {
@@ -190,7 +196,8 @@ export const rejectRequest = async (req, res) => {
 export const revertUser = async (req, res) => {
   try {
     const { userId } = req.params;
-
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const userDoc = await db.collection('users').doc(userId).get();
     
     if (!userDoc.exists) {

@@ -1,7 +1,5 @@
-import firebaseConfig from '../config/firebase.js';
+import firebaseConfig, { admin } from '../config/firebase.js';
 import { v4 as uuidv4 } from 'uuid';
-
-const db = firebaseConfig.getFirestore();
 
 /**
  * Access Keys Controller
@@ -16,6 +14,8 @@ const generateAccessKey = () => {
 // Get all access keys
 export const getAllAccessKeys = async (req, res) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const accessKeysRef = db.collection('accessKeys');
     const snapshot = await accessKeysRef.orderBy('createdAt', 'desc').get();
     
@@ -44,6 +44,8 @@ export const getAllAccessKeys = async (req, res) => {
 // Create a new access key
 export const createAccessKey = async (req, res) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const { notes } = req.body;
     const createdBy = req.user.userId;
 
@@ -80,6 +82,8 @@ export const createAccessKey = async (req, res) => {
 // Delete an access key
 export const deleteAccessKey = async (req, res) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const { id } = req.params;
 
     await db.collection('accessKeys').doc(id).delete();
@@ -101,10 +105,12 @@ export const deleteAccessKey = async (req, res) => {
 // Update access key usage
 export const updateAccessKeyUsage = async (keyId) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const keyRef = db.collection('accessKeys').doc(keyId);
     await keyRef.update({
       lastUsed: new Date().toISOString(),
-      usageCount: firebaseConfig.getFieldValue().increment(1)
+      usageCount: admin.firestore.FieldValue.increment(1)
     });
   } catch (error) {
     console.error('Error updating access key usage:', error);
@@ -114,6 +120,8 @@ export const updateAccessKeyUsage = async (keyId) => {
 // Validate access key
 export const validateAccessKey = async (key) => {
   try {
+    await firebaseConfig.initialize();
+    const db = firebaseConfig.getFirestore();
     const snapshot = await db.collection('accessKeys')
       .where('key', '==', key)
       .where('isActive', '==', true)
