@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "axios": "^1.13.2",
-    "firebase": "^12.5.0",
+    "firebase": "^12.6.0",
     "framer-motion": "^12.23.22",
     "hooks": "^0.3.2",
     "lucide-react": "^0.544.0",
