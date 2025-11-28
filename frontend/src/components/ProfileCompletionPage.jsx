@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import './ProfileCompletionPage.css';
 
 const ProfileCompletionPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,11 +16,7 @@ const ProfileCompletionPage = () => {
     email: ''
   });
 
-  useEffect(() => {
-    fetchProfileStatus();
-  }, []);
-
-  const fetchProfileStatus = async () => {
+  const fetchProfileStatus = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/profile-status`, {
@@ -56,7 +50,11 @@ const ProfileCompletionPage = () => {
       setError(err.message);
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchProfileStatus();
+  }, [fetchProfileStatus]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

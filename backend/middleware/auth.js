@@ -19,6 +19,17 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(403).json({ message: 'User is inactive or does not exist' });
     }
 
+    // Check if user is temporarily suspended by consistency system
+    if (user.isTemporarilySuspended) {
+      return res.status(403).json({ 
+        message: 'Account temporarily suspended due to incomplete profile data. Please complete your profile to regain access.',
+        suspended: true,
+        suspendedAt: user.suspendedAt,
+        suspensionReason: user.suspensionReason || 'Incomplete profile data',
+        redirectTo: '/profile-completion'
+      });
+    }
+
     req.user = {
       uid: user.uid,
       email: user.email,

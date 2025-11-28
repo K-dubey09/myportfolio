@@ -64,6 +64,12 @@ class UserConsistencyService {
         const userId = userDoc.id;
         const userData = userDoc.data();
 
+        // Skip admin users from consistency checks
+        if (userData.role === 'admin') {
+          checkedCount++;
+          continue;
+        }
+
         try {
           // Check if auth record exists
           let authUser;
@@ -156,6 +162,11 @@ class UserConsistencyService {
       for (const userDoc of expiredSnapshot.docs) {
         const userId = userDoc.id;
         const userData = userDoc.data();
+
+        // Skip admin users from deletion
+        if (userData.role === 'admin') {
+          continue;
+        }
 
         try {
           // Log deletion

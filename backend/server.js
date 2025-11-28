@@ -12,8 +12,10 @@ import ConversionsController from './controllers/conversionsController.js';
 import UploadController, { upload } from './controllers/uploadController.js';
 import * as ProfileCompletionController from './controllers/profileCompletionController.js';
 import * as InconsistencyLogsController from './controllers/inconsistencyLogsController.js';
+import * as NotificationsController from './controllers/notificationsController.js';
 import { checkUserConsistency, blockSuspendedUsers } from './middleware/userConsistencyCheck.js';
 import userConsistencyService from './services/userConsistencyService.js';
+import emailNotificationService from './services/emailNotificationService.js';
 import {
   ProfileController,
   SkillsController,
@@ -141,6 +143,10 @@ const initializeServer = async () => {
     userConsistencyService.start();
     console.log('✅ User consistency service started');
 
+    // Start email notification service
+    emailNotificationService.start();
+    console.log('✅ Email notification service started');
+
 // ==================== AUTHENTICATION ROUTES ====================
 app.post('/api/auth/register', AuthController.register);
 app.post('/api/auth/register/request-verification', AuthController.requestEmailVerification);
@@ -175,6 +181,15 @@ app.get('/api/admin/deleted-accounts', authenticateToken, requireAdmin, Inconsis
 app.post('/api/admin/inconsistency-logs/:logId/resolve', authenticateToken, requireAdmin, InconsistencyLogsController.markInconsistencyResolved);
 app.get('/api/admin/inconsistency-stats', authenticateToken, requireAdmin, InconsistencyLogsController.getInconsistencyStats);
 app.post('/api/admin/restore-user/:userId', authenticateToken, requireAdmin, InconsistencyLogsController.restoreUserAccess);
+
+// ==================== NOTIFICATIONS ROUTES (Admin Only) ====================
+app.get('/api/admin/notifications', authenticateToken, requireAdmin, NotificationsController.getAllNotifications);
+app.get('/api/admin/notifications/unread-count', authenticateToken, requireAdmin, NotificationsController.getUnreadCount);
+app.post('/api/admin/notifications/:notificationId/read', authenticateToken, requireAdmin, NotificationsController.markAsRead);
+app.post('/api/admin/notifications/mark-all-read', authenticateToken, requireAdmin, NotificationsController.markAllAsRead);
+app.delete('/api/admin/notifications/:notificationId', authenticateToken, requireAdmin, NotificationsController.deleteNotification);
+app.post('/api/admin/notifications/trigger-check', authenticateToken, requireAdmin, NotificationsController.triggerWarningCheck);
+app.get('/api/admin/content-status', authenticateToken, requireAdmin, NotificationsController.getContentStatus);
 
 // ==================== ACCESS KEYS ROUTES (Admin Only) ====================
 app.get('/api/admin/access-keys', authenticateToken, requireAdmin, AccessKeysController.getAllAccessKeys);
@@ -557,6 +572,9 @@ process.on('SIGINT', async () => {
     
     // Stop consistency service
     userConsistencyService.stop();
+    
+    // Stop email notification service
+    emailNotificationService.stop();
     
     process.exit(0);
   } else {

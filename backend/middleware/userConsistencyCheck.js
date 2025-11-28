@@ -21,6 +21,11 @@ export const checkUserConsistency = async (req, res, next) => {
     
     const userId = req.user.userId;
     
+    // Exempt admin users from consistency checks
+    if (req.user.role === 'admin') {
+      return next();
+    }
+    
     // Get user from Firestore
     const userDoc = await db.collection('users').doc(userId).get();
     

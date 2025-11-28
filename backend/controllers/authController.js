@@ -276,6 +276,10 @@ export const getVerificationStatus = async (req, res) => {
           email: firebaseUser.email,
           name: trackingData.name || firebaseUser.displayName,
           emailVerified: true,
+          role: 'viewer', // Default role for new users
+          isTemporarilySuspended: false, // Not suspended initially
+          suspendedAt: null,
+          suspensionReason: null
         });
       }
       

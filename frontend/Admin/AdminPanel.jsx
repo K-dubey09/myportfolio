@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../src/context/AuthContext';
 import InconsistencyLogsPanel from './components/InconsistencyLogsPanel';
+import NotificationsBell from './components/NotificationsBell';
+import NotificationsPanel from './components/NotificationsPanel';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -167,6 +169,35 @@ const AdminPanel = () => {
     }
   }, [token, apiFetch]);
 
+  // Helper: check if section has less than 3 items
+  const hasLowDataCount = (sectionName) => {
+    if (!data) return false;
+    const sectionData = data[sectionName];
+    if (!sectionData) return false;
+    
+    if (Array.isArray(sectionData)) {
+      return sectionData.length < 3 && sectionData.length > 0;
+    }
+    if (typeof sectionData === 'object') {
+      return Object.keys(sectionData).length < 3 && Object.keys(sectionData).length > 0;
+    }
+    return false;
+  };
+
+  const getDataCount = (sectionName) => {
+    if (!data) return 0;
+    const sectionData = data[sectionName];
+    if (!sectionData) return 0;
+    
+    if (Array.isArray(sectionData)) {
+      return sectionData.length;
+    }
+    if (typeof sectionData === 'object') {
+      return Object.keys(sectionData).length;
+    }
+    return 0;
+  };
+
   // Helper: apply filter, sort and pagination locally
   const applyUsersPipeline = (list) => {
     if (!Array.isArray(list)) return [];
@@ -278,6 +309,27 @@ const AdminPanel = () => {
       fetchUsers();
     }
   }, [activeTab, fetchAccessKeys, fetchAdminRequests, fetchConversions, fetchAchievements, fetchUsers]);
+
+  // Render low data warning banner
+  const renderLowDataWarning = (sectionName, displayName) => {
+    const count = getDataCount(sectionName);
+    if (count >= 3 || count === 0) return null;
+    
+    return (
+      <div className="low-data-warning">
+        <div className="warning-icon">⚠️</div>
+        <div className="warning-content">
+          <h4>Low Content Warning</h4>
+          <p>
+            You currently have only <strong>{count}</strong> {displayName.toLowerCase()} item{count !== 1 ? 's' : ''}.
+            {' '}It's recommended to have at least <strong>3 items</strong> for a complete portfolio showcase.
+          </p>
+          <small>Add more content to improve your portfolio's visibility and professionalism.</small>
+        </div>
+      </div>
+    );
+  };
+
 
   const handleGenerateKey = async () => {
     try {
@@ -2258,6 +2310,7 @@ const AdminPanel = () => {
   // Render Skills Tab
   const renderSkillsTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('skills', 'Skills')}
       <div className="tab-header">
         <h2>Skills Management</h2>
         <div className="header-actions">
@@ -2391,6 +2444,7 @@ const AdminPanel = () => {
   // Render Projects Tab
   const renderProjectsTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('projects', 'Projects')}
       <div className="tab-header">
         <h2>Projects Management</h2>
         <div className="header-actions">
@@ -2581,6 +2635,7 @@ const AdminPanel = () => {
   // Render Experience Tab
   const renderExperienceTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('experiences', 'Experience')}
       <div className="tab-header">
         <h2>Experience Management</h2>
         <div className="header-actions">
@@ -2731,6 +2786,7 @@ const AdminPanel = () => {
   // Render Education Tab
   const renderEducationTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('education', 'Education')}
       <div className="tab-header">
         <h2>Education Management</h2>
       </div>
@@ -2856,6 +2912,7 @@ const AdminPanel = () => {
   // Render Blogs Tab
   const renderBlogsTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('blogs', 'Blogs')}
       <div className="tab-header">
         <h2>Blog Management</h2>
         <div className="header-actions">
@@ -3221,6 +3278,7 @@ const AdminPanel = () => {
   // Render Vlogs Tab
   const renderVlogsTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('vlogs', 'Vlogs')}
       <div className="tab-header">
         <h2>Vlog Management</h2>
         <div className="header-actions">
@@ -3486,6 +3544,7 @@ const AdminPanel = () => {
   // Render Gallery Tab
   const renderGalleryTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('gallery', 'Gallery')}
       <div className="tab-header">
         <h2>Gallery Management</h2>
         <div className="header-actions">
@@ -3699,6 +3758,7 @@ const AdminPanel = () => {
   // Render Services Tab
   const renderServicesTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('services', 'Services')}
       <div className="tab-header">
         <h2>Services Management</h2>
         <div className="header-actions">
@@ -4040,6 +4100,7 @@ const AdminPanel = () => {
   // Render Testimonials Tab (split into Add / Manage)
   const renderTestimonialsTab = () => (
     <div className="tab-content">
+      {renderLowDataWarning('testimonials', 'Testimonials')}
       <div className="tab-header">
         <h2>Testimonials Management</h2>
         <button 
@@ -5293,6 +5354,7 @@ const AdminPanel = () => {
           <span className="status-text">Connected</span>
           {/* left/floating sidebar close button removed to avoid duplicate close icon when navbar opens */}
           <div className="sidebar-actions">
+            <NotificationsBell />
             <button onClick={() => window.location.href = '/'} className="home-btn">
               Home
             </button>
@@ -5316,24 +5378,36 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('skills')}
             >
               <span>⚡</span> Skills
+              {hasLowDataCount('skills') && (
+                <span className="warning-badge" title={`Only ${getDataCount('skills')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'projects' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('projects')}
             >
               <span>💼</span> Projects
+              {hasLowDataCount('projects') && (
+                <span className="warning-badge" title={`Only ${getDataCount('projects')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'experience' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('experience')}
             >
               <span>🏢</span> Experience
+              {hasLowDataCount('experiences') && (
+                <span className="warning-badge" title={`Only ${getDataCount('experiences')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'education' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('education')}
             >
               <span>🎓</span> Education
+              {hasLowDataCount('education') && (
+                <span className="warning-badge" title={`Only ${getDataCount('education')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'achievements' ? 'nav-item active' : 'nav-item'} 
@@ -5350,18 +5424,27 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('blogs')}
             >
               <span>📝</span> Blogs
+              {hasLowDataCount('blogs') && (
+                <span className="warning-badge" title={`Only ${getDataCount('blogs')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'vlogs' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('vlogs')}
             >
               <span>🎥</span> Vlogs
+              {hasLowDataCount('vlogs') && (
+                <span className="warning-badge" title={`Only ${getDataCount('vlogs')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'gallery' ? 'nav-item active' : 'nav-item'} 
               onClick={() => setActiveTab('gallery')}
             >
               <span>🖼️</span> Gallery
+              {hasLowDataCount('gallery') && (
+                <span className="warning-badge" title={`Only ${getDataCount('gallery')} items - Add more content`}>⚠️</span>
+              )}
             </button>
           </div>
           
@@ -5372,6 +5455,9 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('services')}
             >
               <span>🛠️</span> Services
+              {hasLowDataCount('services') && (
+                <span className="warning-badge" title={`Only ${getDataCount('services')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button
               className={activeTab === 'viewer-editor' ? 'nav-item active' : 'nav-item'}
@@ -5384,6 +5470,9 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('testimonials')}
             >
               <span>⭐</span> Testimonials
+              {hasLowDataCount('testimonials') && (
+                <span className="warning-badge" title={`Only ${getDataCount('testimonials')} items - Add more content`}>⚠️</span>
+              )}
             </button>
             <button 
               className={activeTab === 'contacts' ? 'nav-item active' : 'nav-item'} 
@@ -5402,6 +5491,12 @@ const AdminPanel = () => {
               onClick={() => setActiveTab('consistency')}
             >
               <span>🔍</span> Data Consistency
+            </button>
+            <button
+              className={activeTab === 'notifications' ? 'nav-item active' : 'nav-item'}
+              onClick={() => setActiveTab('notifications')}
+            >
+              <span>📧</span> Notifications
             </button>
           </div>
         </nav>
@@ -5475,6 +5570,7 @@ const AdminPanel = () => {
           {activeTab === 'users' && renderUsersTab()}
           {activeTab === 'contacts' && renderContactsTab()}
           {activeTab === 'consistency' && <InconsistencyLogsPanel />}
+          {activeTab === 'notifications' && <NotificationsPanel token={token} />}
         </div>
       </div>
     </div>
