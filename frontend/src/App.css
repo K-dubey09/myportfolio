@@ -7382,19 +7382,19 @@ a,
 }
 
 /* Ensure content is above background patterns */
-.achievements-section > *:not(::before):not(::after),
-.services-section > *:not(::before):not(::after),
-.projects-section > *:not(::before):not(::after),
-.education-section > *:not(::before):not(::after),
-.blogs-section > *:not(::before):not(::after),
-.vlogs-section > *:not(::before):not(::after),
-.gallery-section > *:not(::before):not(::after),
-.hero-section > *:not(::before):not(::after),
-.profile-section > *:not(::before):not(::after),
-.experience-section > *:not(::before):not(::after),
-.skills-section > *:not(::before):not(::after),
-.testimonials-section > *:not(::before):not(::after),
-.contact-section > *:not(::before):not(::after) {
+.achievements-section > *,
+.services-section > *,
+.projects-section > *,
+.education-section > *,
+.blogs-section > *,
+.vlogs-section > *,
+.gallery-section > *,
+.hero-section > *,
+.profile-section > *,
+.experience-section > *,
+.skills-section > *,
+.testimonials-section > *,
+.contact-section > * {
   position: relative;
   z-index: 1;
 }
@@ -9727,7 +9727,7 @@ img {
 }
 
 /* Ensure all page content stays above backgrounds */
-.page-container > *:not(::before):not(::after) {
+.page-container > * {
   position: relative;
   z-index: 1;
 }
