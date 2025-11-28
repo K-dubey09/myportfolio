@@ -88,7 +88,8 @@ jobs:
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
 
       - name: Install frontend dependencies
-        run: npm ci --legacy-peer-deps
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
         working-directory: ${{ env.FRONTEND_DIR }}
 
       - name: Create .env file for build
@@ -115,6 +116,7 @@ jobs:
         working-directory: ${{ env.FRONTEND_DIR }}
         env:
           CI: false
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
