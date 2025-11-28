@@ -99,6 +99,7 @@ const ProtectedRoute = ({ children, allowedRoles = null }) => {
 
 const AdminRoute = () => {
   const { user, loading } = useAuth()
+  const navigate = useNavigate()
 
   if (loading) {
     return (
@@ -115,9 +116,42 @@ const AdminRoute = () => {
     )
   }
 
-  // Only allow admin users to access admin panel
-  if (!user || user.role !== 'admin') {
-    return <PortfolioSite />
+  // Redirect to login if not authenticated
+  if (!user) {
+    navigate('/login')
+    return null
+  }
+
+  // Redirect to home if not admin
+  if (user.role !== 'admin') {
+    navigate('/')
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem',
+        color: '#666',
+        textAlign: 'center',
+        padding: '20px'
+      }}>
+        <h2>Access Denied</h2>
+        <p>You must be an administrator to access this page.</p>
+        <button onClick={() => navigate('/')} style={{
+          marginTop: '20px',
+          padding: '10px 20px',
+          background: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer'
+        }}>
+          Go Home
+        </button>
+      </div>
+    )
   }
 
   return <AdminPanel />
@@ -171,27 +205,34 @@ const App = () => {
             <Toaster position="top-center" reverseOrder={false} />
             <ConditionalNavigation />
           <Routes>
+            {/* Public routes - no authentication required */}
             <Route path="/" element={<PortfolioSite />} />
             <Route path="/register" element={<RegistrationPage />} />
             <Route path="/login" element={<LoginRoute />} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/email-verification-pending" element={<EmailVerificationHandler />} />
+            
+            {/* Profile completion for suspended users - requires authentication */}
             <Route path="/complete-profile" element={<ProfileCompletionPage />} />
+            
+            {/* Admin route - STRICTLY requires admin role */}
             <Route path="/admin" element={<AdminPanelWrapper />} />
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/blogs" element={<BlogsPage />} />
-            <Route path="/testimonials" element={<TestimonialsPage />} />
-            <Route path="/experience" element={<ExperiencePage />} />
-            <Route path="/education" element={<EducationPage />} />
-            <Route path="/skills" element={<SkillsPage />} />
-            <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/vlogs" element={<VlogsPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/achievements" element={<AchievementsPage />} />
-            <Route path="/certifications" element={<CertificationsPage />} />
-            <Route path="/statistics" element={<StatisticsPage />} />
+            
+            {/* Protected routes - require authentication but accessible to all authenticated users */}
+            <Route path="/projects" element={<ProtectedRoute><ProjectsPage /></ProtectedRoute>} />
+            <Route path="/blogs" element={<ProtectedRoute><BlogsPage /></ProtectedRoute>} />
+            <Route path="/testimonials" element={<ProtectedRoute><TestimonialsPage /></ProtectedRoute>} />
+            <Route path="/experience" element={<ProtectedRoute><ExperiencePage /></ProtectedRoute>} />
+            <Route path="/education" element={<ProtectedRoute><EducationPage /></ProtectedRoute>} />
+            <Route path="/skills" element={<ProtectedRoute><SkillsPage /></ProtectedRoute>} />
+            <Route path="/gallery" element={<ProtectedRoute><GalleryPage /></ProtectedRoute>} />
+            <Route path="/vlogs" element={<ProtectedRoute><VlogsPage /></ProtectedRoute>} />
+            <Route path="/services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+            <Route path="/achievements" element={<ProtectedRoute><AchievementsPage /></ProtectedRoute>} />
+            <Route path="/certifications" element={<ProtectedRoute><CertificationsPage /></ProtectedRoute>} />
+            <Route path="/statistics" element={<ProtectedRoute><StatisticsPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProfileRoute />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           </Routes>
         </Router>
       </AuthProvider>
@@ -211,13 +252,77 @@ const ConditionalNavigation = () => {
   return <Navigation />
 }
 
-// Hide Navigation on AdminPanel
+// Strict Admin Route Wrapper
 const AdminPanelWrapper = () => {
-  return (
-    <>
-      <AdminPanel />
-    </>
-  );
-};
+  const { user, loading } = useAuth()
+  const navigate = useNavigate()
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    )
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    navigate('/login', { replace: true })
+    return null
+  }
+
+  // Show access denied if not admin
+  if (user.role !== 'admin') {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem',
+        color: '#666',
+        textAlign: 'center',
+        padding: '20px',
+        background: '#f5f5f5'
+      }}>
+        <div style={{
+          background: 'white',
+          padding: '40px',
+          borderRadius: '10px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+        }}>
+          <h2 style={{ color: '#e74c3c', marginBottom: '20px' }}>⛔ Access Denied</h2>
+          <p style={{ marginBottom: '10px' }}>This area is restricted to administrators only.</p>
+          <p style={{ fontSize: '0.9rem', color: '#999', marginBottom: '30px' }}>
+            Your role: <strong>{user.role || 'viewer'}</strong>
+          </p>
+          <button onClick={() => navigate('/')} style={{
+            padding: '12px 30px',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: '600'
+          }}>
+            Return to Home
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Only render AdminPanel if user is authenticated AND is admin
+  return <AdminPanel />
+};
 export default App

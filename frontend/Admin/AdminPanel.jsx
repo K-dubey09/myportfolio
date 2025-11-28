@@ -89,15 +89,28 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchToken = async () => {
       const idToken = await getIdToken();
-      setToken(idToken);
+      if (idToken) {
+        setToken(idToken);
+      }
     };
     fetchToken();
+    
+    // Refresh token every 55 minutes (tokens expire after 1 hour)
+    const intervalId = setInterval(async () => {
+      const idToken = await getIdToken();
+      if (idToken) {
+        setToken(idToken);
+      }
+    }, 55 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
   }, [getIdToken]);
 
   // Load access keys and conversions when admin opens panel or navigates to that tab
   // NOTE: moved the viewer-editor load effect below where the fetch helpers are declared
 
   const fetchAccessKeys = useCallback(async () => {
+    if (!token) return; // Wait for token to be available
     try {
       const { res, json, text } = await apiFetch('/api/admin/access-keys', { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) {
@@ -115,6 +128,7 @@ const AdminPanel = () => {
   }, [token, apiFetch]);
 
   const fetchAdminRequests = useCallback(async () => {
+    if (!token) return; // Wait for token to be available
     try {
       const { res, json, text } = await apiFetch('/api/admin/requests', { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) {
@@ -132,6 +146,7 @@ const AdminPanel = () => {
   }, [token, apiFetch]);
 
   const fetchConversions = useCallback(async () => {
+    if (!token) return; // Wait for token to be available
     try {
       const { res, json, text } = await apiFetch('/api/admin/conversions', { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) {
@@ -150,6 +165,7 @@ const AdminPanel = () => {
 
   // Fetch users (admin)
   const fetchUsers = useCallback(async () => {
+    if (!token) return; // Wait for token to be available
     try {
       setUsersLoading(true);
       const { res, json, text } = await apiFetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -283,6 +299,7 @@ const AdminPanel = () => {
 
   // Helper to fetch achievements (used by admin tab)
   const fetchAchievements = useCallback(async () => {
+    if (!token) return; // Wait for token to be available
     try {
       const result = await apiFetch('/api/achievements', { headers: { 'Authorization': `Bearer ${token}` } });
       const res = result.res;
@@ -1205,6 +1222,7 @@ const AdminPanel = () => {
   // Removed unused pagination state for testimonials (was causing lint warnings)
 
   const fetchAdminTestimonials = useCallback(async () => {
+    if (!token) return; // Wait for token to be available
     try {
       setTestimonialsLoading(true);
       const { res, json, text } = await apiFetch('/api/admin/testimonials', { headers: { 'Authorization': `Bearer ${token}` } });
