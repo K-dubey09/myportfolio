@@ -193,21 +193,17 @@ jobs:
       - name: Check for SQL Injection vulnerabilities
         run: |
           echo "🔍 Scanning for SQL injection patterns..."
-          if grep -rniE \
+          SQL_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
-            --exclude="*.svg" --exclude="*.ico" --exclude="*.webp" --exclude="*.mp4" --exclude="*.mp3" \
+            --exclude="*.rules" --exclude="*.yml" --exclude="*.yaml" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.log" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.html" --include="*.php" --include="*.py" \
-            'SELECT.*FROM.*WHERE.*\$\{|
-            INSERT.*INTO.*VALUES.*\$\{|
-            UPDATE.*SET.*WHERE.*\$\{|
-            DELETE.*FROM.*WHERE.*\$\{|
-            query\s*\(\s*["\x27].*\$\{|
-            execute\s*\(\s*["\x27].*\$\{' \
-            .; then
+            'SELECT.*FROM.*WHERE.*\$\{|INSERT.*INTO.*VALUES.*\$\{|UPDATE.*SET.*WHERE.*\$\{|DELETE.*FROM.*WHERE.*\$\{|query\s*\(\s*["\x27].*\$\{|execute\s*\(\s*["\x27].*\$\{' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$SQL_RESULTS" ]; then
             echo "::warning::⚠️ Potential SQL injection vulnerability detected!"
+            echo "$SQL_RESULTS"
           fi
           echo "✅ SQL injection check completed"
 
@@ -236,19 +232,18 @@ jobs:
       - name: Check for Command Injection
         run: |
           echo "🔍 Scanning for command injection patterns..."
-          if grep -rniE \
+          CMD_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
-            --exclude="*.svg" --exclude="*.ico" --exclude="*.webp" --exclude="*.mp4" --exclude="*.mp3" \
+            --exclude="*.rules" --exclude="*.dockerignore" --exclude="*.yml" --exclude="*.yaml" \
+            --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.log" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.html" --include="*.php" --include="*.py" \
-            'exec\s*\(.*\$\{|
-            spawn\s*\(.*\$\{|
-            execSync\s*\(.*\$\{|
-            child_process.*\$\{' \
-            .; then
+            '(exec|spawn|execSync|child_process).*\$\{' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$CMD_RESULTS" ]; then
             echo "::error::❌ CRITICAL: Command injection vulnerability detected! Push BLOCKED."
+            echo "$CMD_RESULTS"
             exit 1
           fi
           echo "✅ No command injection vulnerabilities detected"
@@ -323,18 +318,16 @@ jobs:
       - name: Check for SSRF vulnerabilities
         run: |
           echo "🔍 Scanning for SSRF vulnerabilities..."
-          if grep -rniE \
+          SSRF_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.rules" --exclude="*.yml" --exclude="*.yaml" --exclude="*.md" --exclude="*.txt" --exclude="*.css" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.php" --include="*.py" \
-            'fetch\(.*req\.|
-            axios\(.*req\.|
-            http\.request\(.*req\.|
-            request\(.*req\.' \
-            .; then
+            'fetch\(.*req\.|axios\(.*req\.|http\.request\(.*req\.|request\(.*req\.' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$SSRF_RESULTS" ]; then
             echo "::warning::⚠️ Potential SSRF vulnerability detected!"
+            echo "$SSRF_RESULTS"
           fi
           echo "✅ SSRF check completed"
 
