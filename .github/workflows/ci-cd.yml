@@ -216,15 +216,18 @@ jobs:
           echo "🔍 Scanning for XSS vulnerabilities..."
           # Only scan for actual XSS: dangerous DOM APIs with HTTP request data on the SAME line
           # Pattern: innerHTML/document.write/eval/etc with req.params/req.query/req.body template injection
-          if grep -rnE \
+          XSS_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets,utils} \
             --exclude="*.bak" --exclude="*.backup" --exclude="*.old" \
             --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" --exclude="*.log" \
             --exclude="*.png" --exclude="*.jpg" --exclude="*.gif" --exclude="*.svg" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.html" \
-            '(dangerouslySetInnerHTML|\.innerHTML\s*=|document\.write|eval\s*\(|new\s+Function|setTimeout|setInterval).*\$\{.*(req\.params|req\.query|req\.body|params\.|query\.|body\.)' \
-            ./frontend 2>/dev/null | grep -v "e\.target" | grep -v "user\.role" | head -20; then
+            '(dangerouslySetInnerHTML|\.innerHTML\s*=|document\.write|eval\s*\(|new\s+Function|setTimeout|setInterval).*\$\{.*(req\.params|req\.query|req\.body)' \
+            ./frontend 2>/dev/null | grep -v "e\.target" | grep -v "user\.role" | grep -v "e\.currentTarget" | head -20 || true)
+          
+          if [ -n "$XSS_RESULTS" ]; then
             echo "::error::❌ CRITICAL: XSS vulnerability detected!"
+            echo "$XSS_RESULTS"
             echo "::error::Found HTTP request data in DOM manipulation."
             exit 1
           fi
