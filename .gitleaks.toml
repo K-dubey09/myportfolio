@@ -1,0 +1,132 @@
+title = "Portfolio Project - GitLeaks Configuration"
+
+# Exclude markdown files from scanning
+[allowlist]
+paths = [
+    '''\.md$''',
+    '''\.MD$''',
+    '''README''',
+    '''CHANGELOG''',
+    '''\.github/workflows/.*\.yml$'''
+]
+
+# Common patterns to ignore
+regexes = [
+    '''dummy-key''',
+    '''example\.com''',
+    '''localhost''',
+    '''127\.0\.0\.1''',
+    '''your-.*-here''',
+    '''REPLACE_WITH''',
+    '''TODO:''',
+]
+
+# Custom rules for Firebase
+[[rules]]
+id = "firebase-service-account"
+description = "Firebase Service Account Private Key"
+regex = '''-----BEGIN PRIVATE KEY-----'''
+tags = ["firebase", "private-key"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+[[rules]]
+id = "firebase-api-key"
+description = "Firebase API Key"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+tags = ["firebase", "api-key"]
+[rules.allowlist]
+paths = ['''\.md$''', '''\.env\.example$''']
+regexes = ['''dummy''', '''example''']
+
+# MongoDB Connection String
+[[rules]]
+id = "mongodb-uri"
+description = "MongoDB Connection String with credentials"
+regex = '''mongodb(\+srv)?://[a-zA-Z0-9]+:[^@\s]+@'''
+tags = ["mongodb", "database"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# PostgreSQL Connection String
+[[rules]]
+id = "postgresql-uri"
+description = "PostgreSQL Connection String"
+regex = '''postgres(ql)?://[a-zA-Z0-9]+:[^@\s]+@'''
+tags = ["postgresql", "database"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# Generic API Keys
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''["\']?api[_-]?key["\']?\s*[:=]\s*["\'][a-zA-Z0-9_\-]{20,}["\']'''
+tags = ["api-key"]
+[rules.allowlist]
+paths = ['''\.md$''', '''\.env\.example$''']
+regexes = ['''dummy''', '''example''', '''your-api-key''']
+
+# AWS Keys
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "access-key"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# Generic secrets
+[[rules]]
+id = "generic-secret"
+description = "Generic Secret Key"
+regex = '''["\']?secret[_-]?key["\']?\s*[:=]\s*["\'][a-zA-Z0-9_\-]{20,}["\']'''
+tags = ["secret"]
+[rules.allowlist]
+paths = ['''\.md$''', '''\.env\.example$''']
+regexes = ['''dummy''', '''example''']
+
+# Bearer tokens
+[[rules]]
+id = "bearer-token"
+description = "Bearer Token"
+regex = '''bearer\s+[a-zA-Z0-9_\-\.]{20,}'''
+tags = ["token", "authorization"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# Private SSH Keys
+[[rules]]
+id = "ssh-private-key"
+description = "SSH Private Key"
+regex = '''-----BEGIN (?:RSA |OPENSSH |DSA |EC |PGP )?PRIVATE KEY-----'''
+tags = ["ssh", "private-key"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# JWT Tokens
+[[rules]]
+id = "jwt-token"
+description = "JWT Token"
+regex = '''eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*'''
+tags = ["jwt", "token"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# Slack Webhooks
+[[rules]]
+id = "slack-webhook"
+description = "Slack Webhook URL"
+regex = '''https://hooks\.slack\.com/services/T[a-zA-Z0-9_]{8,}/B[a-zA-Z0-9_]{8,}/[a-zA-Z0-9_]{24}'''
+tags = ["slack", "webhook"]
+[rules.allowlist]
+paths = ['''\.md$''']
+
+# GitHub Tokens
+[[rules]]
+id = "github-token"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["github", "token"]
+[rules.allowlist]
+paths = ['''\.md$''']

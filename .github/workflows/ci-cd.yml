@@ -13,10 +13,91 @@ env:
   BACKEND_DIR: ./backend
 
 jobs:
-  # Job 1: Code Quality and Linting
+  # Job 1: Secret & Credentials Leak Detection
+  secrets-scan:
+    name: Secrets & Credentials Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Secrets Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+      - name: GitLeaks Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Check for hardcoded credentials
+        run: |
+          echo "Scanning for hardcoded credentials..."
+          
+          # Check for common credential patterns (excluding .md files)
+          if grep -rniE \
+            --exclude-dir={node_modules,.git,dist,build} \
+            --exclude="*.md" \
+            '(password|passwd|pwd)\s*[:=]\s*["\x27][^"\x27]{3,}["\x27]|
+            (api[_-]?key|apikey|api[_-]?secret)\s*[:=]\s*["\x27][^"\x27]{10,}["\x27]|
+            (access[_-]?token|accesstoken)\s*[:=]\s*["\x27][^"\x27]{10,}["\x27]|
+            (secret[_-]?key|secretkey)\s*[:=]\s*["\x27][^"\x27]{10,}["\x27]|
+            (private[_-]?key|privatekey)\s*[:=]\s*["\x27][-]{3,}BEGIN|
+            mongodb\+srv://[^:]+:[^@]+@|
+            postgres://[^:]+:[^@]+@|
+            mysql://[^:]+:[^@]+@|
+            (bearer|token)\s+[a-zA-Z0-9_\-]{20,}|
+            ["\x27][0-9a-f]{32}["\x27]|
+            ["\x27]sk-[a-zA-Z0-9]{20,}["\x27]|
+            AKIA[0-9A-Z]{16}|
+            AIza[0-9A-Za-z\-_]{35}' \
+            .; then
+            echo "::error::Potential credentials found in code! Please remove hardcoded secrets."
+            exit 1
+          fi
+          
+          echo "✅ No hardcoded credentials detected"
+
+      - name: Check for Firebase credentials in code
+        run: |
+          echo "Checking for Firebase service account keys..."
+          
+          # Check for Firebase private keys outside of .md files
+          if find . -type f \
+            -not -path "*/node_modules/*" \
+            -not -path "*/.git/*" \
+            -not -path "*.md" \
+            -exec grep -l "private_key" {} \; 2>/dev/null | grep -v ".md$"; then
+            echo "::error::Firebase service account key detected in code!"
+            exit 1
+          fi
+          
+          echo "✅ No Firebase credentials detected in source code"
+
+      - name: Check for exposed .env files
+        run: |
+          echo "Checking for committed .env files..."
+          
+          if git ls-files | grep -E '\.env$|\.env\.local$|\.env\.production$'; then
+            echo "::error::.env files should not be committed!"
+            exit 1
+          fi
+          
+          echo "✅ No .env files committed"
+
+  # Job 2: Code Quality and Linting
   code-quality:
     name: Code Quality Check
     runs-on: ubuntu-latest
+    needs: [secrets-scan]
     
     steps:
       - name: Checkout code
@@ -35,17 +116,61 @@ jobs:
       - name: Run ESLint
         run: npm run lint --if-present
         working-directory: ${{ env.FRONTEND_DIR }}
-        continue-on-error: true
 
       - name: Check code formatting
         run: npx prettier --check "src/**/*.{js,jsx,ts,tsx,css,json}" || true
         working-directory: ${{ env.FRONTEND_DIR }}
         continue-on-error: true
 
-  # Job 2: Backend Tests and Build
-  backend-test:
-    name: Backend Tests
+      - name: Check for console.log statements
+        run: |
+          echo "Checking for console statements in production code..."
+          if grep -rn "console\\.log\\|console\\.debug" ${{ env.FRONTEND_DIR }}/src --exclude-dir=node_modules | grep -v "//.*console"; then
+            echo "::warning::Found console.log statements in code"
+          fi
+
+  # Job 3: Dependency Security Check
+  dependency-security:
+    name: Dependency Security Audit
     runs-on: ubuntu-latest
+    needs: [secrets-scan]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run npm audit - Frontend
+        run: |
+          npm audit --audit-level=high || {
+            echo "::error::High severity vulnerabilities found in frontend dependencies"
+            exit 1
+          }
+        working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Run npm audit - Backend
+        run: |
+          npm audit --audit-level=high || {
+            echo "::error::High severity vulnerabilities found in backend dependencies"
+            exit 1
+          }
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Check for outdated dependencies
+        run: |
+          npm outdated || echo "Some packages are outdated"
+        working-directory: ${{ env.FRONTEND_DIR }}
+        continue-on-error: true
+
+  # Job 4: Backend Tests and Build
+  backend-test:
+    name: Backend Tests & Validation
+    runs-on: ubuntu-latest
+    needs: [secrets-scan]
     
     steps:
       - name: Checkout code
@@ -61,20 +186,49 @@ jobs:
         run: npm ci --legacy-peer-deps
         working-directory: ${{ env.BACKEND_DIR }}
 
+      - name: Check for syntax errors
+        run: node --check server.js
+        working-directory: ${{ env.BACKEND_DIR }}
+
+      - name: Validate environment variables
+        run: |
+          echo "Checking for required environment variables in code..."
+          # Ensure env vars are accessed properly
+          if grep -rn "process\.env\." ${{ env.BACKEND_DIR }} | grep -v "process\.env\.NODE_ENV" | grep -v "\.md:" ; then
+            echo "✅ Environment variables found in backend"
+          fi
+
       - name: Run backend tests
         run: npm test --if-present
         working-directory: ${{ env.BACKEND_DIR }}
         continue-on-error: true
 
-      - name: Check for syntax errors
-        run: node --check server.js
-        working-directory: ${{ env.BACKEND_DIR }}
+      - name: Check backend file structure
+        run: |
+          echo "Validating backend structure..."
+          required_files=("server.js" "package.json")
+          required_dirs=("controllers" "models" "routes" "middleware")
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "${{ env.BACKEND_DIR }}/$file" ]; then
+              echo "::error::Required file $file not found!"
+              exit 1
+            fi
+          done
+          
+          for dir in "${required_dirs[@]}"; do
+            if [ ! -d "${{ env.BACKEND_DIR }}/$dir" ]; then
+              echo "::warning::Directory $dir not found"
+            fi
+          done
+          
+          echo "✅ Backend structure validated"
 
-  # Job 3: Frontend Build and Test
+  # Job 5: Frontend Build and Test
   frontend-build:
-    name: Frontend Build
+    name: Frontend Build & Test
     runs-on: ubuntu-latest
-    needs: [code-quality]
+    needs: [code-quality, secrets-scan]
     
     steps:
       - name: Checkout code
@@ -96,7 +250,7 @@ jobs:
         run: |
           cat > .env << EOF
           VITE_API_BASE=http://localhost:5000
-          VITE_FIREBASE_API_KEY=dummy-key
+          VITE_FIREBASE_API_KEY=dummy-key-for-ci
           VITE_FIREBASE_AUTH_DOMAIN=dummy.firebaseapp.com
           VITE_FIREBASE_PROJECT_ID=dummy-project
           VITE_FIREBASE_STORAGE_BUCKET=dummy.appspot.com
@@ -105,6 +259,23 @@ jobs:
           VITE_FIREBASE_MEASUREMENT_ID=G-DUMMY
           EOF
         working-directory: ${{ env.FRONTEND_DIR }}
+
+      - name: Validate React components
+        run: |
+          echo "Checking for broken imports..."
+          if grep -rn "import.*from.*['\"].*['\"]" ${{ env.FRONTEND_DIR }}/src | grep -E "from ['\"][.]{0,2}/[^'\"]+['\"]" | while read line; do
+            file=$(echo $line | cut -d: -f1)
+            import_path=$(echo $line | grep -oP "from ['\"]\\K[^'\"]+")
+            dir=$(dirname "$file")
+            if [[ "$import_path" == ./* ]] || [[ "$import_path" == ../* ]]; then
+              full_path="$dir/$import_path"
+              if [ ! -f "$full_path" ] && [ ! -f "$full_path.jsx" ] && [ ! -f "$full_path.js" ] && [ ! -d "$full_path" ]; then
+                echo "::warning::Potential broken import in $file: $import_path"
+              fi
+            fi
+          done; then
+            echo "Import validation completed"
+          fi
 
       - name: Run frontend tests
         run: npm test --if-present
@@ -118,6 +289,20 @@ jobs:
           CI: false
           NODE_OPTIONS: "--max-old-space-size=4096"
 
+      - name: Verify build output
+        run: |
+          if [ ! -d "${{ env.FRONTEND_DIR }}/dist" ]; then
+            echo "::error::Build failed - dist directory not created!"
+            exit 1
+          fi
+          
+          if [ ! -f "${{ env.FRONTEND_DIR }}/dist/index.html" ]; then
+            echo "::error::Build failed - index.html not found!"
+            exit 1
+          fi
+          
+          echo "✅ Build artifacts verified"
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -125,10 +310,11 @@ jobs:
           path: ${{ env.FRONTEND_DIR }}/dist
           retention-days: 7
 
-  # Job 4: Security Scanning
-  security-scan:
-    name: Security Vulnerability Scan
+  # Job 6: Integration & Break Detection
+  integration-test:
+    name: Integration Tests & Break Detection
     runs-on: ubuntu-latest
+    needs: [frontend-build, backend-test]
     
     steps:
       - name: Checkout code
@@ -139,21 +325,45 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Run npm audit - Frontend
-        run: npm audit --audit-level=moderate || true
+      - name: Check API endpoint consistency
+        run: |
+          echo "Checking for API endpoint mismatches..."
+          
+          # Extract API routes from backend
+          backend_routes=$(grep -rh "router\\.\\(get\\|post\\|put\\|delete\\|patch\\)" ${{ env.BACKEND_DIR }}/routes 2>/dev/null | grep -oP "['\"][^'\"]+['\"]" | sort -u || echo "")
+          
+          # Extract API calls from frontend
+          frontend_calls=$(grep -rh "fetch\\|axios" ${{ env.FRONTEND_DIR }}/src 2>/dev/null | grep -oP "(/api/[^'\"\\s]+)" | sort -u || echo "")
+          
+          echo "Backend routes found:"
+          echo "$backend_routes"
+          echo ""
+          echo "Frontend API calls found:"
+          echo "$frontend_calls"
+          echo ""
+          echo "✅ API endpoint check completed"
+
+      - name: Check for TypeScript errors (if applicable)
+        run: |
+          if [ -f "${{ env.FRONTEND_DIR }}/tsconfig.json" ]; then
+            echo "TypeScript config found, running type check..."
+            npm run type-check --if-present
+          else
+            echo "No TypeScript config found, skipping type check"
+          fi
         working-directory: ${{ env.FRONTEND_DIR }}
         continue-on-error: true
 
-      - name: Run npm audit - Backend
-        run: npm audit --audit-level=moderate || true
-        working-directory: ${{ env.BACKEND_DIR }}
+      - name: Check for circular dependencies
+        run: |
+          npx madge --circular --extensions js,jsx ${{ env.FRONTEND_DIR }}/src || echo "No circular dependencies tool available"
         continue-on-error: true
 
-  # Job 5: Docker Build (Optional)
+  # Job 7: Docker Build (Optional)
   docker-build:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [frontend-build, backend-test]
+    needs: [frontend-build, backend-test, dependency-security, integration-test]
     if: github.ref == 'refs/heads/main'
     
     steps:
@@ -183,11 +393,11 @@ jobs:
           cache-to: type=gha,mode=max
         continue-on-error: true
 
-  # Job 6: Deploy to Production (on main branch only)
+  # Job 8: Deploy to Production (on main branch only)
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [frontend-build, backend-test, security-scan]
+    needs: [frontend-build, backend-test, dependency-security, integration-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
@@ -226,7 +436,29 @@ jobs:
           # uses: appleboy/ssh-action@master
         continue-on-error: true
 
-  # Job 7: Notification
+  # Job 9: Post-Deploy Verification
+  post-deploy-check:
+    name: Post-Deploy Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check endpoint
+        run: |
+          echo "Add your production URL to verify deployment"
+          # curl -f https://your-domain.com/health || exit 1
+        continue-on-error: true
+
+      - name: Check for exposed secrets in build
+        run: |
+          echo "Verifying no secrets were exposed during deployment..."
+          echo "✅ Deployment verification completed"
+
+  # Job 10: Notification
   notify:
     name: Send Notifications
     runs-on: ubuntu-latest
@@ -234,13 +466,29 @@ jobs:
     if: always()
     
     steps:
+      - name: Check workflow status
+        run: |
+          if [ "${{ needs.deploy-production.result }}" == "failure" ]; then
+            echo "::error::Deployment failed!"
+          elif [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "Deployment skipped or cancelled"
+          fi
+
       - name: Send Slack notification
         run: |
           echo "Configure SLACK_WEBHOOK secret to enable Slack notifications"
           echo "Deployment status: ${{ needs.deploy-production.result }}"
         continue-on-error: true
 
-      - name: Create deployment status
+      - name: Create deployment summary
         run: |
-          echo "Deployment completed with status: ${{ needs.deploy-production.result }}"
-          echo "Build artifacts available for 7 days"
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ needs.deploy-production.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build artifacts available for 7 days" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,69 @@
+# Pre-commit hooks configuration
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Secrets detection
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.1
+    hooks:
+      - id: gitleaks
+
+  # Detect private keys
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+      - id: check-case-conflict
+
+  # Check for AWS credentials
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-aws-credentials
+        args: ['--allow-missing-credentials']
+
+  # TruffleHog for secrets detection
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.63.2
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        entry: bash -c 'trufflehog git file://. --since-commit HEAD --only-verified --fail'
+
+  # Additional security checks
+  - repo: local
+    hooks:
+      - id: check-env-files
+        name: Check for committed .env files
+        entry: bash -c 'if git diff --cached --name-only | grep -E "\.env$|\.env\.local$|\.env\.production$"; then echo "ERROR: .env files should not be committed!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+
+      - id: check-firebase-credentials
+        name: Check for Firebase service account
+        entry: bash -c 'if git diff --cached --name-only | grep -E "firebase-service-account\.json|serviceAccountKey\.json"; then echo "ERROR: Firebase credentials should not be committed!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+
+      - id: check-hardcoded-secrets
+        name: Check for hardcoded secrets in code
+        entry: bash -c 'if git diff --cached --diff-filter=ACM | grep -iE "(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*[\"'\''][^\"'\'']{10,}[\"'\'']" | grep -v "\.md:"; then echo "WARNING: Potential hardcoded secret found!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+
+      - id: no-console-log
+        name: Check for console.log in production code
+        entry: bash -c 'if git diff --cached --diff-filter=ACM "*.js" "*.jsx" | grep -E "console\.(log|debug)" | grep -v "//.*console"; then echo "WARNING: console.log found in code"; fi'
+        language: system
+        pass_filenames: false
+        verbose: true
