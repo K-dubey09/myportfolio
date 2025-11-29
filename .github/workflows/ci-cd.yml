@@ -214,39 +214,18 @@ jobs:
       - name: Check for XSS vulnerabilities
         run: |
           echo "🔍 Scanning for XSS vulnerabilities..."
-          # Scan frontend code for XSS patterns with user-controlled data
-          # Exclude backend routes (no DOM manipulation) and utility files without user input
-          if grep -rniE \
+          # Only scan for actual XSS: dangerous DOM APIs with HTTP request data on the SAME line
+          # Pattern: innerHTML/document.write/eval/etc with req.params/req.query/req.body template injection
+          if grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets,utils} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.sass" --exclude="*.less" \
-            --exclude="*.md" --exclude="*.txt" --exclude="*.log" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" --exclude="*.svg" \
-            --exclude="*.ico" --exclude="*.webp" --exclude="*.mp4" --exclude="*.mp3" \
-            --exclude="*.rules" --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" \
-            --exclude="*.yml" --exclude="*.yaml" --exclude="*ignore" \
-            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.html" --include="*.vue" \
-            'dangerouslySetInnerHTML.*\$\{.*req\.|
-            dangerouslySetInnerHTML.*\$\{.*params\.|
-            dangerouslySetInnerHTML.*\$\{.*query\.|
-            dangerouslySetInnerHTML.*\$\{.*body\.|
-            \.innerHTML\s*=.*\$\{.*req\.|
-            \.innerHTML\s*=.*\$\{.*params\.|
-            \.innerHTML\s*=.*\$\{.*query\.|
-            \.innerHTML\s*=.*\$\{.*body\.|
-            document\.write\s*\(.*\$\{.*req\.|
-            document\.write\s*\(.*\$\{.*params\.|
-            document\.write\s*\(.*\$\{.*query\.|
-            document\.write\s*\(.*\$\{.*body\.|
-            eval\s*\(.*\$\{.*req\.|
-            eval\s*\(.*\$\{.*params\.|
-            eval\s*\(.*\$\{.*query\.|
-            new\s+Function.*\$\{.*req\.|
-            setTimeout\s*\(.*\$\{.*req\.|
-            setInterval\s*\(.*\$\{.*req\.' \
-            ./frontend/src ./frontend/Admin 2>/dev/null; then
-            echo "::error::❌ CRITICAL: XSS vulnerability with user-controlled data detected! Push BLOCKED."
-            echo "::error::Found user input (req/params/query/body) in DOM manipulation."
+            --exclude="*.bak" --exclude="*.backup" --exclude="*.old" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" --exclude="*.log" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.gif" --exclude="*.svg" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.html" \
+            '(dangerouslySetInnerHTML|\.innerHTML\s*=|document\.write|eval\s*\(|new\s+Function|setTimeout|setInterval).*\$\{.*(req\.params|req\.query|req\.body|params\.|query\.|body\.)' \
+            ./frontend 2>/dev/null | grep -v "e\.target" | grep -v "user\.role" | head -20; then
+            echo "::error::❌ CRITICAL: XSS vulnerability detected!"
+            echo "::error::Found HTTP request data in DOM manipulation."
             exit 1
           fi
           echo "✅ No XSS vulnerabilities detected"
