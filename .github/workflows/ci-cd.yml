@@ -345,13 +345,13 @@ jobs:
             .; then
             echo "::warning::⚠️ Debug statements found in code!"
           fi
+
   # Job 4: Dependency Security & Supply Chain Attack Prevention (PUSH ONLY)
   dependency-security:
     name: 🔐 Dependency Security & Supply Chain
     runs-on: ubuntu-latest
     needs: [secrets-scan]
-    if: github.event_name == 'push't
-    needs: [secrets-scan]
+    if: github.event_name == 'push'
     
     steps:
       - name: Checkout code
@@ -422,13 +422,13 @@ jobs:
           npx license-checker --summary || echo "License check completed"
         working-directory: ${{ env.FRONTEND_DIR }}
         continue-on-error: true
+
   # Job 5: Authentication & Authorization Security (BLOCKS AUTH BYPASS ON PUSH)
   auth-security:
     name: 🔑 Auth & Authorization Security
     runs-on: ubuntu-latest
     needs: [secrets-scan]
-    if: github.event_name == 'push' || github.event_name == 'pull_request't
-    needs: [secrets-scan]
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     
     steps:
       - name: Checkout code
@@ -483,10 +483,12 @@ jobs:
             .; then
             echo "::warning::⚠️ Insecure session configuration detected!"
   # Job 7: Backend Security & Validation
+  # Job 7: Backend Security & Validation
   backend-test:
     name: 🔒 Backend Security & Validation
     runs-on: ubuntu-latest
     needs: [secrets-scan, code-security-analysis]
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     
     steps:
       - name: Checkout code
@@ -540,11 +542,11 @@ jobs:
               exit 1
             fi
           fi
-  # Job 8: Frontend Build and Security Test
-  frontend-build:
-    name: 🎨 Frontend Build & Security
-    runs-on: ubuntu-latest
-    needs: [code-quality, secrets-scan, code-security-analysis] variable usage..."
+          echo "✅ File upload security verified"
+
+      - name: Validate environment variables
+        run: |
+          echo "🔍 Checking environment variable usage..."
           if grep -rn "process\.env\." ${{ env.BACKEND_DIR }} | grep -v "process\.env\.NODE_ENV" | grep -v "\.md:" ; then
             echo "✅ Environment variables found in backend"
           fi
@@ -574,37 +576,13 @@ jobs:
           done
           
           echo "✅ Backend structure validated"
-      - name: Run backend tests
-        run: npm test --if-present
-        working-directory: ${{ env.BACKEND_DIR }}
-        continue-on-error: true
 
-      - name: Check backend file structure
-        run: |
-          echo "Validating backend structure..."
-          required_files=("server.js" "package.json")
-          required_dirs=("controllers" "models" "routes" "middleware")
-          
-          for file in "${required_files[@]}"; do
-            if [ ! -f "${{ env.BACKEND_DIR }}/$file" ]; then
-              echo "::error::Required file $file not found!"
-              exit 1
-            fi
-          done
-          
-          for dir in "${required_dirs[@]}"; do
-            if [ ! -d "${{ env.BACKEND_DIR }}/$dir" ]; then
-              echo "::warning::Directory $dir not found"
-            fi
-          done
-          
-          echo "✅ Backend structure validated"
-
-  # Job 5: Frontend Build and Test
+  # Job 8: Frontend Build and Security Test
   frontend-build:
-    name: Frontend Build & Test
+    name: 🎨 Frontend Build & Security
     runs-on: ubuntu-latest
-    needs: [code-quality, secrets-scan]
+    needs: [code-quality, secrets-scan, code-security-analysis]
+    if: github.event_name == 'push'
     
     steps:
       - name: Checkout code
@@ -651,11 +629,7 @@ jobs:
             fi
           done; then
             echo "Import validation completed"
-  # Job 9: Integration & Break Detection
-  integration-test:
-    name: 🔗 Integration Tests & Security Validation
-    runs-on: ubuntu-latest
-    needs: [frontend-build, backend-test, dependency-security, auth-security]ND_DIR }}
+          fi
         continue-on-error: true
 
       - name: Build frontend
@@ -686,11 +660,12 @@ jobs:
           path: ${{ env.FRONTEND_DIR }}/dist
           retention-days: 7
 
-  # Job 6: Integration & Break Detection
+  # Job 9: Integration & Break Detection
   integration-test:
-    name: Integration Tests & Break Detection
+    name: 🔗 Integration Tests & Security Validation
     runs-on: ubuntu-latest
-    needs: [frontend-build, backend-test]
+    needs: [frontend-build, backend-test, dependency-security, auth-security]
+    if: github.event_name == 'push'
     
     steps:
       - name: Checkout code
