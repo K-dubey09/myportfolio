@@ -19,8 +19,17 @@ class FirebaseConfig {
     
     try {
       let serviceAccount;
-      const defaultPath = join(__dirname, '..', 'firebase-service-account.json');
-      serviceAccount = JSON.parse(readFileSync(defaultPath, 'utf8'));
+      
+      // Load from environment variable (GitHub Secrets or .env)
+      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        console.log('🔐 Loading Firebase credentials from environment variable');
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      } else {
+        // Fallback to local file for development (NEVER commit this file!)
+        const defaultPath = join(__dirname, '..', 'firebase-service-account.json');
+        console.log('⚠️  Loading Firebase credentials from local file (development only)');
+        serviceAccount = JSON.parse(readFileSync(defaultPath, 'utf8'));
+      }
 
       const envBucket = process.env.FIREBASE_STORAGE_BUCKET || process.env.STORAGE_BUCKET;
       const bucketToUse = envBucket || `${serviceAccount.project_id}.appspot.com`;
