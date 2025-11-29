@@ -210,14 +210,17 @@ jobs:
       - name: Check for XSS vulnerabilities
         run: |
           echo "🔍 Scanning for XSS vulnerabilities..."
-          # Only scan source code files in src/ and components directories
-          # Exclude config files, models, translations, rules, shell scripts, etc.
+          # Scan code files (js, jsx, ts, tsx, html, json) but exclude non-code assets (css, md, images)
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist,models,translations,.github,scripts} \
-            --exclude="*.json" --exclude="*.md" --exclude="*Schema.js" --exclude="*Model.js" \
-            --exclude="*.rules" --exclude="*.sh" --exclude="*.ps1" --exclude="*.css" \
-            --exclude="*.yml" --exclude="*.yaml" --exclude="*ignore" --exclude="*.config.js" \
-            --include="*.js" --include="*.jsx" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.sass" --exclude="*.less" \
+            --exclude="*.md" --exclude="*.txt" --exclude="*.log" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" --exclude="*.svg" \
+            --exclude="*.ico" --exclude="*.webp" --exclude="*.mp4" --exclude="*.mp3" \
+            --exclude="*.rules" --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" \
+            --exclude="*.yml" --exclude="*.yaml" --exclude="*ignore" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.html" --include="*.json" --include="*.vue" \
             'dangerouslySetInnerHTML|
             \.innerHTML\s*=\s*[^"'"'"']*\$\{|
             document\.write\s*\(\s*[^"'"'"']*\$\{|
