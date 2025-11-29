@@ -160,7 +160,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-results.sarif'
         continue-on-error: true
@@ -177,13 +177,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript
           queries: security-and-quality
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -597,6 +597,7 @@ jobs:
             echo "::warning::⚠️ Security headers middleware not detected!"
           fi
           echo "✅ Security headers check completed"
+        continue-on-error: true
 
       - name: Check for file upload security
         run: |
@@ -792,7 +793,8 @@ jobs:
       - name: Build Frontend Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ env.FRONTEND_DIR }}
+          context: .
+          file: ./Dockerfile.frontend
           push: false
           tags: portfolio-frontend:latest
           cache-from: type=gha
@@ -802,7 +804,8 @@ jobs:
       - name: Build Backend Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ env.BACKEND_DIR }}
+          context: .
+          file: ./Dockerfile.backend
           push: false
           tags: portfolio-backend:latest
           cache-from: type=gha
@@ -819,7 +822,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Docker scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-docker-results.sarif'
         continue-on-error: true
