@@ -87,11 +87,12 @@ jobs:
         run: |
           echo "🔍 Checking for Firebase service account keys..."
           
-          # Only check for actual service account JSON files with private keys
+          # Only check for actual service account JSON files with private keys (exclude .example files)
           if find . -type f \
             -not -path "*/node_modules/*" \
             -not -path "*/.git/*" \
             -not -path "*.md" \
+            -not -path "*.example" \
             -not -path "*/config/firebase.js" \
             -not -path "*/firebase.js" \
             -name "*.json" \
