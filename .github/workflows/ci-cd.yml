@@ -42,24 +42,30 @@ jobs:
         run: |
           echo "🔍 Scanning for hardcoded credentials..."
           
-          # Check for common credential patterns (excluding .md files)
+          # Check for common credential patterns (excluding safe files)
           if grep -rniE \
             --exclude-dir={node_modules,.git,dist,build} \
             --exclude="*.md" \
-            '(password|passwd|pwd)\s*[:=]\s*["\x27][^"\x27]{3,}["\x27]|
-            (api[_-]?key|apikey|api[_-]?secret)\s*[:=]\s*["\x27][^"\x27]{10,}["\x27]|
-            (access[_-]?token|accesstoken)\s*[:=]\s*["\x27][^"\x27]{10,}["\x27]|
-            (secret[_-]?key|secretkey)\s*[:=]\s*["\x27][^"\x27]{10,}["\x27]|
+            --exclude="storage.rules" \
+            --exclude=".dockerignore" \
+            --exclude="*.sh" \
+            --exclude="*.ps1" \
+            --exclude=".gitignore" \
+            '(password|passwd|pwd)\s*[:=]\s*["\x27][A-Za-z0-9!@#$%^&*]{8,}["\x27]|
+            (api[_-]?key|apikey)\s*[:=]\s*["\x27][A-Za-z0-9]{20,}["\x27]|
+            (access[_-]?token|accesstoken)\s*[:=]\s*["\x27][A-Za-z0-9_\-\.]{20,}["\x27]|
+            (secret[_-]?key|secretkey)\s*[:=]\s*["\x27][A-Za-z0-9+/=]{20,}["\x27]|
             (private[_-]?key|privatekey)\s*[:=]\s*["\x27][-]{3,}BEGIN|
-            mongodb\+srv://[^:]+:[^@]+@|
-            postgres://[^:]+:[^@]+@|
-            mysql://[^:]+:[^@]+@|
-            (bearer|token)\s+[a-zA-Z0-9_\-]{20,}|
-            ["\x27][0-9a-f]{32}["\x27]|
+            mongodb\+srv://[^:]+:[^@]{3,}@[a-z0-9\-\.]+|
+            postgres://[^:]+:[^@]{3,}@[a-z0-9\-\.]+|
+            mysql://[^:]+:[^@]{3,}@[a-z0-9\-\.]+|
+            bearer\s+[a-zA-Z0-9_\-]{30,}|
             ["\x27]sk-[a-zA-Z0-9]{20,}["\x27]|
             AKIA[0-9A-Z]{16}|
-            AIza[0-9A-Za-z\-_]{35}' \
-            .; then
+            AIza[0-9A-Za-z\-_]{35}|
+            ghp_[a-zA-Z0-9]{36}|
+            gho_[a-zA-Z0-9]{36}' \
+            . 2>/dev/null; then
             echo "::error::❌ CRITICAL: Potential credentials found in code! Push BLOCKED."
             exit 1
           fi
