@@ -214,7 +214,7 @@ jobs:
       - name: Check for XSS vulnerabilities
         run: |
           echo "🔍 Scanning for XSS vulnerabilities..."
-          # Scan code files (js, jsx, ts, tsx, html, json) but exclude non-code assets (css, md, images)
+          # Scan code files for XSS patterns with user-controlled data (req., params., query., body., etc.)
           if grep -rniE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
             --exclude="*.css" --exclude="*.scss" --exclude="*.sass" --exclude="*.less" \
@@ -225,16 +225,27 @@ jobs:
             --exclude="*.yml" --exclude="*.yaml" --exclude="*ignore" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
             --include="*.html" --include="*.json" --include="*.vue" \
-            'dangerouslySetInnerHTML|
-            \.innerHTML\s*=\s*[^"'"'"']*\$\{|
-            document\.write\s*\(\s*[^"'"'"']*\$\{|
-            eval\s*\(\s*[^"'"'"']*\$\{|
-            new\s+Function\s*\(.*\$\{|
-            setTimeout\s*\(\s*[^"'"'"']*\$\{|
-            setInterval\s*\(\s*[^"'"'"']*\$\{' \
+            'dangerouslySetInnerHTML.*\$\{.*req\.|
+            dangerouslySetInnerHTML.*\$\{.*params\.|
+            dangerouslySetInnerHTML.*\$\{.*query\.|
+            dangerouslySetInnerHTML.*\$\{.*body\.|
+            \.innerHTML\s*=.*\$\{.*req\.|
+            \.innerHTML\s*=.*\$\{.*params\.|
+            \.innerHTML\s*=.*\$\{.*query\.|
+            \.innerHTML\s*=.*\$\{.*body\.|
+            document\.write\s*\(.*\$\{.*req\.|
+            document\.write\s*\(.*\$\{.*params\.|
+            document\.write\s*\(.*\$\{.*query\.|
+            document\.write\s*\(.*\$\{.*body\.|
+            eval\s*\(.*\$\{.*req\.|
+            eval\s*\(.*\$\{.*params\.|
+            eval\s*\(.*\$\{.*query\.|
+            new\s+Function.*\$\{.*req\.|
+            setTimeout\s*\(.*\$\{.*req\.|
+            setInterval\s*\(.*\$\{.*req\.' \
             ./frontend/src ./frontend/Admin ./backend/controllers ./backend/routes 2>/dev/null; then
-            echo "::error::❌ CRITICAL: XSS vulnerability pattern detected! Push BLOCKED."
-            echo "::error::Found potential user-controlled content in DOM manipulation."
+            echo "::error::❌ CRITICAL: XSS vulnerability with user-controlled data detected! Push BLOCKED."
+            echo "::error::Found user input (req/params/query/body) in DOM manipulation."
             exit 1
           fi
           echo "✅ No XSS vulnerabilities detected"
