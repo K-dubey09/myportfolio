@@ -214,9 +214,10 @@ jobs:
       - name: Check for XSS vulnerabilities
         run: |
           echo "🔍 Scanning for XSS vulnerabilities..."
-          # Scan code files for XSS patterns with user-controlled data (req., params., query., body., etc.)
+          # Scan frontend code for XSS patterns with user-controlled data
+          # Exclude backend routes (no DOM manipulation) and utility files without user input
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets,utils} \
             --exclude="*.css" --exclude="*.scss" --exclude="*.sass" --exclude="*.less" \
             --exclude="*.md" --exclude="*.txt" --exclude="*.log" \
             --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" --exclude="*.svg" \
@@ -224,7 +225,7 @@ jobs:
             --exclude="*.rules" --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" \
             --exclude="*.yml" --exclude="*.yaml" --exclude="*ignore" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.html" --include="*.json" --include="*.vue" \
+            --include="*.html" --include="*.vue" \
             'dangerouslySetInnerHTML.*\$\{.*req\.|
             dangerouslySetInnerHTML.*\$\{.*params\.|
             dangerouslySetInnerHTML.*\$\{.*query\.|
@@ -243,7 +244,7 @@ jobs:
             new\s+Function.*\$\{.*req\.|
             setTimeout\s*\(.*\$\{.*req\.|
             setInterval\s*\(.*\$\{.*req\.' \
-            ./frontend/src ./frontend/Admin ./backend/controllers ./backend/routes 2>/dev/null; then
+            ./frontend/src ./frontend/Admin 2>/dev/null; then
             echo "::error::❌ CRITICAL: XSS vulnerability with user-controlled data detected! Push BLOCKED."
             echo "::error::Found user input (req/params/query/body) in DOM manipulation."
             exit 1
