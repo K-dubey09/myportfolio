@@ -194,8 +194,12 @@ jobs:
         run: |
           echo "🔍 Scanning for SQL injection patterns..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" --include="*.jsx" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.svg" --exclude="*.ico" --exclude="*.webp" --exclude="*.mp4" --exclude="*.mp3" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.html" --include="*.php" --include="*.py" \
             'SELECT.*FROM.*WHERE.*\$\{|
             INSERT.*INTO.*VALUES.*\$\{|
             UPDATE.*SET.*WHERE.*\$\{|
@@ -239,8 +243,12 @@ jobs:
         run: |
           echo "🔍 Scanning for command injection patterns..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.svg" --exclude="*.ico" --exclude="*.webp" --exclude="*.mp4" --exclude="*.mp3" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.html" --include="*.php" --include="*.py" \
             'exec\s*\(.*\$\{|
             spawn\s*\(.*\$\{|
             execSync\s*\(.*\$\{|
@@ -270,8 +278,11 @@ jobs:
         run: |
           echo "🔍 Checking for insecure random number generation..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             'Math\.random\(\).*password|
             Math\.random\(\).*token|
             Math\.random\(\).*secret|
@@ -286,8 +297,11 @@ jobs:
         run: |
           echo "🔍 Scanning for insecure deserialization..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             'JSON\.parse\(.*req\.|
             eval\(.*JSON|
             unserialize\(|
@@ -301,8 +315,11 @@ jobs:
         run: |
           echo "🔍 Checking for ReDoS vulnerabilities..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             '\(\.\*\)\+|\(\.\+\)\*|\(\[.*\]\)\+\+' \
             .; then
             echo "::warning::⚠️ Potential ReDoS vulnerability detected!"
@@ -313,8 +330,11 @@ jobs:
         run: |
           echo "🔍 Scanning for SSRF vulnerabilities..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             'fetch\(.*req\.|
             axios\(.*req\.|
             http\.request\(.*req\.|
@@ -376,8 +396,11 @@ jobs:
         run: |
           echo "🔍 Checking for debug statements..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" --include="*.jsx" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" \
             'debugger;|
             console\.trace\(|
             console\.assert\(' \
@@ -477,8 +500,11 @@ jobs:
         run: |
           echo "🔍 Checking password security..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" --include="*.jsx" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             'password.*length.*[<].*6|
             minLength.*:.*[1-5].*password' \
             .; then
@@ -500,8 +526,11 @@ jobs:
         run: |
           echo "🔍 Checking JWT implementation..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             'jwt\.sign\([^,]*,\s*["\x27][^"\x27]{1,20}["\x27]|
             jwt\.verify.*algorithm.*none' \
             .; then
@@ -514,13 +543,17 @@ jobs:
         run: |
           echo "🔍 Checking session security..."
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
-            --include="*.js" \
+            --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --include="*.json" --include="*.php" --include="*.py" \
             'session.*secure:\s*false|
             session.*httpOnly:\s*false|
             cookie.*secure:\s*false' \
             .; then
             echo "::warning::⚠️ Insecure session configuration detected!"
+          fi
   # Job 7: Backend Security & Validation
   # Job 7: Backend Security & Validation
   backend-test:
