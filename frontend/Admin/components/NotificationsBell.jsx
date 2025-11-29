@@ -34,7 +34,7 @@ const NotificationsBell = () => {
         const data = await response.json();
         setUnreadCount(data.unreadCount || 0);
       }
-    } catch (error) {
+    } catch {
       // Silently fail - user may not be authenticated
     }
   };
@@ -59,7 +59,7 @@ const NotificationsBell = () => {
         const data = await response.json();
         setNotifications(data.notifications || []);
       }
-    } catch (error) {
+    } catch {
       // Silently fail - user may not be authenticated
     } finally {
       setLoading(false);
@@ -89,7 +89,7 @@ const NotificationsBell = () => {
       // Update local state
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   };
@@ -109,7 +109,7 @@ const NotificationsBell = () => {
 
       setNotifications([]);
       setUnreadCount(0);
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   };

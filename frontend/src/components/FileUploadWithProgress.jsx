@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { uploadFileToStorage, formatFileSize, validateFile } from '../config/storageUtils';
+import { uploadFileToStorage, formatFileSize } from '../config/storageUtils';
 import './FileUploadWithProgress.css';
 
 /**

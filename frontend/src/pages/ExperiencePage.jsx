@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Calendar, MapPin, Building, ExternalLink, Search } from 'lucide-react';
 import toast from 'react-hot-toast';

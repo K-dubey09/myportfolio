@@ -112,7 +112,7 @@ const CertificationsPage = () => {
       ) : (
         <>
           <div className="certifications-grid">
-            {filteredCertifications.map((cert, index) => {
+            {filteredCertifications.map((cert) => {
               const status = getStatus(cert);
               return (
                 <div key={cert._id} className={`certification-card ${status}`}>

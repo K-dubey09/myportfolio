@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './InconsistencyLogsPanel.css';
 
 const InconsistencyLogsPanel = () => {
@@ -24,11 +24,7 @@ const InconsistencyLogsPanel = () => {
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter, typeFilter]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError('');
     
@@ -63,7 +59,11 @@ const InconsistencyLogsPanel = () => {
       setError(err.message);
       setLoading(false);
     }
-  };
+  }, [statusFilter, typeFilter]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleResolveLog = async (logId) => {
     setActionLoading(true);

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { Code, Star, Search, TrendingUp, BarChart } from 'lucide-react';
 import './PagesStyles.css';

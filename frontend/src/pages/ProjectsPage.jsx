@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { API_URL } from '../config/env'
 import { useTranslation } from '../hooks/useTranslation'
