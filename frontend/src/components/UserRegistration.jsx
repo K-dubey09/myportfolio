@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react'

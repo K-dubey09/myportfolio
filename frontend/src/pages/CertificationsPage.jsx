@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Award, Search, Calendar, ExternalLink, CheckCircle } from 'lucide-react';
 import './PagesStyles.css';
@@ -11,7 +11,7 @@ const CertificationsPage = () => {
   const [issuerFilter, setIssuerFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const fetchCertifications = async () => {
+  const fetchCertifications = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:5000/api/certifications', {
         headers: user ? { Authorization: `Bearer ${user.token}` } : {}
@@ -24,11 +24,11 @@ const CertificationsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchCertifications();
-  }, []);
+  }, [fetchCertifications]);
 
   const isExpired = (expiryDate) => {
     if (!expiryDate) return false;
