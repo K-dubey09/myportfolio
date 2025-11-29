@@ -813,6 +813,7 @@ jobs:
         continue-on-error: true
 
       - name: Scan Docker images for vulnerabilities
+        if: success()
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'portfolio-frontend:latest'
@@ -822,6 +823,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Docker scan results
+        if: success() && hashFiles('trivy-docker-results.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-docker-results.sarif'
@@ -1040,7 +1042,7 @@ jobs:
 
       - name: Send Email Notification
         uses: dawidd6/action-send-mail@v3
-        if: always()
+        if: always() && secrets.MAIL_USERNAME != '' && secrets.MAIL_TO != ''
         with:
           server_address: smtp.gmail.com
           server_port: 587
@@ -1125,22 +1127,37 @@ jobs:
           echo "Pipeline status: ${{ steps.status.outputs.status }}"
         continue-on-error: true
 
-      - name: Create deployment summary
+      - name: Create pipeline summary
         run: |
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.message }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: main" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ needs.deploy-production.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔒 Security Status" >> $GITHUB_STEP_SUMMARY
-          echo "All security gates passed ✅" >> $GITHUB_STEP_SUMMARY
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ needs.deploy-production.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Pipeline Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Author**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Build artifacts available for 7 days" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔒 Security Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Secrets Scan | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡️ Security Assessment | ${{ needs.security-assessment.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔬 Code Security Analysis | ${{ needs.code-security-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔐 Dependency Security | ${{ needs.dependency-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔑 Auth Security | ${{ needs.auth-security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Backend Test | ${{ needs.backend-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎨 Frontend Build | ${{ needs.frontend-build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🚦 Security Gate | ${{ needs.security-gate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.status.outputs.status }}" == "success" ]; then
+            echo "### ✅ All Security Checks Passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✨ Your code is secure and ready for deployment" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Pipeline Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the failed jobs above and fix the issues" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip**: Configure email notifications by adding MAIL_USERNAME, MAIL_PASSWORD, and MAIL_TO secrets" >> $GITHUB_STEP_SUMMARY
