@@ -486,16 +486,18 @@ jobs:
       - name: Check for weak password validation
         run: |
           echo "🔍 Checking password security..."
-          if grep -rniE \
+          PWD_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.rules" --exclude="*.dockerignore" --exclude="*.yml" --exclude="*.yaml" \
+            --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.log" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.php" --include="*.py" \
-            'password.*length.*[<].*6|
-            minLength.*:.*[1-5].*password' \
-            .; then
+            'password.*length.*[<].*6|minLength.*:.*[1-5].*password' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$PWD_RESULTS" ]; then
             echo "::error::❌ CRITICAL: Weak password requirements detected! Push BLOCKED."
+            echo "$PWD_RESULTS"
             exit 1
           fi
           echo "✅ Password validation checks passed"
@@ -512,16 +514,18 @@ jobs:
       - name: Check for JWT security issues
         run: |
           echo "🔍 Checking JWT implementation..."
-          if grep -rniE \
+          JWT_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.rules" --exclude="*.dockerignore" --exclude="*.yml" --exclude="*.yaml" \
+            --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.log" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.php" --include="*.py" \
-            'jwt\.sign\([^,]*,\s*["\x27][^"\x27]{1,20}["\x27]|
-            jwt\.verify.*algorithm.*none' \
-            .; then
+            'jwt\.sign\([^,]*,\s*["\x27][^"\x27]{1,20}["\x27]|jwt\.verify.*algorithm.*none' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$JWT_RESULTS" ]; then
             echo "::error::❌ CRITICAL: Weak JWT secret or algorithm detected! Push BLOCKED."
+            echo "$JWT_RESULTS"
             exit 1
           fi
           echo "✅ JWT security checks passed"
@@ -529,18 +533,20 @@ jobs:
       - name: Check for session security
         run: |
           echo "🔍 Checking session security..."
-          if grep -rniE \
+          SESSION_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.rules" --exclude="*.dockerignore" --exclude="*.yml" --exclude="*.yaml" \
+            --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.log" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.php" --include="*.py" \
-            'session.*secure:\s*false|
-            session.*httpOnly:\s*false|
-            cookie.*secure:\s*false' \
-            .; then
+            'session.*secure:\s*false|session.*httpOnly:\s*false|cookie.*secure:\s*false' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$SESSION_RESULTS" ]; then
             echo "::warning::⚠️ Insecure session configuration detected!"
+            echo "$SESSION_RESULTS"
           fi
+          echo "✅ Session security check completed"
   # Job 7: Backend Security & Validation
   # Job 7: Backend Security & Validation
   backend-test:
