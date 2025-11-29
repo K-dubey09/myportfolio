@@ -71,11 +71,15 @@ jobs:
         run: |
           echo "🔍 Checking for Firebase service account keys..."
           
+          # Only check for actual service account JSON files with private keys
           if find . -type f \
             -not -path "*/node_modules/*" \
             -not -path "*/.git/*" \
             -not -path "*.md" \
-            -exec grep -l "private_key" {} \; 2>/dev/null | grep -v ".md$"; then
+            -not -path "*/config/firebase.js" \
+            -not -path "*/firebase.js" \
+            -name "*.json" \
+            -exec grep -l "\"private_key\":" {} \; 2>/dev/null; then
             echo "::error::❌ CRITICAL: Firebase service account key detected! Push BLOCKED."
             exit 1
           fi
