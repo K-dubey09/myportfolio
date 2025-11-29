@@ -266,18 +266,18 @@ jobs:
       - name: Check for Insecure Random
         run: |
           echo "🔍 Checking for insecure random number generation..."
-          if grep -rniE \
+          RANDOM_RESULTS=$(grep -rnE \
             --exclude-dir={node_modules,.git,dist,build,coverage,public,uploads,assets} \
-            --exclude="*.css" --exclude="*.scss" --exclude="*.md" --exclude="*.txt" \
-            --exclude="*.png" --exclude="*.jpg" --exclude="*.jpeg" --exclude="*.gif" \
+            --exclude="*.rules" --exclude="*.dockerignore" --exclude="*.yml" --exclude="*.yaml" \
+            --exclude="*.sh" --exclude="*.ps1" --exclude="*.bat" --exclude="*.md" --exclude="*.txt" \
+            --exclude="*.css" --exclude="*.scss" --exclude="*.log" \
             --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
-            --include="*.json" --include="*.php" --include="*.py" \
-            'Math\.random\(\).*password|
-            Math\.random\(\).*token|
-            Math\.random\(\).*secret|
-            Math\.random\(\).*key' \
-            .; then
+            'Math\.random\(\).*password|Math\.random\(\).*token|Math\.random\(\).*secret|Math\.random\(\).*key' \
+            . 2>/dev/null || true)
+          
+          if [ -n "$RANDOM_RESULTS" ]; then
             echo "::error::❌ CRITICAL: Insecure random for security-critical operation! Push BLOCKED."
+            echo "$RANDOM_RESULTS"
             exit 1
           fi
           echo "✅ Secure random usage verified"
