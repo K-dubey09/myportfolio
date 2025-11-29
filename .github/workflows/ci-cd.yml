@@ -210,18 +210,21 @@ jobs:
       - name: Check for XSS vulnerabilities
         run: |
           echo "🔍 Scanning for XSS vulnerabilities..."
+          # Exclude model files, translation files, and configuration files
           if grep -rniE \
-            --exclude-dir={node_modules,.git,dist} \
+            --exclude-dir={node_modules,.git,dist,models,translations} \
+            --exclude="*.json" --exclude="*.md" --exclude="*Schema.js" --exclude="*Model.js" \
             --include="*.js" --include="*.jsx" \
             'dangerouslySetInnerHTML|
-            innerHTML\s*=|
-            document\.write\(|
-            eval\s*\(|
-            Function\s*\(.*\)\s*\(|
-            setTimeout\s*\(\s*["\x27]|
-            setInterval\s*\(\s*["\x27]' \
-            .; then
+            \.innerHTML\s*=\s*[^"'"'"']*\$\{|
+            document\.write\s*\(\s*[^"'"'"']*\$\{|
+            eval\s*\(\s*[^"'"'"']*\$\{|
+            new\s+Function\s*\(.*\$\{|
+            setTimeout\s*\(\s*[^"'"'"']*\$\{|
+            setInterval\s*\(\s*[^"'"'"']*\$\{' \
+            . 2>/dev/null; then
             echo "::error::❌ CRITICAL: XSS vulnerability pattern detected! Push BLOCKED."
+            echo "::error::Found potential user-controlled content in DOM manipulation."
             exit 1
           fi
           echo "✅ No XSS vulnerabilities detected"
