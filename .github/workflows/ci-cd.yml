@@ -7,6 +7,11 @@ on:
     branches: [main, develop, staging]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   NODE_VERSION: '20.x'
   FRONTEND_DIR: ./frontend
