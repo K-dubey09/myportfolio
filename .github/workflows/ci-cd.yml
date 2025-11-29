@@ -87,8 +87,8 @@ jobs:
         run: |
           echo "🔍 Checking for Firebase service account keys..."
           
-          # Only check for actual service account JSON files with private keys (exclude .example files)
-          if find . -type f \
+          # Find JSON files with "private_key" field, excluding examples and placeholders
+          FOUND_FILES=$(find . -type f \
             -not -path "*/node_modules/*" \
             -not -path "*/.git/*" \
             -not -path "*.md" \
@@ -96,8 +96,12 @@ jobs:
             -not -path "*/config/firebase.js" \
             -not -path "*/firebase.js" \
             -name "*.json" \
-            -exec grep -l "\"private_key\":" {} \; 2>/dev/null; then
+            -exec grep -l "\"private_key\":" {} \; 2>/dev/null | \
+            xargs -I {} sh -c 'grep -q "REPLACE_WITH_YOUR_PRIVATE_KEY" "{}" || echo "{}"' || true)
+          
+          if [ -n "$FOUND_FILES" ]; then
             echo "::error::❌ CRITICAL: Firebase service account key detected! Push BLOCKED."
+            echo "::error::Files with credentials: $FOUND_FILES"
             exit 1
           fi
           
