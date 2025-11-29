@@ -85,8 +85,8 @@ export const requestEmailVerification = async (req, res) => {
     }
 
     // Validate password strength
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
     // Check if user already exists in our database
